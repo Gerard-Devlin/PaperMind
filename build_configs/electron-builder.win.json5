@@ -22,6 +22,7 @@
     executableName: "PaperMind",
     publisherName: "PaperMind",
     legalTrademarks: "PaperMind",
+    icon: "build/icon_v1.ico",
     target: [
       {
         target: "nsis",

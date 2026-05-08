@@ -1,10 +1,10 @@
 <div align="center">
-<img src="./assets/icon.png" height="95" />
+<img src="./build/icon_v1.ico" height="95" />
 <br />
 <img src="https://img.shields.io/badge/dynamic/json?label=Release&query=version&url=https://raw.githubusercontent.com/Future-Scholars/paperlib/master/package.json" />
 <img src="https://img.shields.io/github/license/Future-Scholars/paperlib" />
 <img src="https://img.shields.io/github/stars/Future-Scholars/paperlib" />
-<h2><a href="https://paperlib.app/" > Paperlib </a></h2>
+<h2><a href="https://paperlib.app/" > PaperMind </a></h2>
 An open-source academic paper management tool.
 </div>
 
