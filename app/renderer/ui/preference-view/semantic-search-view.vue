@@ -91,7 +91,7 @@ const rebuildIndex = async () => {
     <Input
       class="mb-5"
       title="PostgreSQL URL"
-      info="A PostgreSQL database with pgvector available. PaperMind creates the required tables."
+      info="Optional advanced mode. Leave empty to use built-in local PGlite + pgvector storage."
       :value="prefState.semanticSearchPostgresURL"
       type="text"
       placeholder="postgresql://user:password@localhost:5432/paperlib"

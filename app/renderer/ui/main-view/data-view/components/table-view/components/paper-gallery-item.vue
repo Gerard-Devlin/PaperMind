@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BIconFileEarmarkPdf } from "bootstrap-icons-vue";
-import { PropType, ref, watch } from "vue";
+import { onBeforeUnmount, onMounted, PropType, ref, watch } from "vue";
 
 import { getProtocol } from "@/base/url";
 import { Entity } from "@/models/entity";
@@ -17,10 +17,36 @@ const props = defineProps({
   },
 });
 
+const MAX_PARALLEL_RENDERS = 2;
+let activeRenderCount = 0;
+const renderQueue: Array<() => Promise<void>> = [];
+
+const runQueuedRender = async (job: () => Promise<void>) => {
+  if (activeRenderCount >= MAX_PARALLEL_RENDERS) {
+    renderQueue.push(job);
+    return;
+  }
+
+  activeRenderCount += 1;
+  try {
+    await job();
+  } finally {
+    activeRenderCount -= 1;
+    const next = renderQueue.shift();
+    if (next) {
+      void runQueuedRender(next);
+    }
+  }
+};
+
 const canvas = ref<HTMLCanvasElement | null>(null);
+const rootRef = ref<HTMLElement | null>(null);
 const imageURL = ref("");
 const isRendering = ref(false);
 const hasPreview = ref(false);
+const previewBlobURLCache = new Map<string, string>();
+const isVisible = ref(false);
+let observer: IntersectionObserver | null = null;
 
 const renderCanvas = async (
   buffer: ArrayBuffer | Uint8Array,
@@ -46,9 +72,14 @@ const renderCanvas = async (
       return;
     }
     context.drawImage(img, 0, 0, canvas.value.width, canvas.value.height);
-    URL.revokeObjectURL(img.src);
+    if (imageURL.value !== img.src) {
+      URL.revokeObjectURL(img.src);
+    }
   };
 
+  if (imageURL.value && imageURL.value.startsWith("blob:")) {
+    URL.revokeObjectURL(imageURL.value);
+  }
   imageURL.value = URL.createObjectURL(
     new Blob([buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer], {
       type: "image/jpeg",
@@ -58,6 +89,10 @@ const renderCanvas = async (
 };
 
 const render = async () => {
+  if (!isVisible.value || isRendering.value || hasPreview.value) {
+    return;
+  }
+
   hasPreview.value = false;
   if (
     !props.item.defaultSup ||
@@ -68,8 +103,35 @@ const render = async () => {
     return;
   }
 
-  isRendering.value = true;
-  try {
+  await runQueuedRender(async () => {
+    if (isRendering.value || hasPreview.value) {
+      return;
+    }
+    isRendering.value = true;
+    try {
+    const cacheKey = `${props.item._id}`;
+    const inMemoryCached = previewBlobURLCache.get(cacheKey);
+    if (inMemoryCached) {
+      const img = new Image();
+      img.onload = () => {
+        if (!canvas.value) {
+          return;
+        }
+        const context = canvas.value.getContext("2d");
+        if (!context) {
+          return;
+        }
+        canvas.value.width = img.width;
+        canvas.value.height = img.height;
+        context.clearRect(0, 0, img.width, img.height);
+        context.drawImage(img, 0, 0, img.width, img.height);
+      };
+      imageURL.value = inMemoryCached;
+      img.src = inMemoryCached;
+      hasPreview.value = true;
+      return;
+    }
+
     const cachedThumbnail = await PLAPI.cacheService.loadThumbnail(props.item);
     if (cachedThumbnail?.blob && cachedThumbnail.blob.byteLength > 0) {
       await renderCanvas(
@@ -77,6 +139,7 @@ const render = async () => {
         cachedThumbnail.width,
         cachedThumbnail.height
       );
+      previewBlobURLCache.set(cacheKey, imageURL.value);
       hasPreview.value = true;
       return;
     }
@@ -101,22 +164,58 @@ const render = async () => {
         canvas.value.width || 720,
         canvas.value.height || 960
       );
+      previewBlobURLCache.set(cacheKey, imageURL.value);
       hasPreview.value = true;
     }
-  } finally {
-    isRendering.value = false;
-  }
+    } finally {
+      isRendering.value = false;
+    }
+  });
 };
 
 watch(
   () => props.item._id,
-  () => render(),
+  () => {
+    hasPreview.value = false;
+    if (isVisible.value) {
+      void render();
+    }
+  },
   { immediate: true }
 );
+
+watch(isVisible, (visible) => {
+  if (visible) {
+    void render();
+  }
+});
+
+onMounted(() => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        isVisible.value = entry.isIntersecting;
+      }
+    },
+    { rootMargin: "200px 0px 200px 0px", threshold: 0.01 }
+  );
+  if (rootRef.value) {
+    observer.observe(rootRef.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (observer && rootRef.value) {
+    observer.unobserve(rootRef.value);
+  }
+  observer?.disconnect();
+  observer = null;
+});
 </script>
 
 <template>
   <div
+    ref="rootRef"
     class="group w-full min-w-[8.25rem] max-w-[10rem] select-none cursor-pointer"
     :class="active ? 'text-accentlight dark:text-accentdark' : ''"
   >

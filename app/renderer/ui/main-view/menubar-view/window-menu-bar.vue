@@ -208,7 +208,7 @@ disposable(
                   </div>
                   <BIconCheck2
                     class="my-auto"
-                    v-if="prefState.mainviewSortBy === 'pubTime'"
+                    v-if="prefState.mainviewSortBy === 'year' || prefState.mainviewSortBy === 'pubTime'"
                   />
                 </div>
               </MenuItem>

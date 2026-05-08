@@ -452,7 +452,9 @@ const switchViewType = (viewType: string) => {
 };
 
 const switchSortBy = (key: string) => {
-  PLMainAPI.preferenceService.set({ mainviewSortBy: key });
+  PLMainAPI.preferenceService.set({
+    mainviewSortBy: key === "pubTime" ? "year" : key,
+  });
 };
 
 const switchSortOrder = (order: "asce" | "desc") => {

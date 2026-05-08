@@ -344,6 +344,10 @@ function _migrate(
     store.set("feedFields", feedFields);
   }
   // TODO: migrate from 1 to 2
+  const currentSortBy = store.get("mainviewSortBy");
+  if (currentSortBy === "pubTime") {
+    store.set("mainviewSortBy", "year");
+  }
 
   store.set("preferenceVersion", preferenceVersion);
 

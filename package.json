@@ -96,6 +96,7 @@
     "webdav": "5.3.1"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.3.14",
     "@future-scholars/paperlib-entry-scrape-extension": "^0.0.36",
     "@future-scholars/paperlib-metadata-scrape-extension": "^0.0.39",
     "dompurify": "3.3.0",
