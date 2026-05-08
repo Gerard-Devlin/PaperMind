@@ -1,6 +1,6 @@
 {
   "name": "papermind",
-  "version": "3.1.6",
+  "version": "3.2.0",
   "main": "dist/main/main.mjs",
   "description": "PaperMind - Academic paper management and semantic research workspace.",
   "author": "PaperMind",

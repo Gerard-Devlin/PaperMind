@@ -302,6 +302,11 @@ class PaperlibMetadataScrapeExtension extends PLExtension {
     if (!PLExtAPI.extensionPreferenceService.get(this.id, "show-presetting-hint")) {
       return;
     }
+    // PaperMind customization: disable this onboarding popup.
+    PLExtAPI.extensionPreferenceService.set(this.id, {
+      "show-presetting-hint": false,
+    });
+    return;
 
     const presetting = PLExtAPI.extensionPreferenceService.get(
       this.id,

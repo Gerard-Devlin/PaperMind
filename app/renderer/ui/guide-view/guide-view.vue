@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Entity } from "@/models/entity";
 import { ref } from "vue";
 
 const uiState = PLUIAPILocal.uiStateService.useState();
@@ -24,24 +23,9 @@ const selectAPaper = async () => {
     "desc",
     undefined
   );
-
-  if (papers.length === 0) {
-    await PLAPI.paperService.update(
-      [
-        new Entity({
-          title: "Welcome to PaperLib!",
-          authors: "Future Scholars, Geoffrey Chen",
-          type: "article",
-          journal: "Github, https://paperlib.app",
-          year: "2020",
-          note: "<md>\n# Welcome to PaperLib!\n\nThis is a guide to help you get started with PaperLib.\n\n",
-        }),
-      ],
-      false,
-      false
-    );
+  if (papers.length > 0) {
+    uiState.selectedIndex = [0];
   }
-  uiState.selectedIndex = [0];
 };
 </script>
 
@@ -280,7 +264,7 @@ const selectAPaper = async () => {
               </span>
               <a
                 class="text-xs mt-4 underline"
-                href="https://paperlib.app/en/doc/getting-started.html"
+                href="https://papermind.app/docs/getting-started"
               >
                 {{ $t("guide.more1info2") }}
               </a>

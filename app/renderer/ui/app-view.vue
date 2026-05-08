@@ -22,7 +22,6 @@ import PaperSmartFilterEditView from "./edit-view/smartfilter-edit-view.vue";
 import MainView from "./main-view/main-view.vue";
 import PreferenceView from "./preference-view/preference-view.vue";
 import PresettingView from "./presetting-view/presetting-view.vue";
-import WhatsNewView from "./whats-new-view/whats-new-view.vue";
 import WelcomeView from "./welcome-view/welcome-view.vue";
 import OverlayNotificationView from "./overlay-notification-view/overlay-notification-view.vue";
 import GuideView from "./guide-view/guide-view.vue";
@@ -101,6 +100,39 @@ const reloadPaperEntities = async () => {
 
   PLUIAPILocal.uiStateService.fire({ entitiesReloaded: Date.now() });
 };
+
+const removeBuiltInWelcomePapers = async () => {
+  const seededWelcomePapers = paperEntities.value.filter((paper) => {
+    const title = `${paper.title || ""}`.trim().toLowerCase();
+    const authors = `${paper.authors || ""}`.trim().toLowerCase();
+    const note = `${paper.note || ""}`.toLowerCase();
+    const journal = `${paper.journal || ""}`.toLowerCase();
+
+    const isWelcomeTitle =
+      title === "welcome to paperlib!" ||
+      title === "welcome to paperlib" ||
+      title === "welcome to papermind!" ||
+      title === "welcome to papermind";
+
+    const isBuiltInSignature =
+      authors.includes("papermind team") ||
+      authors.includes("future scholars") ||
+      authors.includes("geoffrey chen") ||
+      note.includes("get started with paperlib") ||
+      note.includes("get started with papermind") ||
+      journal.includes("paperlib.app") ||
+      journal === "papermind";
+
+    return isWelcomeTitle && isBuiltInSignature;
+  });
+
+  if (seededWelcomePapers.length === 0) {
+    return;
+  }
+
+  await PLAPI.paperService.delete(seededWelcomePapers.map((paper) => paper._id));
+};
+
 disposable(
   PLAPI.paperService.on("updated", () => {
     reloadPaperEntities();
@@ -276,6 +308,7 @@ disposable(
     clearLoadingWatchdog();
     await PLAPI.fileService.initialize();
     await reloadPaperEntities();
+    await removeBuiltInWelcomePapers();
     await reloadTags();
     await reloadFolders();
     await reloadPaperSmartFilters();
@@ -460,16 +493,6 @@ const onNotifyProgressClicked = () => {
   PLAPI.logService.progress("Progress...", randomNumber, true, "DEVLOG");
 };
 
-const isWhatsNewShown = ref(false);
-
-disposable(
-  PLMainAPI.preferenceService.onChanged(["lastVersion"], async () => {
-    isWhatsNewShown.value =
-      prefState.lastVersion !==
-      (await PLMainAPI.upgradeService.currentVersion());
-  })
-);
-
 // ================================
 // Mount Hook
 // ================================
@@ -478,10 +501,6 @@ onMounted(async () => {
     changeFontsize(
       (await PLMainAPI.preferenceService.get("fontsize")) as string
     );
-
-    isWhatsNewShown.value =
-      (await PLMainAPI.preferenceService.get("lastVersion")) !==
-      (await PLMainAPI.upgradeService.currentVersion());
 
     armLoadingWatchdog();
     try {
@@ -604,17 +623,6 @@ onMounted(async () => {
     >
       <PresettingView v-if="prefState.showPresetting" />
     </Transition>  -->
-
-    <Transition
-      enter-active-class="transition ease-out duration-75"
-      enter-from-class="transform opacity-0"
-      enter-to-class="transform opacity-100"
-      leave-active-class="transition ease-in duration-75"
-      leave-from-class="transform opacity-100"
-      leave-to-class="transform opacity-0"
-    >
-      <WhatsNewView v-if="isWhatsNewShown" />
-    </Transition>
 
     <Transition
       enter-active-class="transition ease-out duration-75"

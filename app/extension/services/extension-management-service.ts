@@ -336,8 +336,10 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
       );
 
       const extension = this._extManager.require(info.name);
-
-      this._installedExtensions[info.name] = await extension.initialize();
+      this._installedExtensions[info.name] = await this._safeInitializeExtension(
+        info.name,
+        extension
+      );
 
       this._installedExtensionInfos[info.name] = {
         id: info.name,
@@ -434,8 +436,10 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
       }
 
       const extension = this._extManager.require(info.name);
-
-      this._installedExtensions[info.name] = await extension.initialize();
+      this._installedExtensions[info.name] = await this._safeInitializeExtension(
+        info.name,
+        extension
+      );
 
       this._installedExtensionInfos[info.name] = {
         id: info.name,
@@ -809,5 +813,27 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
     const mem = process.memoryUsage();
 
     return mem.rss / 1024 / 1024;
+  }
+
+  private async _safeInitializeExtension(extensionID: string, extension: any) {
+    if (!extension?.initialize) {
+      return extension;
+    }
+
+    try {
+      return await extension.initialize();
+    } catch (error) {
+      const message = `${(error as Error)?.message || error}`;
+      if (message.includes("PLUIAPI is not defined")) {
+        PLAPI.logService.warn(
+          `Extension initialization fallback is applied.`,
+          `${extensionID}: ${message}`,
+          true,
+          "ExtManagementService"
+        );
+        return extension;
+      }
+      throw error;
+    }
   }
 }

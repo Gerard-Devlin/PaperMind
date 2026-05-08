@@ -249,7 +249,7 @@
     "dbintro": "设置你的文献库",
     "cloudintro": "如果你想使用云同步，可以稍后在设置面板中配置。",
     "scraperintrosub": "PaperMind 会从在线数据库检索论文元数据。请前往扩展设置进行配置。选择合适的抓取器组合可以提高匹配准确率并减少查询时间。",
-    "extensionintro": "我们建议安装以下扩展以改善体验。3.0 版本中所有元数据抓取器都由扩展提供。",
+    "extensionintro": "我们建议安装以下扩展以改善体验。3.2.0 版本中所有元数据抓取器都由扩展提供。",
     "extensionscraper": "抓取扩展",
     "extensionscraperrequired": "请安装抓取扩展",
     "extensionrecommend": "推荐扩展"

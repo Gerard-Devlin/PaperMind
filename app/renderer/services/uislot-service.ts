@@ -48,6 +48,14 @@ export class UISlotService extends PiniaEventable<IUISlotState> {
     }
 
     for (const [sectionID, value] of Object.entries(patch)) {
+      if (
+        slotID === "overlayNotifications" &&
+        value &&
+        this._shouldSuppressOverlayNotification(value)
+      ) {
+        continue;
+      }
+
       if (value === undefined) {
         delete currentSlot[sectionID];
       } else {
@@ -80,5 +88,15 @@ export class UISlotService extends PiniaEventable<IUISlotState> {
     delete currentSlot[itemID];
 
     this.fire({ [slotID]: currentSlot });
+  }
+
+  private _shouldSuppressOverlayNotification(value: any) {
+    const merged = `${value?.title || ""} ${value?.content || ""}`.toLowerCase();
+    return (
+      merged.includes("research topic is cs") ||
+      merged.includes("metadata scraper bundle") ||
+      merged.includes("cs 学科") ||
+      merged.includes("metadata scrape 扩展首选项")
+    );
   }
 }

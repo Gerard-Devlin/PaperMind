@@ -249,7 +249,7 @@
     "dbintro": "Setup Your Library",
     "cloudintro": "If you wish to use the cloud sync, please setup it later in the preference panel.",
     "scraperintrosub": "PaperMind retrive your paper's metadata from online databases. Please go to the extension preference view to setup them. Choosing a suitable scraper combination can improve matching accuracy and reduce query time.",
-    "extensionintro": "We recommand you to install the following extensions to improve your experience. All metadata scrapers are provided by the extensions in 3.0 version.",
+    "extensionintro": "We recommand you to install the following extensions to improve your experience. All metadata scrapers are provided by the extensions in 3.2.0 version.",
     "extensionscraper": "Scraper Extensions",
     "extensionscraperrequired": "Please install the scraper extensions",
     "extensionrecommend": "Recommened Extensions"

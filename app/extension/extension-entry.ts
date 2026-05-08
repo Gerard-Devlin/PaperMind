@@ -11,6 +11,8 @@ import { ExtensionManagementService } from "./services/extension-management-serv
 import { ExtensionPreferenceService } from "./services/extension-preference-service";
 import { IInjectable } from "./services/injectable";
 
+const API_READY_TIMEOUT_MS = 30000;
+
 async function initialize() {
   const extLogService = new LogService("extension.log");
 
@@ -32,7 +34,7 @@ async function initialize() {
   const mainAPIExposed = await extensionRPCService.waitForAPI(
     Process.main,
     "PLMainAPI",
-    5000
+    API_READY_TIMEOUT_MS
   );
   if (!mainAPIExposed) {
     console.error("Main process API is not exposed");
@@ -41,7 +43,7 @@ async function initialize() {
   const serviceAPIExposed = await extensionRPCService.waitForAPI(
     Process.service,
     "PLAPI",
-    5000
+    API_READY_TIMEOUT_MS
   );
   if (!serviceAPIExposed) {
     throw new Error("Service process API is not exposed");
@@ -102,12 +104,23 @@ async function initialize() {
   // 5. Set actionors for RPC service with all initialized services.
   //    Expose the APIs of the current process to other processes
   PLExtAPILocal.extensionRPCService.setActionor(instances);
-  await PLExtAPILocal.extensionManagementService.initialize();
 
   process.parentPort.postMessage({
     type: "service-ready",
     value: Process.extension,
   });
+
+  // Initialize extensions in background so renderer startup is never blocked.
+  PLExtAPILocal.extensionManagementService
+    .initialize()
+    .catch((error: Error) => {
+      extLogService.error(
+        "Failed to initialize extension management service.",
+        error,
+        true,
+        "Extension"
+      );
+    });
 }
 
 initialize();

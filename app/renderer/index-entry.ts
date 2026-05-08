@@ -1,26 +1,10 @@
-import { RecycleScroller } from "@future-scholars/vue-virtual-scroller";
-import "@future-scholars/vue-virtual-scroller/dist/vue-virtual-scroller.css";
-import { createPinia } from "pinia";
-import { Pane, Splitpanes } from "splitpanes";
-import { createApp } from "vue";
-import { createI18n } from "vue-i18n";
-import draggable from "vuedraggable";
-
-import { InjectionContainer } from "@/base/injection/injection";
-import { Process } from "@/base/process-id";
-import { RendererProcessRPCService } from "@/base/rpc/rpc-service-renderer";
 import { removeLoading } from "@/base/loading";
-import { loadLocales } from "@/locales/load";
-
-import { CommandService } from "./services/command-service";
-import { IInjectable } from "./services/injectable";
-import { ShortcutService } from "./services/shortcut-service";
-import { UISlotService } from "./services/uislot-service";
-import { UIStateService } from "./services/uistate-service";
-import { QuerySentenceService } from "./services/querysentence-service";
-import AppView from "./ui/app-view.vue";
+import type { IInjectable } from "./services/injectable";
+import "@future-scholars/vue-virtual-scroller/dist/vue-virtual-scroller.css";
 
 let globalLoadingWatchdog: ReturnType<typeof setTimeout> | null = null;
+let mounted = false;
+const API_READY_TIMEOUT_MS = 30000;
 
 const clearGlobalLoadingWatchdog = () => {
   if (globalLoadingWatchdog) {
@@ -37,40 +21,101 @@ const forceRemoveLoading = () => {
   }
 };
 
-const API_READY_TIMEOUT_MS = 30000;
+const showFatalOverlay = (title: string, details: string) => {
+  const root = document.getElementById("app");
+  if (!root) {
+    return;
+  }
+  const escaped = `${details || ""}`
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+  root.innerHTML = `
+    <div style="position:fixed;inset:0;overflow:auto;background:#fff;color:#222;padding:24px;font-family:Segoe UI,sans-serif;z-index:2147483647;">
+      <h2 style="margin:0 0 10px 0;">${title}</h2>
+      <pre style="white-space:pre-wrap;background:#f3f4f6;padding:12px;border-radius:6px;font-size:12px;line-height:1.45;">${escaped}</pre>
+    </div>
+  `;
+};
+
+const installGlobalErrorHooks = () => {
+  window.addEventListener("error", (event) => {
+    console.error("Window error:", event.error || event.message);
+    forceRemoveLoading();
+    showFatalOverlay(
+      "PaperMind window error",
+      `${event.message}\n\n${event.error?.stack || ""}`
+    );
+  });
+
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event.reason;
+    console.error("Unhandled rejection:", reason);
+    forceRemoveLoading();
+    showFatalOverlay(
+      "PaperMind unhandled rejection",
+      `${reason?.stack || reason || "Unknown rejection"}`
+    );
+  });
+};
 
 async function initialize() {
-  const pinia = createPinia();
+  // Dynamically import all heavy dependencies so startup-time import failures
+  // still go through this function's catch path instead of white-screening.
+  const [{ RecycleScroller }, { createPinia }, { Pane, Splitpanes }, { createApp }, { createI18n }, { default: draggable }] =
+    await Promise.all([
+      import("@future-scholars/vue-virtual-scroller"),
+      import("pinia"),
+      import("splitpanes"),
+      import("vue"),
+      import("vue-i18n"),
+      import("vuedraggable"),
+    ]);
 
+  const [{ InjectionContainer }, { Process }, { RendererProcessRPCService }, { loadLocales }, { CommandService }, { ShortcutService }, { UISlotService }, { UIStateService }, { QuerySentenceService }, { default: AppView }] =
+    await Promise.all([
+      import("@/base/injection/injection"),
+      import("@/base/process-id"),
+      import("@/base/rpc/rpc-service-renderer"),
+      import("@/locales/load"),
+      import("./services/command-service"),
+      import("./services/shortcut-service"),
+      import("./services/uislot-service"),
+      import("./services/uistate-service"),
+      import("./services/querysentence-service"),
+      import("./ui/app-view.vue"),
+    ]);
+
+  const pinia = createPinia();
   const app = createApp(AppView);
 
-  app.use(pinia);
+  app.config.errorHandler = (error, _instance, info) => {
+    console.error("Vue fatal error:", error, info);
+    forceRemoveLoading();
+    showFatalOverlay(
+      "PaperMind runtime error",
+      `${info}\n\n${(error as Error)?.stack || error}`
+    );
+  };
 
+  app.use(pinia);
   app.component("Splitpanes", Splitpanes);
   app.component("Pane", Pane);
   app.component("draggable", draggable);
   app.component("RecycleScroller", RecycleScroller);
 
-  // ============================================================
-  // 1. Initilize the RPC service for current process
   const rendererRPCService = new RendererProcessRPCService(
     Process.renderer,
     "PLUIAPI"
   );
-  // ============================================================
-  // 2. Start the port exchange process.
   await rendererRPCService.initCommunication();
 
-  // ============================================================
-  // 3. Wait for the main/service process to expose its APIs (PLMainAPI, PLAPI)
   const mainAPIExposed = await rendererRPCService.waitForAPI(
     Process.main,
     "PLMainAPI",
     API_READY_TIMEOUT_MS
   );
-
   if (!mainAPIExposed) {
-    console.error("Main process API is not exposed");
     throw new Error("Main process API is not exposed");
   }
 
@@ -79,14 +124,10 @@ async function initialize() {
     "PLAPI",
     API_READY_TIMEOUT_MS
   );
-
   if (!serviceAPIExposed) {
-    console.error("Service process API is not exposed");
     throw new Error("Service process API is not exposed");
   }
 
-  // ============================================================
-  // 4. Create the instances for all services, tools, etc. of the current process.
   const injectionContainer = new InjectionContainer({
     rendererRPCService,
   });
@@ -96,8 +137,8 @@ async function initialize() {
     uiSlotService: UISlotService,
     shortcutService: ShortcutService,
     querySentenceService: QuerySentenceService,
-  });
-  // 4.1 Expose the instances to the global scope for convenience.
+  } as any);
+
   for (const [key, instance] of Object.entries(instances)) {
     if (!globalThis["PLUIAPILocal"]) {
       globalThis["PLUIAPILocal"] = {} as any;
@@ -106,29 +147,21 @@ async function initialize() {
     globalThis["PLUIAPILocal"][key] = instance;
   }
 
-  // ============================================================
-  // 5. Set actionors for RPC service with all initialized services.
-  //    Expose the APIs of the current process to other processes
   rendererRPCService.setActionor(instances);
 
-  // ============================================================
-  // 6. Bind remote states to local Pinia stores.
   await PLMainAPI.preferenceService.bindState();
   await PLAPI.paperService.bindState();
   await PLAPI.feedService.bindState();
   await PLAPI.fileService.bindState();
   await PLAPI.syncService.bindState();
 
-  // ============================================================
-  // 6. Setup other things for the renderer process.
   const locales = loadLocales();
-
   const i18n = createI18n({
     locale: (await PLMainAPI.preferenceService.get("language")) as string,
     fallbackLocale: "en-GB",
     messages: locales,
     globalInjection: true,
-    legacy: false
+    legacy: false,
   });
 
   PLMainAPI.preferenceService.onChanged("language", (newValue) => {
@@ -137,34 +170,30 @@ async function initialize() {
 
   app.use(i18n);
   app.mount("#app");
+  mounted = true;
   clearGlobalLoadingWatchdog();
 }
+
+installGlobalErrorHooks();
 
 globalLoadingWatchdog = setTimeout(() => {
   console.warn("Renderer initialization timeout fallback triggered.");
   forceRemoveLoading();
+  if (!mounted) {
+    showFatalOverlay(
+      "PaperMind is still starting",
+      "Startup is taking too long. Please check service.log and main.log in the PaperMind logs folder."
+    );
+  }
 }, 25000);
 
 initialize().catch((error) => {
   console.error("Renderer initialization failed:", error);
   clearGlobalLoadingWatchdog();
   forceRemoveLoading();
-
-  const root = document.getElementById("app");
-  if (root) {
-    const errorMessage =
-      error instanceof Error
-        ? `${error.message}\n${error.stack || ""}`.trim()
-        : `${error}`;
-    root.innerHTML = `
-      <div style="padding:24px;font-family:sans-serif;color:#333;">
-        <h2 style="margin:0 0 8px 0;">PaperMind failed to initialize</h2>
-        <p style="margin:0 0 10px 0;line-height:1.5;">Please restart the app. If this persists, share the error below.</p>
-        <pre style="white-space:pre-wrap;background:#f3f4f6;padding:10px;border-radius:6px;font-size:12px;line-height:1.45;max-height:260px;overflow:auto;">${errorMessage
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")}</pre>
-      </div>
-    `;
-  }
+  const errorMessage =
+    error instanceof Error
+      ? `${error.message}\n${error.stack || ""}`.trim()
+      : `${error}`;
+  showFatalOverlay("PaperMind failed to initialize", errorMessage);
 });

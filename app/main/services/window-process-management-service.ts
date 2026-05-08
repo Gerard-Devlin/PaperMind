@@ -3,6 +3,7 @@
   BrowserWindowConstructorOptions,
   Rectangle,
   app,
+  dialog,
   ipcMain,
   nativeTheme,
   screen,
@@ -85,31 +86,51 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
     const { entry, ...windowOptions } = options;
 
     this.browserWindows.set(id, new BrowserWindow(windowOptions));
+    const win = this.browserWindows.get(id);
+
+    win.webContents.on(
+      "did-fail-load",
+      (_event, code, description, validatedURL, isMainFrame) => {
+        if (!isMainFrame) {
+          return;
+        }
+        const detail = `Window: ${id}\nCode: ${code}\nReason: ${description}\nURL: ${validatedURL}`;
+        console.error("[Window] did-fail-load", detail);
+        try {
+          dialog.showErrorBox("PaperMind Load Failed", detail);
+        } catch {}
+      }
+    );
+    win.webContents.on("render-process-gone", (_event, details) => {
+      const detail = `Window: ${id}\nReason: ${details.reason}\nExit code: ${details.exitCode}`;
+      console.error("[Window] render-process-gone", detail);
+      try {
+        dialog.showErrorBox("PaperMind Renderer Crashed", detail);
+      } catch {}
+    });
 
     if (additionalHeaders) {
-      this.browserWindows
-        .get(id)
-        .webContents.session.webRequest.onHeadersReceived(
-          (details, callback) => {
-            callback({
-              responseHeaders: {
-                ...details.responseHeaders,
-                ...additionalHeaders,
-              },
-            });
-          }
-        );
+      win.webContents.session.webRequest.onHeadersReceived(
+        (details, callback) => {
+          callback({
+            responseHeaders: {
+              ...details.responseHeaders,
+              ...additionalHeaders,
+            },
+          });
+        }
+      );
     }
 
     const entryURL = this._constructEntryURL(entry);
     if (entryURL.startsWith("http")) {
-      this.browserWindows.get(id).loadURL(entryURL);
+      win.loadURL(entryURL);
     } else {
-      this.browserWindows.get(id).loadFile(entryURL);
+      win.loadFile(entryURL);
     }
 
     // Make all links open with the browser, not with the application
-    this.browserWindows.get(id).webContents.setWindowOpenHandler(({ url }) => {
+    win.webContents.setWindowOpenHandler(({ url }) => {
       if (
         url.includes(process.env.VITE_DEV_SERVER_URL || "") &&
         process.env.NODE_ENV === "development"
@@ -121,25 +142,23 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       }
       return { action: "deny" };
     });
-    this.browserWindows
-      .get(id)
-      .webContents.on("will-navigate", function (e, url) {
-        if (
-          url.includes(process.env.VITE_DEV_SERVER_URL || "") &&
-          process.env.NODE_ENV === "development"
-        ) {
-          return;
-        }
-        e.preventDefault();
-        shell.openExternal(url);
-      });
+    win.webContents.on("will-navigate", function (e, url) {
+      if (
+        url.includes(process.env.VITE_DEV_SERVER_URL || "") &&
+        process.env.NODE_ENV === "development"
+      ) {
+        return;
+      }
+      e.preventDefault();
+      shell.openExternal(url);
+    });
 
     nativeTheme.themeSource = this._preferenceService.get("preferedTheme") as
       | "dark"
       | "light"
       | "system";
 
-    this._setNonMacSpecificStyles(this.browserWindows.get(id));
+    this._setNonMacSpecificStyles(win);
 
     for (const eventName of [
       "ready-to-show",
@@ -152,11 +171,11 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       "move",
       "resize",
     ]) {
-      this.browserWindows.get(id).on(eventName as any, (e) => {
+      win.on(eventName as any, (e) => {
         this.fire({ [id]: eventName });
 
         if (eventCallbacks && eventCallbacks[eventName]) {
-          eventCallbacks[eventName](this.browserWindows.get(id));
+          eventCallbacks[eventName](win);
         }
       });
     }
@@ -190,6 +209,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
           enableBlinkFeatures: "CSSColorSchemeUARendering",
         },
         frame: false,
+        backgroundColor: "#ffffff",
         vibrancy: "sidebar",
         visualEffectState: "active",
       },
@@ -463,7 +483,9 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
     }
 
     if (app.isPackaged) {
-      return fileURLToPath(new URL(url, import.meta.url));
+      // Packaged layout: <app.asar>/dist/{main,renderer}
+      // Resolve from app root to avoid chunk-relative path issues.
+      return path.join(app.getAppPath(), "dist", "renderer", url);
     } else if (process.env.NODE_ENV === "test") {
       return fileURLToPath(new URL(url, import.meta.url));
     } else {
