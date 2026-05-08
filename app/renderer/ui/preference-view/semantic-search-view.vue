@@ -3,6 +3,7 @@ import { BIconArrowRepeat, BIconCheck2Circle, BIconSearch } from "bootstrap-icon
 import { ref } from "vue";
 
 import Input from "./components/Input.vue";
+import Toggle from "./components/toggle.vue";
 
 const prefState = PLMainAPI.preferenceService.useState();
 const qwenKey = ref("");
@@ -61,6 +62,14 @@ const rebuildIndex = async () => {
       placeholder="sk-..."
       show-saving-status
       @event:submit="saveQwenKey"
+    />
+
+    <Toggle
+      class="mb-5"
+      title="Auto AI Tags"
+      info="When papers are imported or updated, PaperMind asks the chat model to add short research tags."
+      :enable="prefState.autoAITagging"
+      @event:change="(value) => updatePref('autoAITagging', value)"
     />
 
     <div class="text-sm font-semibold mb-3 mt-2">Ask</div>

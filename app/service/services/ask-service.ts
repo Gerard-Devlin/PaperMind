@@ -113,4 +113,74 @@ export class AskService extends Eventable<{}> {
       sources,
     };
   }
+
+  async suggestTags(paper: {
+    title: string;
+    authors?: string;
+    year?: string;
+    publication?: string;
+    abstract?: string;
+  }): Promise<string[]> {
+    const apiKey =
+      (await PLMainAPI.preferenceService.getPassword("askAPIKey")) ||
+      process.env.OPENAI_API_KEY ||
+      process.env.DASHSCOPE_API_KEY ||
+      process.env.QWEN_API_KEY ||
+      "";
+    if (!apiKey) {
+      return [];
+    }
+
+    const baseURL = `${await PLMainAPI.preferenceService.get(
+      "askAPIBaseURL"
+    )}`.replace(/\/+$/, "");
+    const model = `${await PLMainAPI.preferenceService.get("askModel")}`;
+
+    const response = await fetch(`${baseURL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Return only a JSON array of 3 to 6 short research tags. No markdown.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify(paper),
+          },
+        ],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const content = (await response.json())?.choices?.[0]?.message?.content || "[]";
+    try {
+      const parsed = JSON.parse(content.replace(/^```json|```$/g, "").trim());
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((tag) => `${tag}`.trim())
+          .filter(Boolean)
+          .slice(0, 6);
+      }
+    } catch (error) {
+      this._logService.warn(
+        "Failed to parse AI tags.",
+        `${(error as Error).message}`,
+        false,
+        "AskService"
+      );
+    }
+
+    return [];
+  }
 }

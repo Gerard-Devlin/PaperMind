@@ -29,6 +29,7 @@ import {
   ISemanticSearchService,
   SemanticSearchService,
 } from "./semantic-search-service";
+import { AskService, IAskService } from "./ask-service";
 
 export interface IPaperServiceState {
   count: number;
@@ -51,6 +52,7 @@ export class PaperService extends Eventable<IPaperServiceState> {
     @IFileService private readonly _fileService: FileService,
     @ISemanticSearchService
     private readonly _semanticSearchService: SemanticSearchService,
+    @IAskService private readonly _askService: AskService,
     @ILogService private readonly _logService: LogService
   ) {
     super("paperService", {
@@ -209,6 +211,8 @@ export class PaperService extends Eventable<IPaperServiceState> {
       );
     });
 
+    await this._applyAITags(fileMovedPaperEntityDrafts);
+
     // #endregion ========================================================
 
     // ========================================================
@@ -299,6 +303,46 @@ export class PaperService extends Eventable<IPaperServiceState> {
         "SemanticSearch"
       );
     }
+  }
+
+  private async _applyAITags(paperEntities: IEntityCollection) {
+    if (!(await PLMainAPI.preferenceService.get("autoAITagging"))) {
+      return;
+    }
+
+    await Promise.all(
+      paperEntities.map(async (paperEntity) => {
+        try {
+          const existingTags = new Set(
+            (paperEntity.tags || []).map((tag) => tag.name?.toLowerCase())
+          );
+          const tags = await this._askService.suggestTags({
+            title: paperEntity.title,
+            authors: paperEntity.authors,
+            year: paperEntity.year,
+            publication:
+              paperEntity.journal ||
+              paperEntity.booktitle ||
+              paperEntity.publisher ||
+              paperEntity.howpublished,
+            abstract: paperEntity.abstract,
+          });
+
+          for (const tag of tags) {
+            if (!existingTags.has(tag.toLowerCase())) {
+              paperEntity.tags.push(new PaperTag({ name: tag }, true));
+            }
+          }
+        } catch (error) {
+          this._logService.warn(
+            "Failed to apply AI tags.",
+            `${(error as Error).message}`,
+            false,
+            "PaperService"
+          );
+        }
+      })
+    );
   }
 
   /**
