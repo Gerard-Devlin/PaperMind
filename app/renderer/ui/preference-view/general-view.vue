@@ -7,6 +7,22 @@ import Toggle from "./components/toggle.vue";
 
 const prefState = PLMainAPI.preferenceService.useState();
 
+const normalizeLanguage = (language: string) => {
+  if (language === "zh-CN" || language === "en-GB") {
+    return language;
+  }
+  if (language === "zh-TW") {
+    return "zh-CN";
+  }
+  return "en-GB";
+};
+
+if (prefState.language !== normalizeLanguage(prefState.language)) {
+  PLMainAPI.preferenceService.set({
+    language: normalizeLanguage(prefState.language),
+  });
+}
+
 const updatePrefs = (key: string, value: unknown) => {
   PLMainAPI.preferenceService.set({ [key]: value });
 };
@@ -82,7 +98,7 @@ const getPDFViewerName = (pdfViewerPath: string) => {
 };
 
 const onChangeLanguage = (language: string) => {
-  updatePrefs("language", language);
+  updatePrefs("language", normalizeLanguage(language));
 };
 </script>
 
@@ -205,9 +221,6 @@ const onChangeLanguage = (language: string) => {
         >
           <option value="en-GB">en-GB</option>
           <option value="zh-CN">zh-CN</option>
-          <option value="zh-TW">zh-TW</option>
-          <option value="ar">ar</option>
-          <option value="de-DE">de-DE</option>
         </select>
       </div>
     </div>

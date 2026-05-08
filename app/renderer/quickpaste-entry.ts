@@ -14,6 +14,16 @@ import QuickpasteView from "./ui/quickpaste-view/quickpaste-view.vue";
 
 import "./css/index.css";
 
+const normalizeLanguage = (language: string) => {
+  if (language === "zh-CN" || language === "en-GB") {
+    return language;
+  }
+  if (language === "zh-TW") {
+    return "zh-CN";
+  }
+  return "en-GB";
+};
+
 async function initialize() {
   const pinia = createPinia();
 
@@ -71,12 +81,25 @@ async function initialize() {
   // 6. Setup other things for the renderer process.
   const locales = loadLocales();
 
+  const initialLanguage = normalizeLanguage(
+    (await PLMainAPI.preferenceService.get("language")) as string
+  );
   const i18n = createI18n({
-    locale: (await PLMainAPI.preferenceService.get("language")) as string,
+    locale: initialLanguage,
     fallbackLocale: "en-GB",
     messages: locales,
     globalInjection: true,
     legacy: false,
+  });
+
+  PLMainAPI.preferenceService.onChanged("language", (newValue) => {
+    const normalizedLanguage = normalizeLanguage(newValue.value as string);
+    const locale = i18n.global.locale as unknown;
+    if (typeof locale === "string") {
+      (i18n.global as any).locale = normalizedLanguage;
+    } else {
+      (locale as { value: string }).value = normalizedLanguage;
+    }
   });
 
   app.use(i18n);

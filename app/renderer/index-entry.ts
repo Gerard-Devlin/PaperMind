@@ -5,6 +5,15 @@ import "@future-scholars/vue-virtual-scroller/dist/vue-virtual-scroller.css";
 let globalLoadingWatchdog: ReturnType<typeof setTimeout> | null = null;
 let mounted = false;
 const API_READY_TIMEOUT_MS = 30000;
+const normalizeLanguage = (language: string) => {
+  if (language === "zh-CN" || language === "en-GB") {
+    return language;
+  }
+  if (language === "zh-TW") {
+    return "zh-CN";
+  }
+  return "en-GB";
+};
 
 const clearGlobalLoadingWatchdog = () => {
   if (globalLoadingWatchdog) {
@@ -156,8 +165,11 @@ async function initialize() {
   await PLAPI.syncService.bindState();
 
   const locales = loadLocales();
+  const initialLanguage = normalizeLanguage(
+    (await PLMainAPI.preferenceService.get("language")) as string
+  );
   const i18n = createI18n({
-    locale: (await PLMainAPI.preferenceService.get("language")) as string,
+    locale: initialLanguage,
     fallbackLocale: "en-GB",
     messages: locales,
     globalInjection: true,
@@ -165,7 +177,13 @@ async function initialize() {
   });
 
   PLMainAPI.preferenceService.onChanged("language", (newValue) => {
-    i18n.global.locale = newValue.value;
+    const normalizedLanguage = normalizeLanguage(newValue.value as string);
+    const locale = i18n.global.locale as unknown;
+    if (typeof locale === "string") {
+      (i18n.global as any).locale = normalizedLanguage;
+    } else {
+      (locale as { value: string }).value = normalizedLanguage;
+    }
   });
 
   app.use(i18n);
