@@ -94,10 +94,13 @@ const render = async () => {
   }
 
   hasPreview.value = false;
+  const defaultSup = props.item.defaultSup;
   if (
-    !props.item.defaultSup ||
+    defaultSup === undefined ||
+    defaultSup === null ||
+    !props.item.supplementaries[defaultSup] ||
     !["file", "downloadRequired"].includes(
-      getProtocol(props.item.supplementaries[props.item.defaultSup].url)
+      getProtocol(props.item.supplementaries[defaultSup].url)
     )
   ) {
     return;
@@ -145,7 +148,7 @@ const render = async () => {
     }
 
     const fileURL = await PLAPI.fileService.access(
-      props.item.supplementaries[props.item.defaultSup].url,
+      props.item.supplementaries[defaultSup].url,
       false
     );
     if (!fileURL || fileURL.startsWith("downloadRequired://")) {
