@@ -1,5 +1,7 @@
 ﻿import { Pool } from "pg";
 
+import fs from "fs/promises";
+import path from "path";
 import { errorcatching } from "@/base/error";
 import { Eventable } from "@/base/event";
 import { createDecorator } from "@/base/injection/injection";
@@ -28,14 +30,29 @@ interface ISemanticSearchRow {
   distance: number;
 }
 
+interface ILocalSemanticIndexItem {
+  id: string;
+  embedding: number[];
+  updatedAt: string;
+}
+
+interface ILocalSemanticIndex {
+  version: 1;
+  embeddingModel: string;
+  embeddingDimensions: number;
+  papers: ILocalSemanticIndexItem[];
+  searchHistory: Array<{
+    query: string;
+    topK: number;
+    resultCount: number;
+    createdAt: string;
+  }>;
+}
+
 /**
- * Semantic search backed by Qwen embeddings and PostgreSQL pgvector.
- *
- * Expected PostgreSQL schema:
- * - papers(id, title, abstract, year, publication, embedding vector)
- * - authors(id, name), paper_authors(paper_id, author_id)
- * - categories(id, name), paper_categories(paper_id, category_id)
- * - search_history is created automatically if missing.
+ * Semantic search backed by Qwen embeddings.
+ * Defaults to a local JSON vector index so packaged builds work out of the box.
+ * If semanticSearchPostgresURL is configured, PostgreSQL pgvector is used instead.
  */
 export class SemanticSearchService extends Eventable<{}> {
   private _pool?: Pool;
@@ -62,7 +79,7 @@ export class SemanticSearchService extends Eventable<{}> {
     if (!(await this._isEnabled())) {
       this._logService.warn(
         "Semantic search is not configured.",
-        "Set semanticSearchPostgresURL or PAPERMIND_SEMANTIC_PG_URL, and configure a Qwen embedding API key.",
+        "Configure a Qwen embedding API key.",
         true,
         "SemanticSearch"
       );
@@ -70,7 +87,9 @@ export class SemanticSearchService extends Eventable<{}> {
     }
 
     const embedding = await this._embed(trimmedQuery);
-    const rows = await this._searchPgVector(trimmedQuery, embedding, topK);
+    const rows = (await this._hasPostgresURL())
+      ? await this._searchPgVector(trimmedQuery, embedding, topK)
+      : await this._searchLocalVector(trimmedQuery, embedding, topK);
 
     const realmIds = rows
       .map((row) => row.id)
@@ -117,7 +136,9 @@ export class SemanticSearchService extends Eventable<{}> {
   ): Promise<{ indexed: number; total: number; error?: string }> {
     try {
       await this._ensureConfigured();
-      await this._ensureSchema();
+      if (await this._hasPostgresURL()) {
+        await this._ensureSchema();
+      }
 
       const realm = await this._databaseCore.realm();
       let paperEntities = Array.from(
@@ -172,7 +193,9 @@ export class SemanticSearchService extends Eventable<{}> {
       return { indexed: 0 };
     }
     await this._ensureConfigured();
-    await this._ensureSchema();
+    if (await this._hasPostgresURL()) {
+      await this._ensureSchema();
+    }
     return { indexed: await this._indexEntities(paperEntities.map((p) => new Entity(p))) };
   }
 
@@ -180,7 +203,9 @@ export class SemanticSearchService extends Eventable<{}> {
   @errorcatching("Failed to test semantic search settings.", true, "SemanticSearch", false)
   async testSettings() {
     await this._ensureConfigured();
-    await this._ensureSchema();
+    if (await this._hasPostgresURL()) {
+      await this._ensureSchema();
+    }
     await this._embed("paperlib semantic search configuration test");
     await PLMainAPI.preferenceService.set({ semanticSearchEnabled: true });
     return true;
@@ -259,17 +284,77 @@ export class SemanticSearchService extends Eventable<{}> {
       return true;
     }
 
-    const connectionString =
-      `${await PLMainAPI.preferenceService.get("semanticSearchPostgresURL")}` ||
-      process.env.PAPERMIND_SEMANTIC_PG_URL ||
-      "";
     const apiKey =
       (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
       process.env.DASHSCOPE_API_KEY ||
       process.env.QWEN_API_KEY ||
       "";
 
-    return Boolean(connectionString && apiKey);
+    return Boolean(apiKey);
+  }
+
+  private async _hasPostgresURL() {
+    const connectionString =
+      `${await PLMainAPI.preferenceService.get("semanticSearchPostgresURL")}` ||
+      process.env.PAPERMIND_SEMANTIC_PG_URL ||
+      "";
+
+    return Boolean(connectionString.trim());
+  }
+
+  private async _searchLocalVector(
+    query: string,
+    embedding: number[],
+    topK: number
+  ): Promise<ISemanticSearchRow[]> {
+    const index = await this._loadLocalIndex();
+    const ranked = index.papers
+      .map((paper) => ({
+        id: paper.id,
+        distance: this._cosineDistance(embedding, paper.embedding),
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, topK);
+
+    index.searchHistory.unshift({
+      query,
+      topK,
+      resultCount: ranked.length,
+      createdAt: new Date().toISOString(),
+    });
+    index.searchHistory = index.searchHistory.slice(0, 200);
+    await this._saveLocalIndex(index);
+
+    const realm = await this._databaseCore.realm();
+    const ids = ranked
+      .map((row) => row.id)
+      .filter((id) => /^[a-fA-F0-9]{24}$/.test(id)) as unknown as OID[];
+    const realmObjects =
+      ids.length > 0
+        ? Array.from(this._paperEntityRepository.loadByIds(realm, ids))
+        : [];
+    const byId = new Map(realmObjects.map((entity) => [`${entity._id}`, entity]));
+
+    const rows: ISemanticSearchRow[] = [];
+    for (const row of ranked) {
+        const entity = byId.get(row.id);
+        if (!entity) {
+          continue;
+        }
+
+        rows.push({
+          id: row.id,
+          title: entity.title,
+          abstract: entity.abstract || null,
+          authors: this._splitAuthors(entity.authors),
+          categories: this._categories(entity),
+          year: entity.year || null,
+          publication: getPublicationString(entity) || null,
+          distance: row.distance,
+        });
+    }
+
+    return rows;
   }
 
   private async _searchPgVector(query: string, embedding: number[], topK: number) {
@@ -351,19 +436,12 @@ export class SemanticSearchService extends Eventable<{}> {
   }
 
   private async _ensureConfigured() {
-    const connectionString =
-      `${await PLMainAPI.preferenceService.get("semanticSearchPostgresURL")}` ||
-      process.env.PAPERMIND_SEMANTIC_PG_URL ||
-      "";
     const apiKey =
       (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
       process.env.DASHSCOPE_API_KEY ||
       process.env.QWEN_API_KEY ||
       "";
 
-    if (!connectionString) {
-      throw new Error("PostgreSQL URL is missing.");
-    }
     if (!apiKey) {
       throw new Error("Qwen embedding API key is missing.");
     }
@@ -439,11 +517,16 @@ export class SemanticSearchService extends Eventable<{}> {
       return 0;
     }
 
-    const pool = await this._getPool();
     const documents = await Promise.all(
       entities.map((entity) => this._documentText(entity))
     );
     const embeddings = await this._embedBatch(documents);
+
+    if (!(await this._hasPostgresURL())) {
+      return await this._upsertLocalEmbeddings(entities, embeddings);
+    }
+
+    const pool = await this._getPool();
     let indexed = 0;
 
     for (let i = 0; i < entities.length; i++) {
@@ -571,6 +654,90 @@ export class SemanticSearchService extends Eventable<{}> {
     }
 
     return normalized.slice(0, 8000);
+  }
+
+  private async _upsertLocalEmbeddings(
+    entities: Entity[],
+    embeddings: number[][]
+  ) {
+    const index = await this._loadLocalIndex();
+    const byId = new Map(index.papers.map((paper) => [paper.id, paper]));
+
+    for (let i = 0; i < entities.length; i += 1) {
+      byId.set(`${entities[i]._id}`, {
+        id: `${entities[i]._id}`,
+        embedding: embeddings[i],
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    index.embeddingModel = `${await PLMainAPI.preferenceService.get(
+      "qwenEmbeddingModel"
+    )}`;
+    index.embeddingDimensions = Number(
+      await PLMainAPI.preferenceService.get("qwenEmbeddingDimensions")
+    );
+    index.papers = [...byId.values()];
+    await this._saveLocalIndex(index);
+
+    return entities.length;
+  }
+
+  private async _loadLocalIndex(): Promise<ILocalSemanticIndex> {
+    const filePath = await this._localIndexPath();
+
+    try {
+      const index = JSON.parse(await fs.readFile(filePath, "utf8"));
+      return {
+        version: 1,
+        embeddingModel: index.embeddingModel || "",
+        embeddingDimensions: Number(index.embeddingDimensions || 0),
+        papers: Array.isArray(index.papers) ? index.papers : [],
+        searchHistory: Array.isArray(index.searchHistory)
+          ? index.searchHistory
+          : [],
+      };
+    } catch {
+      return {
+        version: 1,
+        embeddingModel: "",
+        embeddingDimensions: 0,
+        papers: [],
+        searchHistory: [],
+      };
+    }
+  }
+
+  private async _saveLocalIndex(index: ILocalSemanticIndex) {
+    const filePath = await this._localIndexPath();
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, `${JSON.stringify(index)}\n`, "utf8");
+  }
+
+  private async _localIndexPath() {
+    const appLibFolder = `${await PLMainAPI.preferenceService.get(
+      "appLibFolder"
+    )}`;
+    return path.join(appLibFolder, "semantic-index.json");
+  }
+
+  private _cosineDistance(a: number[], b: number[]) {
+    let dot = 0;
+    let normA = 0;
+    let normB = 0;
+    const length = Math.min(a.length, b.length);
+
+    for (let i = 0; i < length; i += 1) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+
+    if (normA === 0 || normB === 0) {
+      return 1;
+    }
+
+    return 1 - dot / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
   private _splitAuthors(authors: string) {
