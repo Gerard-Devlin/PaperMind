@@ -112,36 +112,59 @@ export class SemanticSearchService extends Eventable<{}> {
     "SemanticSearch",
     { indexed: 0 }
   )
-  async rebuildIndex(batchSize = 16): Promise<{ indexed: number }> {
-    await this._ensureConfigured();
-    const pool = await this._getPool();
-    await this._ensureSchema();
+  async rebuildIndex(
+    batchSize = 10
+  ): Promise<{ indexed: number; total: number; error?: string }> {
+    try {
+      await this._ensureConfigured();
+      await this._ensureSchema();
 
-    const realm = await this._databaseCore.realm();
-    const paperEntities = Array.from(
-      this._paperEntityRepository.load(realm, "", "addTime", "desc")
-    ).map((entity) => new Entity(entity));
+      const realm = await this._databaseCore.realm();
+      let paperEntities = Array.from(
+        this._paperEntityRepository.load(realm, "", "addTime", "desc")
+      ).map((entity) => new Entity(entity));
 
-    let indexed = 0;
-    for (let i = 0; i < paperEntities.length; i += batchSize) {
-      indexed += await this._indexEntities(paperEntities.slice(i, i + batchSize));
+      if (paperEntities.length === 0) {
+        paperEntities = Array.from(realm.objects<Entity>("Entity"))
+          .map((entity) => new Entity(entity))
+          .filter((entity) => entity.title || entity.abstract);
+      }
 
-      this._logService.progress(
-        "Rebuilding semantic index...",
-        paperEntities.length === 0 ? 100 : (indexed / paperEntities.length) * 100,
+      let indexed = 0;
+      for (let i = 0; i < paperEntities.length; i += batchSize) {
+        indexed += await this._indexEntities(
+          paperEntities.slice(i, i + batchSize)
+        );
+
+        this._logService.progress(
+          "Rebuilding semantic index...",
+          paperEntities.length === 0
+            ? 100
+            : (indexed / paperEntities.length) * 100,
+          true,
+          "SemanticSearch"
+        );
+      }
+
+      this._logService.info(
+        "Semantic index rebuilt.",
+        `${indexed} / ${paperEntities.length} paper(s) indexed.`,
         true,
         "SemanticSearch"
       );
+
+      return { indexed, total: paperEntities.length };
+    } catch (error) {
+      const message = `${(error as Error).message}`;
+      this._logService.error(
+        "Failed to rebuild semantic search index.",
+        message,
+        true,
+        "SemanticSearch"
+      );
+
+      return { indexed: 0, total: 0, error: message };
     }
-
-    this._logService.info(
-      "Semantic index rebuilt.",
-      `${indexed} paper(s) indexed.`,
-      true,
-      "SemanticSearch"
-    );
-
-    return { indexed };
   }
 
   async indexEntities(paperEntities: Entity[]): Promise<{ indexed: number }> {
@@ -159,6 +182,7 @@ export class SemanticSearchService extends Eventable<{}> {
     await this._ensureConfigured();
     await this._ensureSchema();
     await this._embed("paperlib semantic search configuration test");
+    await PLMainAPI.preferenceService.set({ semanticSearchEnabled: true });
     return true;
   }
 
@@ -168,6 +192,16 @@ export class SemanticSearchService extends Eventable<{}> {
   }
 
   private async _embedBatch(inputs: string[]) {
+    if (inputs.length > 10) {
+      const embeddings: number[][] = [];
+      for (let i = 0; i < inputs.length; i += 10) {
+        embeddings.push(...(await this._embedBatch(inputs.slice(i, i + 10))));
+      }
+      return embeddings;
+    }
+
+    inputs = inputs.map((input) => this._normalizeEmbeddingInput(input));
+
     const apiKey =
       (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
       process.env.DASHSCOPE_API_KEY ||
@@ -508,7 +542,7 @@ export class SemanticSearchService extends Eventable<{}> {
 
   private async _documentText(entity: Entity) {
     const fulltext = await this._cacheService.loadFullText(entity);
-    return [
+    const metadata = [
       entity.title,
       entity.authors,
       entity.year,
@@ -516,10 +550,27 @@ export class SemanticSearchService extends Eventable<{}> {
       entity.abstract,
       entity.note,
       this._categories(entity).join(", "),
-      fulltext,
     ]
       .filter(Boolean)
       .join("\n");
+
+    return this._normalizeEmbeddingInput(
+      [metadata, fulltext ? fulltext.slice(0, 12000) : ""]
+        .filter(Boolean)
+        .join("\n\n")
+    );
+  }
+
+  private _normalizeEmbeddingInput(input: string) {
+    const normalized = `${input || ""}`
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!normalized) {
+      return "Untitled paper";
+    }
+
+    return normalized.slice(0, 8000);
   }
 
   private _splitAuthors(authors: string) {

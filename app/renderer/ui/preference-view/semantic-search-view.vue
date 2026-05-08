@@ -34,7 +34,9 @@ const rebuildIndex = async () => {
   indexing.value = true;
   statusText.value = "Rebuilding semantic index...";
   const result = await PLAPI.semanticSearchService.rebuildIndex();
-  statusText.value = `Indexed ${result.indexed} paper(s).`;
+  statusText.value = result.error
+    ? `Index failed: ${result.error}`
+    : `Indexed ${result.indexed} / ${result.total} paper(s).`;
   indexing.value = false;
 };
 </script>

@@ -5,21 +5,21 @@ import {
   BIconCloudArrowUp,
   BIconGearWideConnected,
   BIconGlobe,
-  BIconInfoCircle,
+  // BIconInfoCircle,
   BIconKeyboard,
   BIconLayoutSidebar,
-  BIconPuzzle,
+  // BIconPuzzle,
   BIconSearch,
   BIconViewList,
 } from "bootstrap-icons-vue";
 import { onMounted, ref } from "vue";
 
 import { disposable } from "@/base/dispose";
-import AboutView from "./about-view.vue";
+// import AboutView from "./about-view.vue";
 import CloudView from "./cloud-view.vue";
 import SectionItem from "./components/section-item.vue";
 import ExportView from "./export-view.vue";
-import ExtensionView from "./extension-view.vue";
+// import ExtensionView from "./extension-view.vue";
 import GeneralView from "./general-view.vue";
 import HotkeyView from "./hotkey-view.vue";
 import ImportView from "./import-view.vue";
@@ -125,20 +125,20 @@ onMounted(async () => {
           >
             <BIconSearch class="my-auto text-xs" />
           </SectionItem>
-          <SectionItem
+          <!-- <SectionItem
             :name="$t('preference.extension')"
             :active="preferenceTab === 'extension'"
             @click="preferenceTab = 'extension'"
           >
             <BIconPuzzle class="my-auto text-xs" />
-          </SectionItem>
-          <SectionItem
+          </SectionItem> -->
+          <!-- <SectionItem
             :name="$t('preference.about')"
             :active="preferenceTab === 'about'"
             @click="preferenceTab = 'about'"
           >
             <BIconInfoCircle class="my-auto text-xs" />
-          </SectionItem>
+          </SectionItem> -->
         </div>
         <div class="flex justify-end space-x-2 pr-4">
           <div
@@ -160,8 +160,8 @@ onMounted(async () => {
         <ExportView v-if="preferenceTab === 'export'" />
         <HotkeyView v-if="preferenceTab === 'hotkey'" />
         <SemanticSearchView v-if="preferenceTab === 'semantic-search'" />
-        <AboutView v-if="preferenceTab === 'about'" />
-        <ExtensionView v-if="preferenceTab === 'extension'" />
+        <!-- <AboutView v-if="preferenceTab === 'about'" /> -->
+        <!-- <ExtensionView v-if="preferenceTab === 'extension'" /> -->
       </div>
     </div>
   </div>

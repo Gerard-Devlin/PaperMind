@@ -130,7 +130,19 @@ export class PaperFilterOptions implements IPaperFilterOptions {
           .split(" ")
           .join("*")}*`;
         this.filters.push(
-          `(title LIKE[c] \"${fuzzyFormatedSearch}\" OR authors LIKE[c] \"${fuzzyFormatedSearch}\" OR publication LIKE[c] \"${fuzzyFormatedSearch}\" OR note LIKE[c] \"${fuzzyFormatedSearch}\")`
+          [
+            `(title LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `authors LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `year LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `journal LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `booktitle LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `publisher LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `howpublished LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `abstract LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `note LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `doi LIKE[c] \"${fuzzyFormatedSearch}\"`,
+            `arxiv LIKE[c] \"${fuzzyFormatedSearch}\")`,
+          ].join(" OR ")
         );
       } else if (this.searchMode === "advanced") {
         formatedSearch = PaperFilterOptions.parseDateFilter(formatedSearch);
