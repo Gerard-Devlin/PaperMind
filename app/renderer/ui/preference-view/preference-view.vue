@@ -119,7 +119,7 @@ onMounted(async () => {
             <BIconKeyboard class="my-auto text-xs" />
           </SectionItem>
           <SectionItem
-            name="Semantic"
+            :name="$i18n.locale.startsWith('zh') ? '语义搜索' : 'Semantic'"
             :active="preferenceTab === 'semantic-search'"
             @click="preferenceTab = 'semantic-search'"
           >

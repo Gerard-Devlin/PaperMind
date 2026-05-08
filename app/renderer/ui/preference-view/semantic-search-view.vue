@@ -1,11 +1,13 @@
 ﻿<script setup lang="ts">
 import { BIconArrowRepeat, BIconCheck2Circle, BIconSearch } from "bootstrap-icons-vue";
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 import Input from "./components/Input.vue";
 import Toggle from "./components/toggle.vue";
 
 const prefState = PLMainAPI.preferenceService.useState();
+const { t } = useI18n();
 const qwenKey = ref("");
 const testing = ref(false);
 const indexing = ref(false);
@@ -26,17 +28,22 @@ const testSettings = async () => {
   testing.value = true;
   statusText.value = "";
   const ok = await PLAPI.semanticSearchService.testSettings();
-  statusText.value = ok ? "Semantic search settings are ready." : "Semantic search settings failed.";
+  statusText.value = ok
+    ? t("semanticsearch.statusReady")
+    : t("semanticsearch.statusFailed");
   testing.value = false;
 };
 
 const rebuildIndex = async () => {
   indexing.value = true;
-  statusText.value = "Rebuilding semantic index...";
+  statusText.value = t("semanticsearch.statusRebuilding");
   const result = await PLAPI.semanticSearchService.rebuildIndex();
   statusText.value = result.error
-    ? `Index failed: ${result.error}`
-    : `Indexed ${result.indexed} / ${result.total} paper(s).`;
+    ? `${t("semanticsearch.statusIndexFailed")}: ${result.error}`
+    : t("semanticsearch.statusIndexed", {
+        indexed: result.indexed,
+        total: result.total,
+      });
   indexing.value = false;
 };
 </script>
@@ -45,12 +52,12 @@ const rebuildIndex = async () => {
   <div
     class="flex flex-col text-neutral-800 dark:text-neutral-300 w-[400px] md:w-[500px] lg:w-[700px]"
   >
-    <div class="text-base font-semibold mb-4">Semantic Search</div>
+    <div class="text-base font-semibold mb-4">{{ $t("semanticsearch.title") }}</div>
 
     <Input
       class="mb-5"
-      title="Qwen API Key"
-      info="Stored in the system keychain. DashScope compatible-mode embeddings are used."
+      :title="$t('semanticsearch.qwenApiKeyTitle')"
+      :info="$t('semanticsearch.qwenApiKeyInfo')"
       :value="qwenKey"
       type="password"
       placeholder="sk-..."
@@ -60,16 +67,16 @@ const rebuildIndex = async () => {
 
     <Toggle
       class="mb-5"
-      title="Auto AI Tags"
-      info="When papers are imported or updated, PaperMind uses the Qwen API key above to add short research tags automatically."
+      :title="$t('semanticsearch.autoAITagsTitle')"
+      :info="$t('semanticsearch.autoAITagsInfo')"
       :enable="prefState.autoAITagging"
       @event:change="(value) => updatePref('autoAITagging', value)"
     />
 
     <Input
       class="mb-5"
-      title="AI Tagging Base URL"
-      info="OpenAI-compatible chat completions endpoint root for automatic tags."
+      :title="$t('semanticsearch.aiTaggingBaseURLTitle')"
+      :info="$t('semanticsearch.aiTaggingBaseURLInfo')"
       :value="prefState.qwenChatBaseURL"
       type="text"
       placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1"
@@ -79,8 +86,8 @@ const rebuildIndex = async () => {
 
     <Input
       class="mb-5"
-      title="AI Tagging Model"
-      info="Qwen chat model used to generate automatic tags."
+      :title="$t('semanticsearch.aiTaggingModelTitle')"
+      :info="$t('semanticsearch.aiTaggingModelInfo')"
       :value="prefState.qwenChatModel"
       type="text"
       placeholder="qwen-plus"
@@ -90,8 +97,8 @@ const rebuildIndex = async () => {
 
     <Input
       class="mb-5"
-      title="PostgreSQL URL"
-      info="Optional advanced mode. Leave empty to use built-in local PGlite + pgvector storage."
+      :title="$t('semanticsearch.postgresqlURLTitle')"
+      :info="$t('semanticsearch.postgresqlURLInfo')"
       :value="prefState.semanticSearchPostgresURL"
       type="text"
       placeholder="postgresql://user:password@localhost:5432/paperlib"
@@ -102,8 +109,8 @@ const rebuildIndex = async () => {
 
     <Input
       class="mb-5"
-      title="Qwen Embedding Model"
-      info="Default is text-embedding-v4."
+      :title="$t('semanticsearch.embeddingModelTitle')"
+      :info="$t('semanticsearch.embeddingModelInfo')"
       :value="prefState.qwenEmbeddingModel"
       type="text"
       placeholder="text-embedding-v4"
@@ -118,7 +125,9 @@ const rebuildIndex = async () => {
         @click="testSettings"
       >
         <BIconCheck2Circle class="my-auto mr-2 text-xs" />
-        <span class="my-auto text-xs">{{ testing ? "Testing..." : "Test" }}</span>
+        <span class="my-auto text-xs">{{
+          testing ? $t("semanticsearch.testing") : $t("semanticsearch.test")
+        }}</span>
       </button>
       <button
         class="flex h-8 px-3 rounded-md bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 hover:dark:bg-neutral-600 disabled:opacity-50"
@@ -126,14 +135,16 @@ const rebuildIndex = async () => {
         @click="rebuildIndex"
       >
         <BIconArrowRepeat class="my-auto mr-2 text-xs" />
-        <span class="my-auto text-xs">{{ indexing ? "Indexing..." : "Rebuild Index" }}</span>
+        <span class="my-auto text-xs">{{
+          indexing ? $t("semanticsearch.indexing") : $t("semanticsearch.rebuildIndex")
+        }}</span>
       </button>
     </div>
 
     <div class="flex space-x-2 text-xs text-neutral-500 dark:text-neutral-400">
       <BIconSearch class="my-auto flex-none" />
       <span class="my-auto">
-        Use \search_semantic query in the command bar after indexing.
+        {{ $t("semanticsearch.commandHint") }}
       </span>
     </div>
     <div class="text-xs text-neutral-600 dark:text-neutral-400 mt-3" v-if="statusText">
