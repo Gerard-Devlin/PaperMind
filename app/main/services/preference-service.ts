@@ -103,6 +103,7 @@ export interface IPreferenceStore {
   qwenEmbeddingDimensions: number;
   askAPIBaseURL: string;
   askModel: string;
+  autoAITagging: boolean;
 }
 
 const _defaultPreferences: IPreferenceStore = {
@@ -232,6 +233,7 @@ const _defaultPreferences: IPreferenceStore = {
   qwenEmbeddingDimensions: 1024,
   askAPIBaseURL: "https://api.openai.com/v1",
   askModel: "gpt-4o-mini",
+  autoAITagging: true,
 };
 
 function _migrate(

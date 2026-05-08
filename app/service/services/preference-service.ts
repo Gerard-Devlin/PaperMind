@@ -98,6 +98,7 @@ export interface IPreferenceStore {
   qwenEmbeddingDimensions: number;
   askAPIBaseURL: string;
   askModel: string;
+  autoAITagging: boolean;
 }
 
 export const IPreferenceService = createDecorator("preferenceService");
