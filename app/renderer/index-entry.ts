@@ -9,6 +9,7 @@ import draggable from "vuedraggable";
 import { InjectionContainer } from "@/base/injection/injection";
 import { Process } from "@/base/process-id";
 import { RendererProcessRPCService } from "@/base/rpc/rpc-service-renderer";
+import { removeLoading } from "@/base/loading";
 import { loadLocales } from "@/locales/load";
 
 import { CommandService } from "./services/command-service";
@@ -18,6 +19,25 @@ import { UISlotService } from "./services/uislot-service";
 import { UIStateService } from "./services/uistate-service";
 import { QuerySentenceService } from "./services/querysentence-service";
 import AppView from "./ui/app-view.vue";
+
+let globalLoadingWatchdog: ReturnType<typeof setTimeout> | null = null;
+
+const clearGlobalLoadingWatchdog = () => {
+  if (globalLoadingWatchdog) {
+    clearTimeout(globalLoadingWatchdog);
+    globalLoadingWatchdog = null;
+  }
+};
+
+const forceRemoveLoading = () => {
+  try {
+    removeLoading();
+  } catch (error) {
+    console.error("Failed to remove loading overlay:", error);
+  }
+};
+
+const API_READY_TIMEOUT_MS = 30000;
 
 async function initialize() {
   const pinia = createPinia();
@@ -46,7 +66,7 @@ async function initialize() {
   const mainAPIExposed = await rendererRPCService.waitForAPI(
     Process.main,
     "PLMainAPI",
-    5000
+    API_READY_TIMEOUT_MS
   );
 
   if (!mainAPIExposed) {
@@ -57,7 +77,7 @@ async function initialize() {
   const serviceAPIExposed = await rendererRPCService.waitForAPI(
     Process.service,
     "PLAPI",
-    5000
+    API_READY_TIMEOUT_MS
   );
 
   if (!serviceAPIExposed) {
@@ -117,6 +137,34 @@ async function initialize() {
 
   app.use(i18n);
   app.mount("#app");
+  clearGlobalLoadingWatchdog();
 }
 
-initialize();
+globalLoadingWatchdog = setTimeout(() => {
+  console.warn("Renderer initialization timeout fallback triggered.");
+  forceRemoveLoading();
+}, 25000);
+
+initialize().catch((error) => {
+  console.error("Renderer initialization failed:", error);
+  clearGlobalLoadingWatchdog();
+  forceRemoveLoading();
+
+  const root = document.getElementById("app");
+  if (root) {
+    const errorMessage =
+      error instanceof Error
+        ? `${error.message}\n${error.stack || ""}`.trim()
+        : `${error}`;
+    root.innerHTML = `
+      <div style="padding:24px;font-family:sans-serif;color:#333;">
+        <h2 style="margin:0 0 8px 0;">PaperMind failed to initialize</h2>
+        <p style="margin:0 0 10px 0;line-height:1.5;">Please restart the app. If this persists, share the error below.</p>
+        <pre style="white-space:pre-wrap;background:#f3f4f6;padding:10px;border-radius:6px;font-size:12px;line-height:1.45;max-height:260px;overflow:auto;">${errorMessage
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")}</pre>
+      </div>
+    `;
+  }
+});

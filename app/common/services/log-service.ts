@@ -1,4 +1,6 @@
 import * as loglib from "electron-log";
+import os from "os";
+import path from "path";
 
 import { Eventable } from "@/base/event";
 import { createDecorator } from "@/base/injection/injection";
@@ -70,14 +72,18 @@ export class LogService extends Eventable<ILogEventState> {
     });
 
     if (name) {
-      const folder = loglib.transports.file
-        .getFile()
-        .path.split("/")
-        .slice(0, -1)
-        .join("/");
-
-      console.log(`${folder}/${name}`);
-      loglib.transports.file.resolvePath = () => `${folder}/${name}`;
+      let folder = "";
+      try {
+        const basePath =
+          process.env.PAPERMIND_LOG_DIR ||
+          process.env.LOCALAPPDATA ||
+          process.env.APPDATA ||
+          os.tmpdir();
+        folder = path.join(basePath, "PaperMind", "logs");
+      } catch {
+        folder = path.dirname(loglib.transports.file.getFile().path);
+      }
+      loglib.transports.file.resolvePath = () => path.join(folder, name);
     }
 
     if (process && process.env.NODE_ENV === "test") {

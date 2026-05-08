@@ -73,14 +73,26 @@ if (!app.requestSingleInstanceLock()) {
   });
 }
 
-if (process.defaultApp) {
-  if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient("paperlib", process.execPath, [
-      path.resolve(process.argv[1]),
-    ]);
+try {
+  // Avoid hard-failing on restricted Windows environments (e.g. no registry permission).
+  // Protocol registration is optional and should never block app startup.
+  const shouldRegisterProtocol =
+    process.env.PAPERMIND_REGISTER_PROTOCOL === "1";
+  if (shouldRegisterProtocol) {
+    if (process.defaultApp) {
+      if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient("paperlib", process.execPath, [
+          path.resolve(process.argv[1]),
+        ]);
+      }
+    } else {
+      app.setAsDefaultProtocolClient("paperlib");
+    }
   }
-} else {
-  app.setAsDefaultProtocolClient("paperlib");
+} catch (error) {
+  try {
+    console.warn("Protocol registration skipped:", error);
+  } catch {}
 }
 
 async function initialize() {

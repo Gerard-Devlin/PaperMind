@@ -7,6 +7,8 @@ import { errorcatching } from "@/base/error";
 import { Eventable } from "@/base/event";
 import { processing, ProcessingKey } from "@/common/utils/processing";
 import ElectronStore from "electron-store";
+import os from "os";
+import path from "path";
 import * as openidClient from "openid-client";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -74,6 +76,10 @@ export class SyncService extends Eventable<ISyncServiceState> {
   constructor() {
     const _store = new ElectronStore<ISyncServiceState>({
       name: "sync",
+      cwd: path.join(
+        process.env.APPDATA || process.env.LOCALAPPDATA || os.tmpdir(),
+        "PaperMind"
+      ),
     });
 
     const defaultState = JSON.parse(

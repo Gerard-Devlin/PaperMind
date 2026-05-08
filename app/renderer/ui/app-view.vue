@@ -234,9 +234,32 @@ disposable(
 );
 
 var initStartTime = Date.now();
+let loadingWatchdog: NodeJS.Timeout | null = null;
+
+const clearLoadingWatchdog = () => {
+  if (loadingWatchdog) {
+    clearTimeout(loadingWatchdog);
+    loadingWatchdog = null;
+  }
+};
+
+const armLoadingWatchdog = () => {
+  clearLoadingWatchdog();
+  loadingWatchdog = setTimeout(() => {
+    PLAPI.logService.warn(
+      "Initialization timeout fallback triggered.",
+      "Continue launching UI without blocking splash screen.",
+      true,
+      "UI"
+    );
+    removeLoading();
+  }, 20000);
+};
+
 disposable(
   PLAPI.databaseService.on("dbInitializing", async () => {
     initStartTime = Date.now();
+    armLoadingWatchdog();
 
     PLUIAPILocal.uiStateService.resetUIStates();
 
@@ -250,6 +273,7 @@ disposable(
 
 disposable(
   PLAPI.databaseService.on("dbInitialized", async () => {
+    clearLoadingWatchdog();
     await PLAPI.fileService.initialize();
     await reloadPaperEntities();
     await reloadTags();
@@ -459,7 +483,19 @@ onMounted(async () => {
       (await PLMainAPI.preferenceService.get("lastVersion")) !==
       (await PLMainAPI.upgradeService.currentVersion());
 
-    await PLAPI.databaseService.initialize(true);
+    armLoadingWatchdog();
+    try {
+      await PLAPI.databaseService.initialize(true);
+    } catch (error) {
+      clearLoadingWatchdog();
+      PLAPI.logService.error(
+        "Failed to initialize database on startup.",
+        `${(error as Error).message || error}`,
+        true,
+        "UI"
+      );
+      removeLoading();
+    }
   });
 });
 </script>

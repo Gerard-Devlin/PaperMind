@@ -30,6 +30,8 @@ import { SemanticSearchService } from "./services/semantic-search-service";
 import { SmartFilterService } from "./services/smartfilter-service";
 import { SyncService } from "@/service/services/sync-service";
 
+const API_READY_TIMEOUT_MS = 30000;
+
 async function initialize() {
   const logService = new LogService("service.log");
 
@@ -51,7 +53,7 @@ async function initialize() {
   const mainAPIExposed = await serviceRPCService.waitForAPI(
     Process.main,
     "PLMainAPI",
-    5000
+    API_READY_TIMEOUT_MS
   );
 
   if (!mainAPIExposed) {
