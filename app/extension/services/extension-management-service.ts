@@ -16,6 +16,30 @@ import {
 } from "./extension-preference-service";
 import { SimpleIntervalJob, Task, ToadScheduler } from "toad-scheduler";
 
+const BUNDLED_SCRAPER_EXTENSION_PATHS: Record<
+  string,
+  { sourceDir: string; packageDir: string; preferPackage?: boolean }
+> = {
+  "@future-scholars/paperlib-entry-scrape-extension": {
+    sourceDir: "paperlib-entry-scrape-extension-main",
+    packageDir: path.join(
+      "node_modules",
+      "@future-scholars",
+      "paperlib-entry-scrape-extension"
+    ),
+    preferPackage: true,
+  },
+  "@future-scholars/paperlib-metadata-scrape-extension": {
+    sourceDir: "paperlib-metadata-scrape-extension-main",
+    packageDir: path.join(
+      "node_modules",
+      "@future-scholars",
+      "paperlib-metadata-scrape-extension"
+    ),
+    preferPackage: true,
+  },
+};
+
 export const IExtensionManagementService = createDecorator(
   "extensionManagementService"
 );
@@ -92,9 +116,75 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
 
   async initialize() {
     await this._chooseNPMRegistry();
+    await this.ensureOfficialScrapeExtensionsInstalled();
     await this.loadInstalledExtensions();
     await this.checkUpdate();
     await this.startUpdateCheckDaemon();
+  }
+
+  async ensureOfficialScrapeExtensionsInstalled() {
+    for (const [extensionID, bundled] of Object.entries(
+      BUNDLED_SCRAPER_EXTENSION_PATHS
+    )) {
+      if (this._installedExtensions[extensionID]) {
+        continue;
+      }
+
+      const bundledPath = this._resolveBundledExtensionPath(bundled);
+      if (!bundledPath) {
+        PLAPI.logService.warn(
+          `Bundled scraper extension is not available.`,
+          extensionID,
+          false,
+          "ExtManagementService"
+        );
+        continue;
+      }
+
+      if (!fs.existsSync(path.join(bundledPath, "dist", "main.js"))) {
+        PLAPI.logService.warn(
+          `Bundled scraper extension is not built.`,
+          `${bundledPath} is missing dist/main.js`,
+          true,
+          "ExtManagementService"
+        );
+        continue;
+      }
+
+      await this.install(bundledPath, false);
+      const info = this._installedExtensionInfos[extensionID];
+      if (info) {
+        info.verified = true;
+        info.originLocation = bundledPath;
+        this._extStore.set(extensionID, info);
+      }
+    }
+  }
+
+  private _resolveBundledExtensionPath(bundled: {
+    sourceDir: string;
+    packageDir: string;
+    preferPackage?: boolean;
+  }) {
+    const resourcesPath =
+      (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath ||
+      "";
+    const sourceCandidates = [
+      path.join(process.cwd(), bundled.sourceDir),
+      path.join(resourcesPath, "bundled-extensions", bundled.sourceDir),
+      path.join(__dirname, "..", "..", "..", bundled.sourceDir),
+    ];
+    const packageCandidates = [
+      path.join(process.cwd(), bundled.packageDir),
+      path.join(__dirname, "..", "..", "..", bundled.packageDir),
+    ];
+    const candidates = bundled.preferPackage
+      ? [...packageCandidates, ...sourceCandidates]
+      : [...sourceCandidates, ...packageCandidates];
+
+    return candidates.find((candidate) =>
+      fs.existsSync(path.join(candidate, "package.json"))
+    );
   }
 
   async _chooseNPMRegistry() {
@@ -133,6 +223,9 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
     const promises: Promise<any>[] = [];
 
     for (const [ie, extInfo] of Object.entries(this._extStore.store)) {
+      if (this._installedExtensions[ie]) {
+        continue;
+      }
       promises.push(
         new Promise(async (resolve, reject) => {
           try {
@@ -636,6 +729,17 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
     ...args: any
   ) {
     try {
+      if (
+        !this._installedExtensions[extensionID] &&
+        BUNDLED_SCRAPER_EXTENSION_PATHS[extensionID]
+      ) {
+        await this.ensureOfficialScrapeExtensionsInstalled();
+      }
+
+      if (!this._installedExtensions[extensionID]) {
+        throw new Error(`Extension ${extensionID} is not loaded.`);
+      }
+
       return await this._installedExtensions[extensionID][methodName](...args);
     } catch (e) {
       console.error(e);

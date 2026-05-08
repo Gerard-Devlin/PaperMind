@@ -15,7 +15,6 @@ import { Entity, IEntityCollection, IEntityObject } from "@/models/entity";
 import { OID } from "@/models/id";
 import { DatabaseCore, IDatabaseCore } from "@/service/services/database/core";
 
-import { uid } from "@/base/misc";
 import { getDefaultSupplementaryFileURL, getProtocol } from "@/base/url";
 import { ISupplementary, Supplementary } from "@/models/supplementary";
 import {
@@ -26,6 +25,10 @@ import { CacheService, ICacheService } from "./cache-service";
 import { FileService, IFileService } from "./file-service";
 import { ISchedulerService, SchedulerService } from "./scheduler-service";
 import { IScrapeService, ScrapeService } from "./scrape-service";
+import {
+  ISemanticSearchService,
+  SemanticSearchService,
+} from "./semantic-search-service";
 
 export interface IPaperServiceState {
   count: number;
@@ -46,6 +49,8 @@ export class PaperService extends Eventable<IPaperServiceState> {
     @ICacheService private readonly _cacheService: CacheService,
     @ISchedulerService private readonly _schedulerService: SchedulerService,
     @IFileService private readonly _fileService: FileService,
+    @ISemanticSearchService
+    private readonly _semanticSearchService: SemanticSearchService,
     @ILogService private readonly _logService: LogService
   ) {
     super("paperService", {
@@ -273,8 +278,27 @@ export class PaperService extends Eventable<IPaperServiceState> {
     if (updateCache) {
       this._cacheService.updateFullTextCache(successfulEntityDrafts);
     }
+    void this._indexSemanticSearch(successfulEntityDrafts);
 
     return successfulEntityDrafts;
+  }
+
+  private async _indexSemanticSearch(paperEntities: IEntityCollection) {
+    try {
+      const indexableEntities = paperEntities
+        .map((paperEntity) => new Entity(paperEntity))
+        .filter((paperEntity) => paperEntity.title || paperEntity.abstract);
+      if (indexableEntities.length > 0) {
+        await this._semanticSearchService.indexEntities(indexableEntities);
+      }
+    } catch (error) {
+      this._logService.warn(
+        "Failed to update semantic search index.",
+        `${(error as Error).message}`,
+        false,
+        "SemanticSearch"
+      );
+    }
   }
 
   /**
@@ -474,30 +498,11 @@ export class PaperService extends Eventable<IPaperServiceState> {
     const payloads = urlList.map((url) => {
       return { type: "file", value: url };
     });
-    // FIXME: fix this bypass for debug
-    // const scrapedPaperEntityDrafts = await this._scrapeService.scrape(
-    //   payloads,
-    //   [],
-    //   false
-    // );
-
-    const scrapedPaperEntityDrafts = urlList.map((url) => {
-      const paperEntityDraft = new Entity({
-        title: `Paper from file ${url}`,
-        year: "2025",
-        booktitle: "Test booktitle",
-        type: "inproceedings",
-      });
-      const supId = uid();
-      paperEntityDraft.supplementaries = {
-        [supId]: new Supplementary({
-          _id: supId,
-          url: url,
-        }),
-      };
-      paperEntityDraft.defaultSup = supId;
-      return paperEntityDraft;
-    });
+    const scrapedPaperEntityDrafts = await this._scrapeService.scrape(
+      payloads,
+      [],
+      false
+    );
 
     // 2. Update.
     return await this.update(scrapedPaperEntityDrafts, true, false);

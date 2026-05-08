@@ -1,4 +1,4 @@
-import { MessageBoxOptions, dialog } from "electron";
+﻿import { MessageBoxOptions, dialog } from "electron";
 import updater from "electron-updater";
 
 import { Eventable } from "@/base/event";
@@ -37,8 +37,8 @@ export class UpgradeService extends Eventable<IUpgradeServiceState> {
       const dialogOpts = {
         type: "info",
         buttons: ["Close"],
-        title: "A new version of Paperlib is available",
-        message: "A new version of Paperlib is available",
+        title: "A new version of PaperMind is available",
+        message: "A new version of PaperMind is available",
         detail: "It is downloading and will notify you when it is ready.",
       } as MessageBoxOptions;
       await dialog.showMessageBox(dialogOpts);
@@ -64,10 +64,10 @@ export class UpgradeService extends Eventable<IUpgradeServiceState> {
         buttons: ["Update Now", "Cancel"],
         title: `A new version ${
           info.version || ""
-        } of Paperlib is automatically downloaded.`,
+        } of PaperMind is automatically downloaded.`,
         message: `A new version ${
           info.version || ""
-        } of Paperlib is automatically downloaded.`,
+        } of PaperMind is automatically downloaded.`,
         detail: `${info.releaseNotes}`,
       } as MessageBoxOptions;
 
@@ -95,3 +95,4 @@ export class UpgradeService extends Eventable<IUpgradeServiceState> {
     return updater.autoUpdater.currentVersion.version;
   }
 }
+

@@ -8,6 +8,7 @@ import SwitcherTitle from "./components/switcher-title.vue";
 import WindowControlBar from "./components/window-control-bar.vue";
 import SidebarFeedsView from "./sidebar-feeds-view.vue";
 import SidebarLibraryView from "./sidebar-library-view.vue";
+import SidebarAskView from "./sidebar-ask-view.vue";
 
 const uiState = PLUIAPILocal.uiStateService.useState();
 
@@ -20,7 +21,7 @@ const onViewContentSwitch = (view: number) => {
     uiState.selectedIndex = [];
     uiState.selectedFeed = "feed-all";
   }
-  uiState.contentType = ["library", "feed"][view];
+  uiState.contentType = ["library", "feed", "ask"][view];
 };
 
 const darkMode = ref(false);
@@ -33,31 +34,35 @@ PLMainAPI.preferenceService.on("preferedTheme", async () => {
 </script>
 
 <template>
-  <div class="flex-none flex flex-col w-full h-screen justify-between">
+  <div class="flex-none flex flex-col w-full min-w-0 h-screen justify-between overflow-hidden">
     <WindowControlBar class="flex-none" v-if="uiState.os !== 'win32'" />
     <div
-      class="h-16 draggable-title flex w-full pl-6"
+      class="h-16 draggable-title flex w-full min-w-0 px-4"
       v-if="uiState.os === 'win32'"
     >
-      <div class="flex-row flex items-center space-x-3">
-        <img class="w-4" :src="darkMode ? darkLogo : lightLogo" />
-        <span class="text-sm font-semibold">PAPERLIB</span>
+      <div class="flex-row flex items-center space-x-3 min-w-0">
+        <img class="w-4 flex-none" :src="darkMode ? darkLogo : lightLogo" />
+        <span class="text-sm font-semibold truncate">PAPERMIND</span>
       </div>
     </div>
 
     <SwitcherTitle
       class="h-7"
-      :titles="[$t('mainview.library'), $t('mainview.feeds')]"
+      :titles="[$t('mainview.library'), $t('mainview.feeds'), 'Ask']"
       @changed="onViewContentSwitch"
     />
 
     <SidebarLibraryView
-      class="w-full h-[calc(100vh-5rem)] px-2 overflow-y-auto no-scrollbar"
+      class="w-full min-w-0 h-[calc(100vh-5rem)] px-2 overflow-y-auto no-scrollbar"
       v-if="uiState.contentType === 'library'"
     />
     <SidebarFeedsView
-      class="w-full h-[calc(100vh-5rem)] px-2 overflow-y-auto no-scrollbar"
+      class="w-full min-w-0 h-[calc(100vh-5rem)] px-2 overflow-y-auto no-scrollbar"
       v-if="uiState.contentType === 'feed'"
+    />
+    <SidebarAskView
+      class="w-full min-w-0 h-[calc(100vh-5rem)] overflow-hidden"
+      v-if="uiState.contentType === 'ask'"
     />
 
     <NotificationBar class="flex-none" />

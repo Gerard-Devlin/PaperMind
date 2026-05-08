@@ -12,6 +12,7 @@ import { PaperEntityRepository } from "./repositories/db-repository/paper-entity
 import { PaperSmartFilterRepository } from "./repositories/db-repository/smartfilter-repository";
 import { RSSRepository } from "./repositories/rss-repository/rss-repository";
 import { BrowserExtensionService } from "./services/browser-extension-service";
+import { AskService } from "./services/ask-service";
 import { CacheService } from "./services/cache-service";
 import { CategorizerService } from "./services/categorizer-service";
 import { DatabaseService } from "./services/database-service";
@@ -25,6 +26,7 @@ import { ReferenceService } from "./services/reference-service";
 import { RenderService } from "./services/render-service";
 import { SchedulerService } from "./services/scheduler-service";
 import { ScrapeService } from "./services/scrape-service";
+import { SemanticSearchService } from "./services/semantic-search-service";
 import { SmartFilterService } from "./services/smartfilter-service";
 import { SyncService } from "@/service/services/sync-service";
 
@@ -76,11 +78,13 @@ async function initialize() {
     cacheService: CacheService,
     cacheDatabaseCore: CacheDatabaseCore,
     scrapeService: ScrapeService,
+    semanticSearchService: SemanticSearchService,
     paperService: PaperService,
     categorizerService: CategorizerService,
     smartFilterService: SmartFilterService,
     paperSmartFilterRepository: PaperSmartFilterRepository,
     browserExtensionService: BrowserExtensionService,
+    askService: AskService,
     feedService: FeedService,
     feedEntityRepository: FeedEntityRepository,
     feedRepository: FeedRepository,

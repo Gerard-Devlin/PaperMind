@@ -3,7 +3,7 @@
  */
 {
   appId: "dev.paperlib.app",
-  productName: "Paperlib",
+  productName: "PaperMind",
   asar: true,
   publish: [
     {
@@ -39,4 +39,22 @@
     "!certificate.p12",
     "!tests",
   ],
+  extraResources: [
+    {
+      from: "paperlib-entry-scrape-extension-main",
+      to: "bundled-extensions/paperlib-entry-scrape-extension-main",
+      filter: ["package.json", "dist/**", "public/**", "pdf-worker/**"],
+    },
+    {
+      from: "paperlib-metadata-scrape-extension-main",
+      to: "bundled-extensions/paperlib-metadata-scrape-extension-main",
+      filter: ["package.json", "dist/**"],
+    },
+    {
+      from: "paperlib-community-metadata-collection-main",
+      to: "bundled-extensions/paperlib-community-metadata-collection-main",
+      filter: ["package.json", "metadata/**", "pipeline/**"],
+    },
+  ],
 }
+

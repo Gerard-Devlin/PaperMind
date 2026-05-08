@@ -1,4 +1,4 @@
-import Cite from "citation-js";
+﻿import Cite from "citation-js";
 import pTimeout, { ClearablePromise } from "p-timeout";
 
 import { createDecorator } from "@/base/injection/injection";
@@ -9,7 +9,7 @@ import { PaperEntity } from "@/models/paper-entity";
 export const IHookService = createDecorator("hookService");
 
 /**
- * HookService is a service inject some hook points in the Paperlib app. Extensions can use these hook points to extend the functionality of Paperlib.
+ * HookService is a service inject some hook points in the PaperMind app. Extensions can use these hook points to extend the functionality of PaperMind.
  */
 export class HookService {
   private readonly _modifyHookPoints: {
@@ -317,3 +317,4 @@ export class HookService {
     }
   }
 }
+

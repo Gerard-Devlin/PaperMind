@@ -33,19 +33,19 @@ export class RenderService {
    * @param fileURL - File url
    * @returns Rendered PNG buffer
    */
-  async renderPDF(fileURL: string) {
+  async renderPDF(fileURL: string, scale = 0.5, quality = 20) {
     const doc = mupdf.Document.openDocument(
       await fsPromise.readFile(eraseProtocol(fileURL)),
       "application/pdf"
     );
     const page = doc.loadPage(0);
     const pix = page.toPixmap(
-      mupdf.Matrix.scale(0.5, 0.5),
+      mupdf.Matrix.scale(scale, scale),
       mupdf.ColorSpace.DeviceRGB,
       false,
       true
     );
-    const buffer = pix.asJPEG(20, false);
+    const buffer = pix.asJPEG(quality, false);
     return buffer;
   }
 

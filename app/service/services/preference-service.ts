@@ -90,6 +90,14 @@ export interface IPreferenceStore {
   showGuide: boolean;
   showWelcome: boolean;
   fontsize: "normal" | "large" | "larger";
+
+  semanticSearchEnabled: boolean;
+  semanticSearchPostgresURL: string;
+  qwenEmbeddingBaseURL: string;
+  qwenEmbeddingModel: string;
+  qwenEmbeddingDimensions: number;
+  askAPIBaseURL: string;
+  askModel: string;
 }
 
 export const IPreferenceService = createDecorator("preferenceService");

@@ -22,6 +22,11 @@ const commandInput = ref<HTMLInputElement | null>(null);
 const onSearchTextChanged = debounce(() => {
   uiState.commandBarText = `${commandText.value}`;
 
+  if (uiState.commandBarSearchMode === "semantic") {
+    uiState.querySentenceCommandbar = `semantic:${commandText.value}`;
+    return;
+  }
+
   const filterOptions = new PaperFilterOptions({
     search: commandText.value,
     searchMode: uiState.commandBarSearchMode,
@@ -105,7 +110,11 @@ const onRunCommand = () => {
 
     PLUIAPILocal.commandService.run(commandID, commandArgs);
 
-    if (["search", "search_fulltext", "search_advanced"].includes(commandID)) {
+    if (
+      ["search", "search_fulltext", "search_advanced", "search_semantic"].includes(
+        commandID
+      )
+    ) {
       commandText.value = commandArgs;
       onSearchTextChanged();
     } else {
@@ -296,6 +305,12 @@ disposable(
       v-if="!isCommand && uiState.commandBarSearchMode === 'advanced'"
     >
       Advanced
+    </div>
+    <div
+      class="text-xxs my-auto mr-2 px-1 border-[1px] border-neutral-300 rounded"
+      v-if="!isCommand && uiState.commandBarSearchMode === 'semantic'"
+    >
+      Semantic
     </div>
 
     <input

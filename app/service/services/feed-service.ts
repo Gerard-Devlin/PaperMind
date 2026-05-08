@@ -411,7 +411,7 @@ export class FeedService extends Eventable<IFeedServiceState> {
     );
 
     // NOTE: here we decide to not download the PDFs when adding to library.
-    await this._paperService.update(paperEntityDrafts, false, false);
+    await this._paperService.update(paperEntityDrafts as any, false, false);
   }
 
   @processing(ProcessingKey.General)

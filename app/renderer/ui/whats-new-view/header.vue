@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import {
   BIconCoin,
   BIconDiscord,
@@ -24,7 +24,7 @@ const openURL = (url: string) => {
     />
     <img class="w-10 mx-auto mb-2" src="../../assets/logo-light.png" v-else />
 
-    <div class="mx-auto text-xl font-semibold mb-4">PAPERLIB</div>
+    <div class="mx-auto text-xl font-semibold mb-4">PAPERMIND</div>
 
     <div class="flex mx-auto space-x-5">
       <div
@@ -58,3 +58,4 @@ const openURL = (url: string) => {
     </div>
   </div>
 </template>
+

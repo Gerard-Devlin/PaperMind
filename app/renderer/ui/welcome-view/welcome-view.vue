@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref } from "vue";
 
 const prefState = PLMainAPI.preferenceService.useState();
@@ -56,11 +56,11 @@ onMounted(async () => {
       class="typing-style text-xl font-bold font-mono mx-auto my-40"
       v-if="isShowSlogan"
     >
-      WELCOME TO PAPERLIB 3.0
+      WELCOME TO PAPERMIND 3.0
     </div>
     <div class="w-[45rem] px-3 mx-auto my-20 flex flex-col" v-else>
       <div class="mx-auto font-semibold mb-8 space-x-2 flex">
-        <span class="text-3xl my-auto">PAPERLIB</span>
+        <span class="text-3xl my-auto">PAPERMIND</span>
         <span
           class="text-xl bg-neutral-700 text-white dark:bg-neutral-300 dark:text-neutral-800 rounded-md px-2 py-1 my-auto"
           >3.0</span
@@ -72,15 +72,15 @@ onMounted(async () => {
         </div>
         <div>|</div>
         <div class="underline cursor-pointer" @click="language = 'zh-CN'">
-          简体中文
+          绠€浣撲腑鏂?
         </div>
       </div>
       <div class="flex flex-col" v-if="language === 'en-GB'">
         <div class="mx-auto mb-8 font-semibold">
-          Welcome to the new major version --- Paperlib 3.0.
+          Welcome to the new major version --- PaperMind 3.0.
         </div>
         <div>
-          In Paperlib 3.0, we bring you a new experience with many exciting new
+          In PaperMind 3.0, we bring you a new experience with many exciting new
           features:
         </div>
         <ul class="list-disc px-4 mx-1">
@@ -92,8 +92,8 @@ onMounted(async () => {
         <hr class="my-8" />
         <div class="font-bold text-xl mb-4">Extension System</div>
         <div class="mb-2">
-          Paperlib 3.0 introduces a new extension system that allows you to
-          extend the functionality of Paperlib. You can now install extensions
+          PaperMind 3.0 introduces a new extension system that allows you to
+          extend the functionality of PaperMind. You can now install extensions
           from the Extension Marketplace, or develop and publish your own
           extension.
         </div>
@@ -125,7 +125,7 @@ onMounted(async () => {
               <span class="font-semibold">api-host</span>
               <span>-</span>
               <span
-                >helps you to connect Paperlib with other Apps such as Raycast,
+                >helps you to connect PaperMind with other Apps such as Raycast,
                 Obsidian etc.</span
               >
             </li>
@@ -145,7 +145,7 @@ onMounted(async () => {
           Hierarchy Folders / SmartFilters
         </div>
         <div class="mb-2">
-          Paperlib 3.0 introduces a new feature called Nested Folders /
+          PaperMind 3.0 introduces a new feature called Nested Folders /
           SmartFilters. You can now create a folder inside another folder. Also,
           the smartfilters can be organised in hierarchy.
         </div>
@@ -155,7 +155,7 @@ onMounted(async () => {
         <div class="mb-2">Other updates please refer to the release notes.</div>
 
         <hr class="my-8" />
-        <div>📣 Seeking contributors 📣</div>
+        <div>馃摚 Seeking contributors 馃摚</div>
         <div>
           If you are interested in contributing, please
           <a class="underline" href="https://github.com/GeoffreyChen777"
@@ -165,78 +165,78 @@ onMounted(async () => {
       </div>
       <div class="flex flex-col" v-else>
         <div class="mx-auto mb-8 font-semibold">
-          欢迎来到全新的版本 --- Paperlib 3.0。
+          娆㈣繋鏉ュ埌鍏ㄦ柊鐨勭増鏈?--- PaperMind 3.0銆?
         </div>
-        <div>在 Paperlib 3.0 中，我们为您带来了许多令人兴奋的新功能：</div>
+        <div>鍦?PaperMind 3.0 涓紝鎴戜滑涓烘偍甯︽潵浜嗚澶氫护浜哄叴濂嬬殑鏂板姛鑳斤細</div>
         <ul class="list-disc px-4 mx-1">
-          <li class="font-semibold">扩展插件系统</li>
-          <li class="font-semibold">层级组和层级智能过滤器</li>
-          <li class="font-semibold">一些 UI 重新设计</li>
-          <li>和许许多多...</li>
+          <li class="font-semibold">鎵╁睍鎻掍欢绯荤粺</li>
+          <li class="font-semibold">灞傜骇缁勫拰灞傜骇鏅鸿兘杩囨护鍣?/li>
+          <li class="font-semibold">涓€浜?UI 閲嶆柊璁捐</li>
+          <li>鍜岃璁稿澶?..</li>
         </ul>
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">扩展插件系统</div>
+        <div class="font-bold text-xl mb-4">鎵╁睍鎻掍欢绯荤粺</div>
         <div class="mb-2">
-          Paperlib 3.0 引入了一个新的扩展系统，允许您扩展 Paperlib
-          的功能。现在您可以从扩展市场安装扩展，或者开发并发布您自己的扩展。
+          PaperMind 3.0 寮曞叆浜嗕竴涓柊鐨勬墿灞曠郴缁燂紝鍏佽鎮ㄦ墿灞?PaperMind
+          鐨勫姛鑳姐€傜幇鍦ㄦ偍鍙互浠庢墿灞曞競鍦哄畨瑁呮墿灞曪紝鎴栬€呭紑鍙戝苟鍙戝竷鎮ㄨ嚜宸辩殑鎵╁睍銆?
         </div>
         <div class="mb-2">
-          <span>我们也提供了一些由官方开发维护的扩展插件，比如：</span>
+          <span>鎴戜滑涔熸彁渚涗簡涓€浜涚敱瀹樻柟寮€鍙戠淮鎶ょ殑鎵╁睍鎻掍欢锛屾瘮濡傦細</span>
           <ul class="list-disc px-4 mx-1">
             <li class="space-x-2">
               <span class="font-semibold">metadata-scrape</span>
               <span>-</span>
-              <span>帮助你搜索论文的元数据。</span>
+              <span>甯姪浣犳悳绱㈣鏂囩殑鍏冩暟鎹€?/span>
             </li>
             <li class="space-x-2">
               <span class="font-semibold">ai-summary / ai-chat</span>
               <span>-</span>
               <span
-                >使用 LLM
-                总结论文，给论文自动打标签，用自然语言搜索你的论文库，和 LLM
-                讨论论文等。</span
+                >浣跨敤 LLM
+                鎬荤粨璁烘枃锛岀粰璁烘枃鑷姩鎵撴爣绛撅紝鐢ㄨ嚜鐒惰瑷€鎼滅储浣犵殑璁烘枃搴擄紝鍜?LLM
+                璁ㄨ璁烘枃绛夈€?/span
               >
             </li>
             <li class="space-x-2">
               <span class="font-semibold">format-pubname</span>
               <span>-</span>
-              <span>帮助你自动格式化论文的发表信息。</span>
+              <span>甯姪浣犺嚜鍔ㄦ牸寮忓寲璁烘枃鐨勫彂琛ㄤ俊鎭€?/span>
             </li>
             <li class="space-x-2">
               <span class="font-semibold">api-host</span>
               <span>-</span>
-              <span>帮助连接其他应用程序，比如 Raycast，Obsidian 等。</span>
+              <span>甯姪杩炴帴鍏朵粬搴旂敤绋嬪簭锛屾瘮濡?Raycast锛孫bsidian 绛夈€?/span>
             </li>
-            <li>等等...</li>
+            <li>绛夌瓑...</li>
           </ul>
         </div>
         <div class="mb-2">
-          对于开发者，我们提供了一套丰富的
-          API，以帮助您开发自己的扩展。您可以在我们的<a
+          瀵逛簬寮€鍙戣€咃紝鎴戜滑鎻愪緵浜嗕竴濂椾赴瀵岀殑
+          API锛屼互甯姪鎮ㄥ紑鍙戣嚜宸辩殑鎵╁睍銆傛偍鍙互鍦ㄦ垜浠殑<a
             class="underline"
             href="https://paperlib.app/en/extension-doc/"
-            >文档</a
-          >中找到更多信息。
+            >鏂囨。</a
+          >涓壘鍒版洿澶氫俊鎭€?
         </div>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">层级组和层级智能过滤器</div>
+        <div class="font-bold text-xl mb-4">灞傜骇缁勫拰灞傜骇鏅鸿兘杩囨护鍣?/div>
         <div class="mb-2">
-          Paperlib 3.0
-          引入了一个新功能，层级组和层级智能过滤器。您现在可以在另一个组中创建一个子组。此外，智能过滤器也可以以层级方式组织。
+          PaperMind 3.0
+          寮曞叆浜嗕竴涓柊鍔熻兘锛屽眰绾х粍鍜屽眰绾ф櫤鑳借繃婊ゅ櫒銆傛偍鐜板湪鍙互鍦ㄥ彟涓€涓粍涓垱寤轰竴涓瓙缁勩€傛澶栵紝鏅鸿兘杩囨护鍣ㄤ篃鍙互浠ュ眰绾ф柟寮忕粍缁囥€?
         </div>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">更多更新...</div>
-        <div class="mb-2">其他更新请参阅更新日志。</div>
+        <div class="font-bold text-xl mb-4">鏇村鏇存柊...</div>
+        <div class="mb-2">鍏朵粬鏇存柊璇峰弬闃呮洿鏂版棩蹇椼€?/div>
 
         <hr class="my-8" />
-        <div>📣 寻求合作开发者 📣</div>
+        <div>馃摚 瀵绘眰鍚堜綔寮€鍙戣€?馃摚</div>
         <div>
-          如果你感兴趣参与 Paperlib 的核心开发，请
+          濡傛灉浣犳劅鍏磋叮鍙備笌 PaperMind 鐨勬牳蹇冨紑鍙戯紝璇?
           <a class="underline" href="https://github.com/GeoffreyChen777"
-            >联系我</a
-          >。
+            >鑱旂郴鎴?/a
+          >銆?
         </div>
       </div>
 
@@ -254,3 +254,4 @@ onMounted(async () => {
     ></div>
   </div>
 </template>
+

@@ -1,0 +1,1789 @@
+{
+  "info": {
+    "name": "Conference on Machine Learning and Systems",
+    "short_name": "MLSys",
+    "date": "2023"
+  },
+  "collection": [
+    {
+      "title": "RecD: Deduplication for End-to-End Deep Learning Recommendation Model Training Infrastructure",
+      "authors": [
+        {
+          "first_name": "Mark",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Dhruv",
+          "last_name": "Choudhary"
+        },
+        {
+          "first_name": "Devashish",
+          "last_name": "Tyagi"
+        },
+        {
+          "first_name": "Ajay",
+          "last_name": "Somani"
+        },
+        {
+          "first_name": "Max",
+          "last_name": "Kaplan"
+        },
+        {
+          "first_name": "Sung-Han",
+          "last_name": "Lin"
+        },
+        {
+          "first_name": "Sarunya",
+          "last_name": "Pumma"
+        },
+        {
+          "first_name": "Jongsoo",
+          "last_name": "Park"
+        },
+        {
+          "first_name": "Aarti",
+          "last_name": "Basant"
+        },
+        {
+          "first_name": "Niket",
+          "last_name": "Agarwal"
+        },
+        {
+          "first_name": "Carole-Jean",
+          "last_name": "Wu"
+        },
+        {
+          "first_name": "Christos",
+          "last_name": "Kozyrakis"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Practical Edge Kernels for Integer-Only Vision Transformers Under Post-training Quantization",
+      "authors": [
+        {
+          "first_name": "Zining",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Bingsheng",
+          "last_name": "He"
+        },
+        {
+          "first_name": "Zhenjie",
+          "last_name": "Zhang"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Building Verified Neural Networks for Computer Systems with Ouroboros",
+      "authors": [
+        {
+          "first_name": "Cheng",
+          "last_name": "Tan"
+        },
+        {
+          "first_name": "Changliu",
+          "last_name": "Liu"
+        },
+        {
+          "first_name": "Zhihao",
+          "last_name": "Jia"
+        },
+        {
+          "first_name": "Tianhao",
+          "last_name": "Wei"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Uniform Sparsity in Deep Neural Networks",
+      "authors": [
+        {
+          "first_name": "Saurav",
+          "last_name": "Muralidharan"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Renee: END-TO-END TRAINING OF EXTREME CLASSIFICATION MODELS",
+      "authors": [
+        {
+          "first_name": "Vidit",
+          "last_name": "Jain"
+        },
+        {
+          "first_name": "Jatin",
+          "last_name": "Prakash"
+        },
+        {
+          "first_name": "Deepak",
+          "last_name": "Saini"
+        },
+        {
+          "first_name": "Jian",
+          "last_name": "Jiao"
+        },
+        {
+          "first_name": "Ramachandran",
+          "last_name": "Ramjee"
+        },
+        {
+          "first_name": "Manik",
+          "last_name": "Varma"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "GlueFL: Reconciling Client Sampling and Model Masking for Bandwidth Efficient Federated Learning",
+      "authors": [
+        {
+          "first_name": "Shiqi",
+          "last_name": "He"
+        },
+        {
+          "first_name": "Qifan",
+          "last_name": "Yan"
+        },
+        {
+          "first_name": "Feijie",
+          "last_name": "Wu"
+        },
+        {
+          "first_name": "Lanjun",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Mathias",
+          "last_name": "L\u00e9cuyer"
+        },
+        {
+          "first_name": "Ivan",
+          "last_name": "Beschastnikh"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Sparsity-Aware Memory Interface Architecture using Stacked XORNet Compression for Accelerating Pruned-DNN Models",
+      "authors": [
+        {
+          "first_name": "Younghoon",
+          "last_name": "Byun"
+        },
+        {
+          "first_name": "Seungsik",
+          "last_name": "Moon"
+        },
+        {
+          "first_name": "Baeseong",
+          "last_name": "Park"
+        },
+        {
+          "first_name": "Se",
+          "last_name": "Jung Kwon"
+        },
+        {
+          "first_name": "Dongsoo",
+          "last_name": "Lee"
+        },
+        {
+          "first_name": "Gunho",
+          "last_name": "Park"
+        },
+        {
+          "first_name": "Eunji",
+          "last_name": "Yoo"
+        },
+        {
+          "first_name": "Jung",
+          "last_name": "Gyu Min"
+        },
+        {
+          "first_name": "Youngjoo",
+          "last_name": "Lee"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "PipeFisher: Efficient Training of Large Language Models Using Pipelining and Fisher Information Matrices",
+      "authors": [
+        {
+          "first_name": "Kazuki",
+          "last_name": "Osawa"
+        },
+        {
+          "first_name": "Shigang",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Torsten",
+          "last_name": "Hoefler"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "RevBiFPN: The Fully Reversible Bidirectional Feature Pyramid Network",
+      "authors": [
+        {
+          "first_name": "Vitaliy",
+          "last_name": "Chiley"
+        },
+        {
+          "first_name": "Vithursan",
+          "last_name": "Thangarasa"
+        },
+        {
+          "first_name": "Abhay",
+          "last_name": "Gupta"
+        },
+        {
+          "first_name": "Anshul",
+          "last_name": "Samar"
+        },
+        {
+          "first_name": "Joel",
+          "last_name": "Hestness"
+        },
+        {
+          "first_name": "Dennis",
+          "last_name": "DeCoste"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "AutoScratch: ML-Optimized Cache Management for Inference-Oriented GPUs",
+      "authors": [
+        {
+          "first_name": "Yaosheng",
+          "last_name": "Fu"
+        },
+        {
+          "first_name": "Evgeny",
+          "last_name": "Bolotin"
+        },
+        {
+          "first_name": "Aamer",
+          "last_name": "Jaleel"
+        },
+        {
+          "first_name": "Gal",
+          "last_name": "Dalal"
+        },
+        {
+          "first_name": "Shie",
+          "last_name": "Mannor"
+        },
+        {
+          "first_name": "Jacob",
+          "last_name": "Subag"
+        },
+        {
+          "first_name": "Noam",
+          "last_name": "Korem"
+        },
+        {
+          "first_name": "Michael",
+          "last_name": "Behar"
+        },
+        {
+          "first_name": "David",
+          "last_name": "Nellans"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Validating Large Language Models with ReLM",
+      "authors": [
+        {
+          "first_name": "Michael",
+          "last_name": "Kuchnik"
+        },
+        {
+          "first_name": "Virginia",
+          "last_name": "Smith"
+        },
+        {
+          "first_name": "George",
+          "last_name": "Amvrosiadis"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Hotline Profiler: Automatic Annotation and A Multi-Scale Timeline for Visualizing Time-Use in DNN Training",
+      "authors": [
+        {
+          "first_name": "Daniel",
+          "last_name": "Snider"
+        },
+        {
+          "first_name": "Fanny",
+          "last_name": "Chevalier"
+        },
+        {
+          "first_name": "Gennady",
+          "last_name": "Pekhimenko"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "ApproxCaliper: A Programmable Framework for Application-aware Neural Network Optimization",
+      "authors": [
+        {
+          "first_name": "Yifan",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Hashim",
+          "last_name": "Sharif"
+        },
+        {
+          "first_name": "Peter",
+          "last_name": "Pao-Huang"
+        },
+        {
+          "first_name": "Vatsin",
+          "last_name": "Shah"
+        },
+        {
+          "first_name": "Arun",
+          "last_name": "Narenthiran Sivakumar"
+        },
+        {
+          "first_name": "Mateus",
+          "last_name": "Valverde Gasparino"
+        },
+        {
+          "first_name": "Abdulrahman",
+          "last_name": "Mahmoud"
+        },
+        {
+          "first_name": "Nathan",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Sarita",
+          "last_name": "Adve"
+        },
+        {
+          "first_name": "Girish",
+          "last_name": "Chowdhary"
+        },
+        {
+          "first_name": "Sasa",
+          "last_name": "Misailovic"
+        },
+        {
+          "first_name": "Vikram",
+          "last_name": "Adve"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Cupcake: A Compression Scheduler for Scalable Communication-Efficient Distributed Training",
+      "authors": [
+        {
+          "first_name": "Zhuang",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Xinyu",
+          "last_name": "Wu"
+        },
+        {
+          "first_name": "Zhaozhuo",
+          "last_name": "Xu"
+        },
+        {
+          "first_name": "T.",
+          "last_name": "S. Eugene Ng"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "SUBGRAPH STATIONARY HARDWARE-SOFTWARE INFERENCE CO-DESIGN",
+      "authors": [
+        {
+          "first_name": "Payman",
+          "last_name": "Behnam"
+        },
+        {
+          "first_name": "Alexey",
+          "last_name": "Tumanov"
+        },
+        {
+          "first_name": "Tushar",
+          "last_name": "Krishna"
+        },
+        {
+          "first_name": "Pranav",
+          "last_name": "Gadikar"
+        },
+        {
+          "first_name": "Yangyu",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Jianming",
+          "last_name": "Tong"
+        },
+        {
+          "first_name": "Yue",
+          "last_name": "Pan"
+        },
+        {
+          "first_name": "Abhimanyu",
+          "last_name": "Rajeshkumar Bambhaniya"
+        },
+        {
+          "first_name": "Alind",
+          "last_name": "Khare"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Safe Optimized Static Memory Allocation for Parallel Deep Learning",
+      "authors": [
+        {
+          "first_name": "Ioannis",
+          "last_name": "Lamprou"
+        },
+        {
+          "first_name": "Zhen",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Javier",
+          "last_name": "de Juan"
+        },
+        {
+          "first_name": "Hang",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Yongqiang",
+          "last_name": "Lai"
+        },
+        {
+          "first_name": "Etienne",
+          "last_name": "Filhol"
+        },
+        {
+          "first_name": "Cedric",
+          "last_name": "Bastoul"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "SysNoise: Exploring and Benchmarking Training-Deployment System Inconsistency",
+      "authors": [
+        {
+          "first_name": "Yan",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Yuhang",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Ruihao",
+          "last_name": "Gong"
+        },
+        {
+          "first_name": "Aishan",
+          "last_name": "Liu"
+        },
+        {
+          "first_name": "yanfei",
+          "last_name": "wang"
+        },
+        {
+          "first_name": "Jian",
+          "last_name": "Hu"
+        },
+        {
+          "first_name": "Yongqiang",
+          "last_name": "Yao"
+        },
+        {
+          "first_name": "Yunchen",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "tianzi",
+          "last_name": "xiaotian"
+        },
+        {
+          "first_name": "Fengwei",
+          "last_name": "Yu"
+        },
+        {
+          "first_name": "Xianglong",
+          "last_name": "Liu"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Learning to Parallelize with OpenMP by Augmented Heterogeneous AST Representation",
+      "authors": [
+        {
+          "first_name": "Le",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Quazi",
+          "last_name": "Ishtiaque Mahmud"
+        },
+        {
+          "first_name": "Hung",
+          "last_name": "Phan"
+        },
+        {
+          "first_name": "Nesreen",
+          "last_name": "Ahmed"
+        },
+        {
+          "first_name": "Ali",
+          "last_name": "Jannesari"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "SIRIUS: Harvesting Whole-Program Optimization Opportunities for DNNs",
+      "authors": [
+        {
+          "first_name": "YIJIN",
+          "last_name": "LI"
+        },
+        {
+          "first_name": "Jiacheng",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Sun",
+          "last_name": "Qianqi"
+        },
+        {
+          "first_name": "Haohui",
+          "last_name": "Mai"
+        },
+        {
+          "first_name": "Lei",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Wanlu",
+          "last_name": "Cao"
+        },
+        {
+          "first_name": "Yanfan",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Li",
+          "last_name": "zhicheng"
+        },
+        {
+          "first_name": "YING",
+          "last_name": "LIU"
+        },
+        {
+          "first_name": "Xinyuan",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Xiyu",
+          "last_name": "Shi"
+        },
+        {
+          "first_name": "Jie",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Jingling",
+          "last_name": "Xue"
+        },
+        {
+          "first_name": "HUIMIN",
+          "last_name": "CUI"
+        },
+        {
+          "first_name": "XiaoBing",
+          "last_name": "Feng"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Virtual Machine Allocation with Lifetime Predictions",
+      "authors": [
+        {
+          "first_name": "Hugo",
+          "last_name": "Barbalho"
+        },
+        {
+          "first_name": "Patricia",
+          "last_name": "Kovaleski"
+        },
+        {
+          "first_name": "Beibin",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Luke",
+          "last_name": "Marshall"
+        },
+        {
+          "first_name": "Marco",
+          "last_name": "Molinaro"
+        },
+        {
+          "first_name": "Abhisek",
+          "last_name": "Pan"
+        },
+        {
+          "first_name": "Eli",
+          "last_name": "Cortez"
+        },
+        {
+          "first_name": "Matheus",
+          "last_name": "Leao"
+        },
+        {
+          "first_name": "Harsh",
+          "last_name": "Patwari"
+        },
+        {
+          "first_name": "Zuzu",
+          "last_name": "Tang"
+        },
+        {
+          "first_name": "Larissa",
+          "last_name": "Rozales Gon\u00e7alves"
+        },
+        {
+          "first_name": "David",
+          "last_name": "Dion"
+        },
+        {
+          "first_name": "Thomas",
+          "last_name": "Moscibroda"
+        },
+        {
+          "first_name": "Ishai",
+          "last_name": "Menache"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Breadth-First Pipeline Parallelism",
+      "authors": [
+        {
+          "first_name": "Joel",
+          "last_name": "Lamy-Poirier"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Efficient GPU Kernels for N:M-Sparse Weights in Deep Learning",
+      "authors": [
+        {
+          "first_name": "Bin",
+          "last_name": "Lin"
+        },
+        {
+          "first_name": "Ningxin",
+          "last_name": "Zheng"
+        },
+        {
+          "first_name": "Lei",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Shijie",
+          "last_name": "Cao"
+        },
+        {
+          "first_name": "Lingxiao",
+          "last_name": "Ma"
+        },
+        {
+          "first_name": "Quanlu",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Yi",
+          "last_name": "Zhu"
+        },
+        {
+          "first_name": "Ting",
+          "last_name": "Cao"
+        },
+        {
+          "first_name": "Jilong",
+          "last_name": "Xue"
+        },
+        {
+          "first_name": "Yuqing",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Fan",
+          "last_name": "Yang"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Be Careful with PyPI Packages: You May Unconsciously Spread Backdoor Model Weights",
+      "authors": [
+        {
+          "first_name": "Tianhang",
+          "last_name": "Zheng"
+        },
+        {
+          "first_name": "Hao",
+          "last_name": "Lan"
+        },
+        {
+          "first_name": "Baochun",
+          "last_name": "Li"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Reducing Activation Recomputation in Large Transformer Models",
+      "authors": [
+        {
+          "first_name": "Vijay",
+          "last_name": "Anand Korthikanti"
+        },
+        {
+          "first_name": "Jared",
+          "last_name": "Casper"
+        },
+        {
+          "first_name": "Sangkug",
+          "last_name": "Lym"
+        },
+        {
+          "first_name": "Lawrence",
+          "last_name": "McAfee"
+        },
+        {
+          "first_name": "Michael",
+          "last_name": "Andersch"
+        },
+        {
+          "first_name": "Mohammad",
+          "last_name": "Shoeybi"
+        },
+        {
+          "first_name": "Bryan",
+          "last_name": "Catanzaro"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Edge Impulse: An MLOps Platform for Tiny Machine Learning",
+      "authors": [
+        {
+          "first_name": "colby",
+          "last_name": "banbury"
+        },
+        {
+          "first_name": "Vijay",
+          "last_name": "Janapa Reddi"
+        },
+        {
+          "first_name": "Alexander",
+          "last_name": "Elium"
+        },
+        {
+          "first_name": "Shawn",
+          "last_name": "Hymel"
+        },
+        {
+          "first_name": "David",
+          "last_name": "Tischler"
+        },
+        {
+          "first_name": "Daniel",
+          "last_name": "Situnayake"
+        },
+        {
+          "first_name": "Carl",
+          "last_name": "Ward"
+        },
+        {
+          "first_name": "Louis",
+          "last_name": "Moreau"
+        },
+        {
+          "first_name": "Jenny",
+          "last_name": "Plunkett"
+        },
+        {
+          "first_name": "Matthew",
+          "last_name": "Kelcey"
+        },
+        {
+          "first_name": "Mathijs",
+          "last_name": "Baaijens"
+        },
+        {
+          "first_name": "Alessandro",
+          "last_name": "Grande"
+        },
+        {
+          "first_name": "Dmitry",
+          "last_name": "Maslov"
+        },
+        {
+          "first_name": "Arthur",
+          "last_name": "Beavis"
+        },
+        {
+          "first_name": "Jan",
+          "last_name": "Jongboom"
+        },
+        {
+          "first_name": "Jessica",
+          "last_name": "Quaye"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Cuttlefish: Low-Rank Model Training without All the Tuning",
+      "authors": [
+        {
+          "first_name": "Hongyi",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Saurabh",
+          "last_name": "Agarwal"
+        },
+        {
+          "first_name": "Pongsakorn",
+          "last_name": "U-chupala"
+        },
+        {
+          "first_name": "Yoshiki",
+          "last_name": "Tanaka"
+        },
+        {
+          "first_name": "Eric",
+          "last_name": "Xing"
+        },
+        {
+          "first_name": "Dimitris",
+          "last_name": "Papailiopoulos"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Pre-train and Search: Efficient Embedding Table Sharding with Pre-trained Neural Cost Models",
+      "authors": [
+        {
+          "first_name": "Daochen",
+          "last_name": "Zha"
+        },
+        {
+          "first_name": "Louis",
+          "last_name": "Feng"
+        },
+        {
+          "first_name": "Liang",
+          "last_name": "Luo"
+        },
+        {
+          "first_name": "Bhargav",
+          "last_name": "Bhushanam"
+        },
+        {
+          "first_name": "Zirui",
+          "last_name": "Liu"
+        },
+        {
+          "first_name": "Yusuo",
+          "last_name": "Hu"
+        },
+        {
+          "first_name": "Jade",
+          "last_name": "Nie"
+        },
+        {
+          "first_name": "Yuzhen",
+          "last_name": "Huang"
+        },
+        {
+          "first_name": "Yuandong",
+          "last_name": "Tian"
+        },
+        {
+          "first_name": "Arun",
+          "last_name": "Kejariwal"
+        },
+        {
+          "first_name": "Xia",
+          "last_name": "Hu"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "XRBench: An Extended Reality (XR) Machine Learning Benchmark Suite for the Metaverse",
+      "authors": [
+        {
+          "first_name": "Hyoukjun",
+          "last_name": "Kwon"
+        },
+        {
+          "first_name": "Krishnakumar",
+          "last_name": "Nair"
+        },
+        {
+          "first_name": "Jamin",
+          "last_name": "Seo"
+        },
+        {
+          "first_name": "Jason",
+          "last_name": "Yik"
+        },
+        {
+          "first_name": "Debabrata",
+          "last_name": "Mohapatra"
+        },
+        {
+          "first_name": "Dongyuan",
+          "last_name": "Zhan"
+        },
+        {
+          "first_name": "JINOOK",
+          "last_name": "SONG"
+        },
+        {
+          "first_name": "Peter",
+          "last_name": "Capak"
+        },
+        {
+          "first_name": "Peizhao",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Peter",
+          "last_name": "Vajda"
+        },
+        {
+          "first_name": "Colby",
+          "last_name": "Banbury"
+        },
+        {
+          "first_name": "Mark",
+          "last_name": "Mazumder"
+        },
+        {
+          "first_name": "Liangzhen",
+          "last_name": "Lai"
+        },
+        {
+          "first_name": "Ashish",
+          "last_name": "Sirasao"
+        },
+        {
+          "first_name": "Tushar",
+          "last_name": "Krishna"
+        },
+        {
+          "first_name": "Harshit",
+          "last_name": "Khaitan"
+        },
+        {
+          "first_name": "Vikas",
+          "last_name": "Chandra"
+        },
+        {
+          "first_name": "Vijay",
+          "last_name": "Janapa Reddi"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Communication-Efficient Graph Neural Networks with Probabilistic Neighborhood Expansion Analysis and Caching",
+      "authors": [
+        {
+          "first_name": "Tim",
+          "last_name": "Kaler"
+        },
+        {
+          "first_name": "Alexandros",
+          "last_name": "Iliopoulos"
+        },
+        {
+          "first_name": "Philip",
+          "last_name": "Murzynowski"
+        },
+        {
+          "first_name": "Tao",
+          "last_name": "Schardl"
+        },
+        {
+          "first_name": "Charles",
+          "last_name": "E. Leiserson"
+        },
+        {
+          "first_name": "Jie",
+          "last_name": "Chen"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "GiPH: Generalizable Placement Learning for Adaptive Heterogeneous Computing",
+      "authors": [
+        {
+          "first_name": "Yi",
+          "last_name": "Hu"
+        },
+        {
+          "first_name": "Chaoran",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Edward",
+          "last_name": "Andert"
+        },
+        {
+          "first_name": "Harshul",
+          "last_name": "Singh"
+        },
+        {
+          "first_name": "Aviral",
+          "last_name": "Shrivastava"
+        },
+        {
+          "first_name": "James",
+          "last_name": "Laudon"
+        },
+        {
+          "first_name": "Yanqi",
+          "last_name": "Zhou"
+        },
+        {
+          "first_name": "Bob",
+          "last_name": "Iannucci"
+        },
+        {
+          "first_name": "Carlee",
+          "last_name": "Joe-Wong"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "ALCOP: Automatic Load-Compute Pipelining in Deep Learning Compiler for AI-GPUs",
+      "authors": [
+        {
+          "first_name": "Guyue",
+          "last_name": "Huang"
+        },
+        {
+          "first_name": "Yang",
+          "last_name": "Bai"
+        },
+        {
+          "first_name": "Liu",
+          "last_name": "Liu"
+        },
+        {
+          "first_name": "Yuke",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Bei",
+          "last_name": "Yu"
+        },
+        {
+          "first_name": "Yufei",
+          "last_name": "Ding"
+        },
+        {
+          "first_name": "Yuan",
+          "last_name": "Xie"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Transcending Runtime-Memory Tradeoffs in Checkpointing by being Fusion Aware",
+      "authors": [
+        {
+          "first_name": "Horace",
+          "last_name": "He"
+        },
+        {
+          "first_name": "Shangdi",
+          "last_name": "Yu"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "HyperGef: A Framework Enabling Efficient Fusion for Hypergraph Neural Network on GPUs",
+      "authors": [
+        {
+          "first_name": "Zhongming",
+          "last_name": "Yu"
+        },
+        {
+          "first_name": "Guohao",
+          "last_name": "Dai"
+        },
+        {
+          "first_name": "Shang",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Genghan",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Hengrui",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Feiwen",
+          "last_name": "Zhu"
+        },
+        {
+          "first_name": "June",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Jishen",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Yu",
+          "last_name": "Wang"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "PyTorch RPC: Distributed Deep Learning Built on Tensor-Optimized Remote Procedure Calls",
+      "authors": [
+        {
+          "first_name": "Pritam",
+          "last_name": "Damania"
+        },
+        {
+          "first_name": "Shen",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Alban",
+          "last_name": "Desmaison"
+        },
+        {
+          "first_name": "Alisson",
+          "last_name": "Azzolini"
+        },
+        {
+          "first_name": "Brian",
+          "last_name": "Vaughan"
+        },
+        {
+          "first_name": "Edward",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Gregory",
+          "last_name": "Chanan"
+        },
+        {
+          "first_name": "Guoqiang",
+          "last_name": "Jerry Chen"
+        },
+        {
+          "first_name": "Hongyi",
+          "last_name": "Jia"
+        },
+        {
+          "first_name": "Howard",
+          "last_name": "Huang"
+        },
+        {
+          "first_name": "Joseph",
+          "last_name": "Spisak"
+        },
+        {
+          "first_name": "Luca",
+          "last_name": "Wehrstedt"
+        },
+        {
+          "first_name": "Lucas",
+          "last_name": "Hosseini"
+        },
+        {
+          "first_name": "Manoj",
+          "last_name": "Krishnan"
+        },
+        {
+          "first_name": "Omkar",
+          "last_name": "Salpekar"
+        },
+        {
+          "first_name": "Pavel",
+          "last_name": "Belevich"
+        },
+        {
+          "first_name": "Rohan",
+          "last_name": "Varma"
+        },
+        {
+          "first_name": "Satendra",
+          "last_name": "Gera"
+        },
+        {
+          "first_name": "Wanchao",
+          "last_name": "Liang"
+        },
+        {
+          "first_name": "Shihao",
+          "last_name": "Xu"
+        },
+        {
+          "first_name": "Soumith",
+          "last_name": "Chintala"
+        },
+        {
+          "first_name": "Chaoyang",
+          "last_name": "He"
+        },
+        {
+          "first_name": "Amir",
+          "last_name": "Ziashahabi"
+        },
+        {
+          "first_name": "Salman",
+          "last_name": "Avestimehr"
+        },
+        {
+          "first_name": "",
+          "last_name": ""
+        },
+        {
+          "first_name": "Zachary",
+          "last_name": "DeVito"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "FedTree: A Federated Learning System For Trees",
+      "authors": [
+        {
+          "first_name": "Qinbin",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Zhaomin",
+          "last_name": "Wu"
+        },
+        {
+          "first_name": "Yanzheng",
+          "last_name": "Cai"
+        },
+        {
+          "first_name": "yuxuan",
+          "last_name": "han"
+        },
+        {
+          "first_name": "Ching",
+          "last_name": "Man Yung"
+        },
+        {
+          "first_name": "Tianyuan",
+          "last_name": "Fu"
+        },
+        {
+          "first_name": "Bingsheng",
+          "last_name": "He"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "X-RLFLOW: GRAPH REINFORCEMENT LEARNING FOR NEURAL NETWORK SUBGRAPHS TRANSFORMATION",
+      "authors": [
+        {
+          "first_name": "Guoliang",
+          "last_name": "HE"
+        },
+        {
+          "first_name": "Sean",
+          "last_name": "Parker"
+        },
+        {
+          "first_name": "Eiko",
+          "last_name": "Yoneki"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "On Noisy Evaluation in Federated Hyperparameter Tuning",
+      "authors": [
+        {
+          "first_name": "Kevin",
+          "last_name": "Kuo"
+        },
+        {
+          "first_name": "Pratiksha",
+          "last_name": "Thaker"
+        },
+        {
+          "first_name": "Mikhail",
+          "last_name": "Khodak"
+        },
+        {
+          "first_name": "John",
+          "last_name": "Nguyen"
+        },
+        {
+          "first_name": "Daniel",
+          "last_name": "Jiang"
+        },
+        {
+          "first_name": "Ameet",
+          "last_name": "Talwalkar"
+        },
+        {
+          "first_name": "Virginia",
+          "last_name": "Smith"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Exploiting Hardware Utilization and Adaptive Dataflow for Efficient Sparse Convolution in 3D Point Clouds",
+      "authors": [
+        {
+          "first_name": "Ke",
+          "last_name": "Hong"
+        },
+        {
+          "first_name": "Zhongming",
+          "last_name": "Yu"
+        },
+        {
+          "first_name": "Guohao",
+          "last_name": "Dai"
+        },
+        {
+          "first_name": "Xinhao",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Yaoxiu",
+          "last_name": "Lian"
+        },
+        {
+          "first_name": "\u6cfd\u6d69",
+          "last_name": "\u5218"
+        },
+        {
+          "first_name": "Ningyi",
+          "last_name": "Xu"
+        },
+        {
+          "first_name": "Yu",
+          "last_name": "Wang"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "On Optimizing the Communication of Model Parallelism",
+      "authors": [
+        {
+          "first_name": "Yonghao",
+          "last_name": "Zhuang"
+        },
+        {
+          "first_name": "Lianmin",
+          "last_name": "Zheng"
+        },
+        {
+          "first_name": "Zhuohan",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Eric",
+          "last_name": "Xing"
+        },
+        {
+          "first_name": "Qirong",
+          "last_name": "Ho"
+        },
+        {
+          "first_name": "Joseph",
+          "last_name": "Gonzalez"
+        },
+        {
+          "first_name": "Ion",
+          "last_name": "Stoica"
+        },
+        {
+          "first_name": "Hao",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Hexu",
+          "last_name": "Zhao"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "FLINT: A Platform for Federated Learning Integration",
+      "authors": [
+        {
+          "first_name": "Ewen",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Boyi",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Mosharaf",
+          "last_name": "Chowdhury"
+        },
+        {
+          "first_name": "Ajay",
+          "last_name": "Kannan"
+        },
+        {
+          "first_name": "Franco",
+          "last_name": "Liang"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Unified Convolution Framework: A compiler-based approach to support sparse convolutions",
+      "authors": [
+        {
+          "first_name": "Jaeyeon",
+          "last_name": "Won"
+        },
+        {
+          "first_name": "Changwan",
+          "last_name": "Hong"
+        },
+        {
+          "first_name": "Charith",
+          "last_name": "Mendis"
+        },
+        {
+          "first_name": "Joel",
+          "last_name": "Emer"
+        },
+        {
+          "first_name": "Saman",
+          "last_name": "Amarasinghe"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Efficiently Scaling Transformer Inference",
+      "authors": [
+        {
+          "first_name": "Reiner",
+          "last_name": "Pope"
+        },
+        {
+          "first_name": "Sholto",
+          "last_name": "Douglas"
+        },
+        {
+          "first_name": "Aakanksha",
+          "last_name": "Chowdhery"
+        },
+        {
+          "first_name": "Jacob",
+          "last_name": "Devlin"
+        },
+        {
+          "first_name": "James",
+          "last_name": "Bradbury"
+        },
+        {
+          "first_name": "Jonathan",
+          "last_name": "Heek"
+        },
+        {
+          "first_name": "Kefan",
+          "last_name": "Xiao"
+        },
+        {
+          "first_name": "Shivani",
+          "last_name": "Agrawal"
+        },
+        {
+          "first_name": "Jeff",
+          "last_name": "Dean"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Tutel: Adaptive Mixture-of-Experts at Scale",
+      "authors": [
+        {
+          "first_name": "Changho",
+          "last_name": "Hwang"
+        },
+        {
+          "first_name": "Wei",
+          "last_name": "Cui"
+        },
+        {
+          "first_name": "Yifan",
+          "last_name": "Xiong"
+        },
+        {
+          "first_name": "Ziyue",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Ze",
+          "last_name": "Liu"
+        },
+        {
+          "first_name": "Han",
+          "last_name": "Hu"
+        },
+        {
+          "first_name": "Zilong",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Rafael",
+          "last_name": "Salas"
+        },
+        {
+          "first_name": "Jithin",
+          "last_name": "Jose"
+        },
+        {
+          "first_name": "Prabhat",
+          "last_name": "Ram"
+        },
+        {
+          "first_name": "HoYuen",
+          "last_name": "Chau"
+        },
+        {
+          "first_name": "Peng",
+          "last_name": "Cheng"
+        },
+        {
+          "first_name": "Fan",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Mao",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Yongqiang",
+          "last_name": "Xiong"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "\u03bc-TWO: 3\u00d7 Faster Multi-Model Training with Orchestration and Memory Optimization",
+      "authors": [
+        {
+          "first_name": "Sanket",
+          "last_name": "Purandare"
+        },
+        {
+          "first_name": "Abdul",
+          "last_name": "Wasay"
+        },
+        {
+          "first_name": "Stratos",
+          "last_name": "Idreos"
+        },
+        {
+          "first_name": "Animesh",
+          "last_name": "Jain"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "MegaBlocks: Efficient Sparse Training with Mixture-of-Experts",
+      "authors": [
+        {
+          "first_name": "Trevor",
+          "last_name": "Gale"
+        },
+        {
+          "first_name": "Deepak",
+          "last_name": "Narayanan"
+        },
+        {
+          "first_name": "Cliff",
+          "last_name": "Young"
+        },
+        {
+          "first_name": "Matei",
+          "last_name": "Zaharia"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    },
+    {
+      "title": "Adaptive Message Quantization and Parallelization for Distributed Full-graph GNN Training",
+      "authors": [
+        {
+          "first_name": "Borui",
+          "last_name": "Wan"
+        },
+        {
+          "first_name": "Juntao",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Chuan",
+          "last_name": "Wu"
+        }
+      ],
+      "publication": "The Sixth Annual Conference on Machine Learning and Systems",
+      "pubTime": "2023",
+      "pubType": 1
+    }
+  ]
+}

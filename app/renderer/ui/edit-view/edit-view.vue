@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { BIconQuestionCircle } from "bootstrap-icons-vue";
 import { Ref, inject, onMounted, ref } from "vue";
 
@@ -329,7 +329,7 @@ onMounted(() => {
                   <span class="m-auto text-xs">{{ $t("menu.rescrape") }}</span>
                 </div>
                 <div
-                  title="Try to fillin one of the missing title, DOI, or arXiv ID to re-scrape the metadata of the paper if Paperlib cannot process it correctly."
+                  title="Try to fillin one of the missing title, DOI, or arXiv ID to re-scrape the metadata of the paper if PaperMind cannot process it correctly."
                   class="my-auto"
                 >
                   <BIconQuestionCircle
@@ -375,7 +375,7 @@ onMounted(() => {
               <span class="m-auto text-xs">{{ $t("menu.rescrape") }}</span>
             </div>
             <div
-              title="Try to fillin one of the missing title, DOI, or arXiv ID to re-scrape the metadata of the paper if Paperlib cannot process it correctly."
+              title="Try to fillin one of the missing title, DOI, or arXiv ID to re-scrape the metadata of the paper if PaperMind cannot process it correctly."
               class="my-auto"
             >
               <BIconQuestionCircle
@@ -405,3 +405,4 @@ onMounted(() => {
     </div>
   </div>
 </template>
+

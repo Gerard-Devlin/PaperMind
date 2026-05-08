@@ -24,6 +24,7 @@ import type { UISlotService } from "@/renderer/services/uislot-service";
 import type { UIStateService } from "@/renderer/services/uistate-service";
 
 import type { BrowserExtensionService } from "@/service/services/browser-extension-service";
+import type { AskService } from "@/service/services/ask-service";
 import type { CacheService } from "@/service/services/cache-service";
 import type { CategorizerService } from "@/service/services/categorizer-service";
 import type { DatabaseService } from "@/service/services/database-service";
@@ -35,6 +36,7 @@ import type { ReferenceService } from "@/service/services/reference-service";
 import type { RenderService } from "@/service/services/render-service";
 import type { SchedulerService } from "@/service/services/scheduler-service";
 import type { ScrapeService } from "@/service/services/scrape-service";
+import type { SemanticSearchService } from "@/service/services/semantic-search-service";
 import type { SmartFilterService } from "@/service/services/smartfilter-service";
 import type { SyncService } from "@/service/services/sync-service";
 
@@ -63,10 +65,12 @@ interface PLAPIShape {
   schedulerService: Proxied<SchedulerService>;
   cacheService: Proxied<CacheService>;
   scrapeService: Proxied<ScrapeService>;
+  semanticSearchService: Proxied<SemanticSearchService>;
   paperService: Proxied<PaperService>;
   categorizerService: Proxied<CategorizerService>;
   smartFilterService: Proxied<SmartFilterService>;
   browserExtensionService: Proxied<BrowserExtensionService>;
+  askService: Proxied<AskService>;
   feedService: Proxied<FeedService>;
   referenceService: Proxied<ReferenceService>;
   syncService: Proxied<SyncService>;
@@ -116,10 +120,12 @@ export interface PLAPILocalShape {
   schedulerService: SchedulerService;
   cacheService: CacheService;
   scrapeService: ScrapeService;
+  semanticSearchService: SemanticSearchService;
   paperService: PaperService;
   categorizerService: CategorizerService;
   smartFilterService: SmartFilterService;
   browserExtensionService: BrowserExtensionService;
+  askService: AskService;
   feedService: FeedService;
   referenceService: ReferenceService;
   syncService: SyncService;

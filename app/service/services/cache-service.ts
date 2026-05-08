@@ -98,6 +98,29 @@ export class CacheService {
     }
   }
 
+  @processing(ProcessingKey.General)
+  @errorcatching("Failed to get fulltext cache.", true, "CacheService", "")
+  async loadFullText(paperEntity: Entity): Promise<string> {
+    const realm = await this._cacheDatabaseCore.realm();
+
+    const cache = realm.objectForPrimaryKey<PaperEntityCache>(
+      "PaperEntityCache",
+      new ObjectId(paperEntity._id) as unknown as PrimaryKey
+    );
+
+    if (cache?.fulltext) {
+      return cache.fulltext;
+    }
+
+    await this.updateFullTextCache([paperEntity]);
+    const updatedCache = realm.objectForPrimaryKey<PaperEntityCache>(
+      "PaperEntityCache",
+      new ObjectId(paperEntity._id) as unknown as PrimaryKey
+    );
+
+    return updatedCache?.fulltext || "";
+  }
+
   // ========================
   // Create and Update
   // ========================

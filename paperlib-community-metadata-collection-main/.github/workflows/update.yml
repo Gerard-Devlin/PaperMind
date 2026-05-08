@@ -1,0 +1,29 @@
+name: Update Metadata Database
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update_database:
+    runs-on: self-hosted
+
+    steps:
+      - name: "Checkout Project"
+        uses: actions/checkout@v4
+
+      - name: Get All Changed Metadata JSON Files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: metadata/**/*.json
+
+      - name: Insert Metadata into Database from JSON Files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for file in "$ALL_CHANGED_FILES"; do
+            DATABASE_URL=${{ secrets.DATABASE_URL }} DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }} DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} MEILISEARCH_URL=${{ secrets.MEILISEARCH_URL }} python3 ./script/update_db.py $file
+          done

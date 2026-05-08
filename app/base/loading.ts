@@ -1,4 +1,4 @@
-export function appendLoading() {
+﻿export function appendLoading() {
   const styleContent = `
 .app-loading-wrap {
   position: fixed;
@@ -62,7 +62,7 @@ export function appendLoading() {
   oDiv.id = "app-loading-wrap";
   oDiv.className = "app-loading-wrap";
   oDiv.innerHTML = `
-  <div><div class="lds-dual-ring"><div></div><div></div></div> <span style="width: 150px; margin-left: 15px; font-size: 2rem; font-family: sans-serif; font-weight: 100;">PAPERLIB</span> </div>`;
+  <div><div class="lds-dual-ring"><div></div><div></div></div> <span style="width: 150px; margin-left: 15px; font-size: 2rem; font-family: sans-serif; font-weight: 100;">PAPERMIND</span> </div>`;
 
   document.head.appendChild(oStyle);
   document.body.appendChild(oDiv);
@@ -84,3 +84,4 @@ export function removeLoading() {
     console.error(e);
   }
 }
+

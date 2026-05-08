@@ -1,11 +1,14 @@
 import { errorcatching } from "@/base/error";
 import { Eventable } from "@/base/event";
 import { createDecorator } from "@/base/injection/injection";
+import { uid } from "@/base/misc";
 import { Process } from "@/base/process-id";
 import { ILogService, LogService } from "@/common/services/log-service";
 import { ProcessingKey, processing } from "@/common/utils/processing";
 import { HookService, IHookService } from "./hook-service";
 import { IEntityCollection, Entity } from "@/models/entity";
+import { PaperEntity } from "@/models/paper-entity";
+import { Supplementary } from "@/models/supplementary";
 
 export const IScrapeService = createDecorator("scrapeService");
 
@@ -52,35 +55,36 @@ export class ScrapeService extends Eventable<{}> {
       );
       return false;
     } else {
-      let status =
-        await PLExtAPI.extensionManagementService.isOfficialScrapeExtensionInstalled();
-
-      if (status === "loaded") {
-        return true;
-      } else if (status === "unloaded") {
-        for (let i = 0; i < 15; i++) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          status =
-            await PLExtAPI.extensionManagementService.isOfficialScrapeExtensionInstalled();
-
-          if (status === "loaded") {
-            break;
-          }
-        }
-        return true;
-      }
-
-      if (status !== "loaded") {
+      try {
+        await PLExtAPI.extensionManagementService.ensureOfficialScrapeExtensionsInstalled();
+      } catch (error) {
         this._logService.warn(
-          "Official scrape extension is not installed yet.",
-          "",
+          "Failed to prepare bundled scrape extensions.",
+          `${(error as Error).message}`,
           true,
           "ScrapeService"
         );
-        return false;
-      } else {
-        return true;
       }
+
+      let status: "uninstalled" | "unloaded" | "loaded" = "uninstalled";
+      for (let i = 0; i < 30; i++) {
+        status =
+          await PLExtAPI.extensionManagementService.isOfficialScrapeExtensionInstalled();
+
+        if (status === "loaded") {
+          return true;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      this._logService.warn(
+        "Official scrape extension is not ready yet.",
+        `Current status: ${status}`,
+        true,
+        "ScrapeService"
+      );
+      return false;
     }
   }
 
@@ -98,7 +102,9 @@ export class ScrapeService extends Eventable<{}> {
     force: boolean = false
   ): Promise<Entity[]> {
     // 0. Wait for scraper extension to be ready.
-    await this._scrapeExtensionReady();
+    if (!(await this._scrapeExtensionReady())) {
+      return [];
+    }
 
     // Do in chunks 10
     const jobID = Math.random().toString(36).substring(7);
@@ -180,9 +186,7 @@ export class ScrapeService extends Eventable<{}> {
           600000, // 10 min
           payloads
         )
-      ).map((p) => {
-        return new Entity(p);
-      });
+      ).map((p) => this._toCurrentEntity(p));
     }
 
     if (this._hookService.hasHook("afterScrapeEntry")) {
@@ -191,9 +195,9 @@ export class ScrapeService extends Eventable<{}> {
         5000,
         paperEntityDrafts
       );
-      paperEntityDrafts = paperEntityDrafts.map((p) => {
-        return new Entity(p);
-      });
+      paperEntityDrafts = paperEntityDrafts.map((p) =>
+        this._toCurrentEntity(p)
+      );
     }
 
     return paperEntityDrafts;
@@ -225,11 +229,14 @@ export class ScrapeService extends Eventable<{}> {
 
     let scrapedPaperEntityDrafts = paperEntityDrafts;
     if (this._hookService.hasHook("scrapeMetadata")) {
+      const legacyPaperEntityDrafts = paperEntityDrafts.map((p) =>
+        this._toLegacyPaperEntity(p)
+      );
       [scrapedPaperEntityDrafts, scrapers, force] =
         await this._hookService.modifyHookPoint(
           "scrapeMetadata",
           60000,
-          paperEntityDrafts,
+          legacyPaperEntityDrafts,
           scrapers,
           force
         );
@@ -246,7 +253,7 @@ export class ScrapeService extends Eventable<{}> {
         );
     }
 
-    return scrapedPaperEntityDrafts;
+    return scrapedPaperEntityDrafts.map((p) => this._toCurrentEntity(p));
   }
 
   /**
@@ -264,7 +271,9 @@ export class ScrapeService extends Eventable<{}> {
     paperEntities: IEntityCollection
   ): Promise<Record<string, Entity[]>> {
     // 0. Wait for scraper extension to be ready.
-    await this._scrapeExtensionReady();
+    if (!(await this._scrapeExtensionReady())) {
+      return {};
+    }
 
     // Do in chunks 10
     const jobID = Math.random().toString(36).substring(7);
@@ -333,11 +342,9 @@ export class ScrapeService extends Eventable<{}> {
         600000, // 10 min
         paperEntities
       );
-      paperEntityDraftCandidates.forEach((p) => {
-        return p.map((p) => {
-          return new Entity(p);
-        });
-      });
+      paperEntityDraftCandidates = paperEntityDraftCandidates.map((group) =>
+        group.map((p) => this._toCurrentEntity(p))
+      );
     }
 
     if (this._hookService.hasHook("afterScrapeEntry")) {
@@ -347,13 +354,156 @@ export class ScrapeService extends Eventable<{}> {
         paperEntityDraftCandidates
       );
 
-      paperEntityDraftCandidates.forEach((p) => {
-        return p.map((p) => {
-          return new Entity(p);
-        });
-      });
+      paperEntityDraftCandidates = paperEntityDraftCandidates.map((group) =>
+        group.map((p) => this._toCurrentEntity(p))
+      );
     }
 
     return paperEntityDraftCandidates;
+  }
+
+  private _toCurrentEntity(raw: any): Entity {
+    if (
+      raw &&
+      (raw.publication !== undefined ||
+        raw.pubTime !== undefined ||
+        raw.mainURL !== undefined ||
+        raw.supURLs !== undefined)
+    ) {
+      const type = this._legacyPubTypeToEntityType(raw.pubType);
+      const supplementaries: Record<string, Supplementary> = {};
+      let defaultSup: string | undefined;
+      const urls = [raw.mainURL, ...(raw.supURLs || [])].filter(
+        (url, index, array) => url && array.indexOf(url) === index
+      );
+
+      for (const url of urls) {
+        const supId = uid();
+        supplementaries[supId] = new Supplementary({
+          _id: supId,
+          name: defaultSup ? undefined : "Main",
+          url,
+        });
+        defaultSup = defaultSup || supId;
+      }
+
+      return new Entity({
+        _id: raw._id || raw.id,
+        _partition: raw._partition,
+        addTime: raw.addTime,
+        library: "main",
+        type,
+        title: raw.title || "",
+        authors: raw.authors || "",
+        year: `${raw.pubTime || raw.year || ""}`.slice(0, 4),
+        doi: raw.doi || undefined,
+        arxiv: raw.arxiv || undefined,
+        journal: type === "article" ? raw.publication || undefined : undefined,
+        booktitle:
+          type === "inproceedings" ? raw.publication || undefined : undefined,
+        howpublished:
+          !["article", "inproceedings"].includes(type) && raw.publication
+            ? raw.publication
+            : undefined,
+        pages: raw.pages || undefined,
+        volume: raw.volume || undefined,
+        number: raw.number || undefined,
+        publisher: raw.publisher || undefined,
+        rating: raw.rating || 0,
+        tags: raw.tags || [],
+        folders: raw.folders || [],
+        flag: raw.flag || false,
+        note: raw.note || "",
+        supplementaries,
+        defaultSup,
+      });
+    }
+
+    return new Entity(raw);
+  }
+
+  private _toLegacyPaperEntity(entity: Entity | any) {
+    if (
+      entity &&
+      (entity.publication !== undefined ||
+        entity.pubTime !== undefined ||
+        entity.mainURL !== undefined ||
+        entity.supURLs !== undefined)
+    ) {
+      return entity;
+    }
+
+    const supplementaries = entity?.supplementaries || {};
+    const defaultSup = entity?.defaultSup
+      ? supplementaries[entity.defaultSup]
+      : undefined;
+    const supURLs = Object.entries(supplementaries)
+      .filter(([id]) => id !== entity?.defaultSup)
+      .map(([, sup]) => (sup as Supplementary).url)
+      .filter(Boolean);
+
+    return new PaperEntity({
+      _id: entity?._id,
+      id: entity?._id,
+      _partition: entity?._partition,
+      addTime: entity?.addTime,
+      title: entity?.title || "",
+      authors: entity?.authors || "",
+      publication:
+        entity?.journal ||
+        entity?.booktitle ||
+        entity?.publisher ||
+        entity?.school ||
+        entity?.institution ||
+        entity?.howpublished ||
+        "",
+      pubTime: entity?.year || "",
+      pubType: this._entityTypeToLegacyPubType(entity?.type),
+      doi: entity?.doi || "",
+      arxiv: entity?.arxiv || "",
+      mainURL: defaultSup?.url || "",
+      supURLs,
+      rating: entity?.rating || 0,
+      tags: entity?.tags || [],
+      folders: entity?.folders || [],
+      flag: entity?.flag || false,
+      note: entity?.note || "",
+      pages: entity?.pages || "",
+      volume: entity?.volume || "",
+      number: entity?.number || "",
+      publisher: entity?.publisher || "",
+    });
+  }
+
+  private _legacyPubTypeToEntityType(pubType: number | string | undefined) {
+    switch (Number(pubType)) {
+      case 1:
+        return "inproceedings";
+      case 2:
+        return "misc";
+      case 3:
+        return "book";
+      default:
+        return "article";
+    }
+  }
+
+  private _entityTypeToLegacyPubType(type: string | undefined) {
+    switch (type) {
+      case "inproceedings":
+      case "proceedings":
+        return 1;
+      case "misc":
+      case "booklet":
+      case "manual":
+      case "techreport":
+        return 2;
+      case "book":
+      case "inbook":
+      case "incollection":
+        return 3;
+      default:
+        return 0;
+    }
   }
 }

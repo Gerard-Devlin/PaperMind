@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { nextTick, onMounted, ref } from "vue";
 
 import Options from "./components/options.vue";
@@ -100,12 +100,12 @@ onMounted(() => {
     class="flex flex-col text-neutral-800 dark:text-neutral-300 w-[400px] md:w-[500px] lg:w-[700px]"
   >
     <!-- Official RESTful API Sync -->
-    <div class="text-base font-semibold mb-1">Paperlib Sync</div>
+    <div class="text-base font-semibold mb-1">PaperMind Sync</div>
     <div class="text-xxs mb-3" @click="onRealmClickGuide">
       <span
         class="underline hover:text-accentlight hover:dark:text-accentdark cursor-pointer"
       >
-        Paperlib Official Cloud Sync Service
+        PaperMind Official Cloud Sync Service
         <!-- TODO: Translation -->
       </span>
     </div>
@@ -338,3 +338,4 @@ onMounted(() => {
     </div>
   </div>
 </template>
+

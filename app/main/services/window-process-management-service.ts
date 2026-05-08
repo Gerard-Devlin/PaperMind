@@ -1,4 +1,4 @@
-import {
+﻿import {
   BrowserWindow,
   BrowserWindowConstructorOptions,
   Rectangle,
@@ -173,7 +173,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       Process.renderer,
       {
         entry: "index.html",
-        title: "Paperlib",
+        title: "PaperMind",
         width: windowSize.width,
         height: windowSize.height,
         minWidth: 600,
@@ -731,3 +731,4 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
     });
   }
 }
+

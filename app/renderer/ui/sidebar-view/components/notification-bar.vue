@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { BIconArrowBarUp } from "bootstrap-icons-vue";
 import { Ref, ref } from "vue";
 
@@ -31,7 +31,7 @@ const pushMsgToHistory = (
   const newMsg = {
     id: logMessage.id,
     level: level,
-    name: logMessage.id === "default" ? "Paperlib" : logMessage.id,
+    name: logMessage.id === "default" ? "PaperMind" : logMessage.id,
     msg: logMessage.msg,
     additional: logMessage.additional || "",
     value: logMessage.value || 0,
@@ -243,3 +243,4 @@ const onLeave = () => {
     />
   </div>
 </template>
+

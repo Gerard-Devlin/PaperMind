@@ -65,6 +65,15 @@ provide(
 const reloadPaperEntities = async () => {
   let querySentence: string;
   let fulltextQuerySetence: string | undefined = undefined;
+  if (uiState.commandBarSearchMode === "semantic") {
+    paperEntities.value = await PLAPI.semanticSearchService.search(
+      uiState.commandBarText,
+      20
+    );
+    PLUIAPILocal.uiStateService.fire({ entitiesReloaded: Date.now() });
+    return;
+  }
+
   if (uiState.querySentenceCommandbar.includes("(fulltext contains")) {
     querySentence = uiState.querySentencesSidebar
       .map((x) => `(${x})`)

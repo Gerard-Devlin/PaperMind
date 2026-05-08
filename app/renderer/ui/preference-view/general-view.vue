@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref } from "vue";
 
 import Options from "./components/options.vue";
@@ -91,7 +91,7 @@ const onChangeLanguage = (language: string) => {
     class="flex flex-col text-neutral-800 dark:text-neutral-300 w-[400px] md:w-[500px] lg:w-[700px]"
   >
     <div class="text-base font-semibold mb-4">
-      Paperlib {{ $t("preference.library") }}
+      PaperMind {{ $t("preference.library") }}
     </div>
     <div class="text-xs font-semibold">
       {{ $t("preference.storagefolder") }}
@@ -163,7 +163,7 @@ const onChangeLanguage = (language: string) => {
       class="text-xxs text-neutral-600 dark:text-neutral-500"
       v-if="prefState.renamingFormat === 'custom'"
     >
-      ⓘ <b>Avaliable components:</b> title, firstchartitle, author, firstname,
+      鈸?<b>Avaliable components:</b> title, firstchartitle, author, firstname,
       lastname, year, publication. <br />
       &nbsp;&nbsp;&nbsp; Use '/' for hierarchical organisation. <br />
       &nbsp;&nbsp;&nbsp; <b>Example:</b> {year}/{firstchartitle} >
@@ -283,3 +283,4 @@ const onChangeLanguage = (language: string) => {
     </div>
   </div>
 </template>
+

@@ -3,6 +3,7 @@ import { CacheDatabaseCore } from "@/service/services/database/cache-core";
 import { DatabaseCore } from "@/service/services/database/core";
 import { PreferenceService } from "@/service/services/preference-service";
 import { BrowserExtensionService } from "./browser-extension-service";
+import { AskService } from "./ask-service";
 import { CacheService } from "./cache-service";
 import { CategorizerService } from "./categorizer-service";
 import { DatabaseService } from "./database-service";
@@ -14,6 +15,7 @@ import { ReferenceService } from "./reference-service";
 import { RenderService } from "./render-service";
 import { SchedulerService } from "./scheduler-service";
 import { ScrapeService } from "./scrape-service";
+import { SemanticSearchService } from "./semantic-search-service";
 import { SmartFilterService } from "./smartfilter-service";
 
 import { CategorizerRepository } from "../repositories/db-repository/categorizer-repository";
@@ -38,11 +40,13 @@ export type IInjectable =
   | CacheService
   | CacheDatabaseCore
   | ScrapeService
+  | SemanticSearchService
   | PaperService
   | CategorizerService
   | SmartFilterService
   | PaperSmartFilterRepository
   | BrowserExtensionService
+  | AskService
   | FeedService
   | FeedRepository
   | FeedEntityRepository

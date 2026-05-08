@@ -8,7 +8,7 @@ const props = defineProps({
     required: true,
   },
   candidates: {
-    type: Object as PropType<PaperEntity[]>,
+    type: Object as PropType<PaperEntity[] | any[]>,
     required: true,
     default: [],
   },
@@ -25,7 +25,7 @@ const selectIdx = ref<number>(0);
 // ================================
 const onConfirmClicked = async () => {
   const paperEntityDraft = new PaperEntity(props.candidates[selectIdx.value]);
-  const currentEntityDraft = (await PLAPI.paperService.loadByIds([props.id]))[0] as PaperEntity;
+  const currentEntityDraft = (await PLAPI.paperService.loadByIds([props.id]))[0] as unknown as PaperEntity;
 
   if (currentEntityDraft) {
     paperEntityDraft.id = currentEntityDraft.id;
@@ -40,7 +40,7 @@ const onConfirmClicked = async () => {
     paperEntityDraft.supURLs = currentEntityDraft.supURLs;
     paperEntityDraft.note = currentEntityDraft.note;
 
-    PLAPI.paperService.update([paperEntityDraft], false, true);
+    PLAPI.paperService.update([paperEntityDraft] as any, false, true);
   }
   uiState.showingCandidatesId = "";
   delete uiState.metadataCandidates[props.id]

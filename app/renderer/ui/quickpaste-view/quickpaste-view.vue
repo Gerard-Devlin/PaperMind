@@ -50,7 +50,7 @@ const onSearchTextChanged = debounce(async () => {
       }).toString(),
       mainviewSortBy.value,
       mainviewSortOrder.value
-    )) as PaperEntity[];
+    )) as unknown as PaperEntity[];
 
     // @ts-ignore
     paperEntities.value.push({

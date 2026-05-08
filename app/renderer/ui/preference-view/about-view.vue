@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { BIconCoin, BIconGithub, BIconGlobe } from "bootstrap-icons-vue";
 import { onMounted, ref } from "vue";
 
@@ -29,7 +29,7 @@ onMounted(async () => {
       v-if="darkMode"
     />
     <img src="../../assets/logo-light.png" class="w-8 mb-2 ml-1" v-else />
-    <div class="text-base font-semibold mb-4">Paperlib</div>
+    <div class="text-base font-semibold mb-4">PaperMind</div>
     <div class="text-xs mb-4">
       created by Future Scholars, a simple academic paper management tool.
     </div>
@@ -67,3 +67,4 @@ onMounted(async () => {
     />
   </div>
 </template>
+

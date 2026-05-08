@@ -1,11 +1,12 @@
 {
-  "name": "paperlib",
+  "name": "papermind",
   "version": "3.1.6",
   "main": "dist/main/main.mjs",
   "description": "A simple academic paper management tool.",
   "author": "Future Scholars <hi@paperlib.app>",
   "license": "GPL-3.0",
   "private": true,
+  "packageManager": "pnpm@10.33.4",
   "scripts": {
     "dev": "electron-vite dev -w",
     "typecheck:app": "tsc --noEmit -p ./app/tsconfig.json --composite false",
@@ -13,15 +14,16 @@
     "typecheck:service": "tsc --noEmit -p ./app/service/tsconfig.json --composite false",
     "typecheck:extension": "tsc --noEmit -p ./app/extension/tsconfig.json --composite false",
     "typecheck:renderer": "vue-tsc --noEmit -p ./app/renderer/tsconfig.json --composite false",
-    "typecheck": "pnpm run typecheck:app && pnpm run typecheck:main && pnpm run typecheck:service && pnpm run typecheck:extension && pnpm run typecheck:renderer",
-    "build-mac-arm": "vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.mac.arm.json5",
-    "build-mac-x86": "vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.mac.json5",
-    "build-win": "vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.win.json5",
-    "build-linux": "vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.linux.json5",
-    "build-mac-arm-dev": "vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.mac.arm.dev.json5",
-    "build-mac-x86-dev": "vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.mac.dev.json5",
-    "build-win-dev": "vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.win.dev.json5",
-    "build-linux-dev": "vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.linux.dev.json5",
+    "typecheck": "corepack pnpm@10 run typecheck:app && corepack pnpm@10 run typecheck:main && corepack pnpm@10 run typecheck:service && corepack pnpm@10 run typecheck:extension && corepack pnpm@10 run typecheck:renderer",
+    "build:bundled-scrapers": "pnpm -C paperlib-entry-scrape-extension-main install && pnpm -C paperlib-entry-scrape-extension-main build && pnpm -C paperlib-metadata-scrape-extension-main install && pnpm -C paperlib-metadata-scrape-extension-main build",
+    "build-mac-arm": "pnpm run build:bundled-scrapers && vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.mac.arm.json5",
+    "build-mac-x86": "pnpm run build:bundled-scrapers && vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.mac.json5",
+    "build-win": "pnpm run build:bundled-scrapers && vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.win.json5",
+    "build-linux": "pnpm run build:bundled-scrapers && vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.linux.json5",
+    "build-mac-arm-dev": "pnpm run build:bundled-scrapers && vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.mac.arm.dev.json5",
+    "build-mac-x86-dev": "pnpm run build:bundled-scrapers && vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.mac.dev.json5",
+    "build-win-dev": "pnpm run build:bundled-scrapers && vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.win.dev.json5",
+    "build-linux-dev": "pnpm run build:bundled-scrapers && vue-tsc --noEmit && vite build && electron-builder --config ./build_configs/electron-builder.linux.dev.json5",
     "dev-build": "vite build && electron-builder --config ./build_configs/electron-builder.mac.arm.json5",
     "test:e2e": "vue-tsc --noEmit && vite build && vitest run",
     "test:e2e-dev": "vite build && vitest run",
@@ -38,6 +40,7 @@
     "@types/katex": "0.14.0",
     "@types/lodash": "^4.17.6",
     "@types/markdown-it": "12.2.3",
+    "@types/pg": "^8.20.0",
     "@types/splitpanes": "2.2.1",
     "@types/tough-cookie": "4.0.2",
     "@types/ws": "8.5.3",
@@ -93,12 +96,15 @@
     "webdav": "5.3.1"
   },
   "dependencies": {
+    "@future-scholars/paperlib-entry-scrape-extension": "^0.0.36",
+    "@future-scholars/paperlib-metadata-scrape-extension": "^0.0.39",
     "dompurify": "3.3.0",
     "electron-updater": "6.2.1",
     "katex": "0.16.2",
     "keytar": "7.9.0",
     "mupdf": "^0.2.2",
     "openid-client": "^6.1.7",
+    "pg": "^8.20.0",
     "realm": "11.10.2",
     "uuid": "^11.0.5",
     "ws": "8.6.0",
@@ -110,3 +116,4 @@
     "management"
   ]
 }
+

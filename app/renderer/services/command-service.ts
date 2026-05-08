@@ -90,9 +90,20 @@ export class CommandService extends PiniaEventable<{}> {
     });
 
     this.register({
+      id: "search_semantic",
+      description: "Search the library semantically with Qwen embeddings.",
+      priority: 99996,
+      handler: (keyword: string) => {
+        this._uiStateService.setState({
+          commandBarSearchMode: "semantic",
+        });
+      },
+    });
+
+    this.register({
       id: "scrape_preprints",
       description: "Scrape metadata for all preprint papers in the library.",
-      priority: 99996,
+      priority: 99995,
       handler: () => {
         PLAPI.paperService.scrapePreprint();
       },

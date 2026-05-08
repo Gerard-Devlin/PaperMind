@@ -1,4 +1,4 @@
-import ElectronStore from "electron-store";
+﻿import ElectronStore from "electron-store";
 import keytar from "keytar";
 import os from "os";
 import { join } from "path";
@@ -95,6 +95,14 @@ export interface IPreferenceStore {
   showGuide: boolean;
   showWelcome: boolean;
   fontsize: "normal" | "large" | "larger";
+
+  semanticSearchEnabled: boolean;
+  semanticSearchPostgresURL: string;
+  qwenEmbeddingBaseURL: string;
+  qwenEmbeddingModel: string;
+  qwenEmbeddingDimensions: number;
+  askAPIBaseURL: string;
+  askModel: string;
 }
 
 const _defaultPreferences: IPreferenceStore = {
@@ -216,6 +224,14 @@ const _defaultPreferences: IPreferenceStore = {
   showGuide: true,
   showWelcome: true,
   fontsize: "normal",
+
+  semanticSearchEnabled: false,
+  semanticSearchPostgresURL: "",
+  qwenEmbeddingBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  qwenEmbeddingModel: "text-embedding-v4",
+  qwenEmbeddingDimensions: 1024,
+  askAPIBaseURL: "https://api.openai.com/v1",
+  askModel: "gpt-4o-mini",
 };
 
 function _migrate(
@@ -223,9 +239,9 @@ function _migrate(
   preferenceVersion: number
 ) {
   // Versions:
-  // 0: Paperlib < 3.0.0
-  // 1: Paperlib >= 3.0.0-beta.1
-  // 2: Paperlib >= 3.0.0-beta.4
+  // 0: PaperMind < 3.0.0
+  // 1: PaperMind >= 3.0.0-beta.1
+  // 2: PaperMind >= 3.0.0-beta.4
   const prevVersion = store.has("preferenceVersion")
     ? store.get("preferenceVersion")
     : 0;
@@ -401,3 +417,4 @@ export class PreferenceService extends Eventable<IPreferenceStore> {
     await keytar.setPassword("paperlib", key, pwd);
   }
 }
+

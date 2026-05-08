@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { PropType } from "vue";
+import { PropType, ref } from "vue";
 
+import { Entity, IEntityCollection } from "@/models/entity";
+import { OID } from "@/models/id";
 import { FieldTemplate } from "@/renderer/types/data-view";
 
-import TableView from "./table-view.vue";
-import { Entity, IEntityCollection } from "@/models/entity";
+import PaperGalleryItem from "./components/paper-gallery-item.vue";
 
 const props = defineProps({
   entities: {
@@ -45,8 +46,8 @@ const props = defineProps({
   },
 });
 
-// =================
-// Event handlers
+const lastSelectedSingleIndex = ref<number>(-1);
+
 const emits = defineEmits([
   "event:click",
   "event:dblclick",
@@ -57,49 +58,93 @@ const emits = defineEmits([
   "event:header-width-change",
   "event:click-candidate-btn",
 ]);
+
+const calSelectedIndex = (event: MouseEvent, index: number) => {
+  let selectedIndexBuffer = JSON.parse(JSON.stringify(props.selectedIndex));
+  if (event.shiftKey && lastSelectedSingleIndex.value >= 0) {
+    const minIndex = Math.min(lastSelectedSingleIndex.value, index);
+    const maxIndex = Math.max(lastSelectedSingleIndex.value, index);
+    selectedIndexBuffer = [];
+    for (let i = minIndex; i <= maxIndex; i++) {
+      selectedIndexBuffer.push(i);
+    }
+  } else if (
+    (event.ctrlKey && props.platform !== "darwin") ||
+    (event.metaKey && props.platform === "darwin")
+  ) {
+    if (selectedIndexBuffer.indexOf(index) >= 0) {
+      selectedIndexBuffer.splice(selectedIndexBuffer.indexOf(index), 1);
+    } else {
+      selectedIndexBuffer.push(index);
+    }
+  } else {
+    selectedIndexBuffer = [index];
+    lastSelectedSingleIndex.value = index;
+  }
+
+  return selectedIndexBuffer;
+};
+
+const onItemClicked = (event: MouseEvent, index: number) => {
+  emits("event:click", calSelectedIndex(event, index));
+};
+
+const onItemRightClicked = (event: MouseEvent, index: number) => {
+  let selectedIndex = props.selectedIndex;
+  if (props.selectedIndex.indexOf(index) === -1) {
+    selectedIndex = calSelectedIndex(event, index);
+  }
+  emits("event:contextmenu", selectedIndex);
+};
+
+const onItemDoubleClicked = (event: MouseEvent, index: number) => {
+  emits("event:dblclick", calSelectedIndex(event, index));
+};
+
+const onItemDraged = (event: DragEvent, index: number, id: OID) => {
+  event.dataTransfer?.setData(
+    "application/json",
+    JSON.stringify({
+      type: "PaperEntity",
+      value: id,
+    })
+  );
+
+  let selectedIndex = props.selectedIndex;
+  if (props.selectedIndex.indexOf(index) === -1) {
+    selectedIndex = calSelectedIndex(event as unknown as MouseEvent, index);
+  }
+
+  if (event.altKey || event.metaKey) {
+    event.preventDefault();
+    event.stopPropagation();
+    emits("event:drag-file", selectedIndex);
+    return;
+  }
+
+  const el = event.target as HTMLElement;
+  event.dataTransfer?.setDragImage(el, 0, 0);
+  emits("event:drag", selectedIndex);
+};
 </script>
 
 <template>
-  <splitpanes horizontal>
-    <pane :key="1" min-size="12">
-      <TableView
-        id="table-data-view"
-        class="w-full max-h-[calc(100vh-4rem)]"
-        :entities="entities"
-        :candidates="candidates"
-        :field-templates="fieldTemplates"
-        :selected-index="selectedIndex"
-        :platform="platform"
-        :entity-sort-by="entitySortBy"
-        :entity-sort-order="entitySortOrder"
-        :item-size="itemSize"
-        @event:click="(args) => emits('event:click', args)"
-        @event:contextmenu="(args) => emits('event:contextmenu', args)"
-        @event:dblclick="(args) => emits('event:dblclick', args)"
-        @event:drag="(args) => emits('event:drag', args)"
-        @event:drag-file="(args) => emits('event:drag-file', args)"
-        @event:header-click="(args) => emits('event:header-click', args)"
-        @event:header-width-change="
-          (args) => emits('event:header-width-change', args)
-        "
-        @event:click-candidate-btn="
-          (args) => emits('event:click-candidate-btn', args)
-        "
-      />
-    </pane>
-    <pane
-      id="table-reader-data-view"
-      :key="1"
-      min-size="12"
-      v-if="displayingURL"
+  <div class="h-[calc(100vh-4rem)] overflow-y-auto px-3 py-4">
+    <div
+      class="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,9rem))] justify-evenly gap-x-4 gap-y-7"
     >
-      <div class="w-full h-full flex">
-        <div
-          class="m-auto bg-neutral-200 py-1 px-2 dark:bg-neutral-600 rounded-md text-sm"
-        >
-          A better PDF Viewer will be here soon.
-        </div>
-      </div>
-    </pane>
-  </splitpanes>
+      <PaperGalleryItem
+        v-for="(item, index) in entities"
+        :id="`item-${index}`"
+        :key="`${item._id}`"
+        :item="item"
+        :active="selectedIndex.indexOf(index) >= 0"
+        draggable="true"
+        @click="(e: MouseEvent) => onItemClicked(e, index)"
+        @contextmenu="(e: MouseEvent) => onItemRightClicked(e, index)"
+        @dblclick="(e: MouseEvent) => onItemDoubleClicked(e, index)"
+        @dragstart="(event: DragEvent) => onItemDraged(event, index, item._id)"
+      />
+    </div>
+  </div>
 </template>
