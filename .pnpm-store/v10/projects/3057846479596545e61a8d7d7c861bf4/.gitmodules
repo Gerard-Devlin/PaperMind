@@ -1,0 +1,3 @@
+[submodule "pdf-worker"]
+    path = pdf-worker
+    url = https://github.com/Future-Scholars/pdf-worker.git

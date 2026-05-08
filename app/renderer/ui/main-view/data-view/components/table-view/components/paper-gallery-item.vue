@@ -20,6 +20,11 @@ const props = defineProps({
 const MAX_PARALLEL_RENDERS = 2;
 let activeRenderCount = 0;
 const renderQueue: Array<() => Promise<void>> = [];
+const previewBlobURLCache = new Map<string, string>();
+const thumbnailBinaryCache = new Map<
+  string,
+  { blob: ArrayBuffer; width: number; height: number }
+>();
 
 const runQueuedRender = async (job: () => Promise<void>) => {
   if (activeRenderCount >= MAX_PARALLEL_RENDERS) {
@@ -44,7 +49,6 @@ const rootRef = ref<HTMLElement | null>(null);
 const imageURL = ref("");
 const isRendering = ref(false);
 const hasPreview = ref(false);
-const previewBlobURLCache = new Map<string, string>();
 const isVisible = ref(false);
 let observer: IntersectionObserver | null = null;
 
@@ -88,7 +92,39 @@ const renderCanvas = async (
   img.src = imageURL.value;
 };
 
+const renderFromCachedBlobURL = (blobURL: string) => {
+  if (!canvas.value) {
+    return false;
+  }
+
+  const context = canvas.value.getContext("2d");
+  if (!context) {
+    return false;
+  }
+
+  const img = new Image();
+  img.onload = () => {
+    if (!canvas.value) {
+      return;
+    }
+    canvas.value.width = img.width || 720;
+    canvas.value.height = img.height || 960;
+    context.clearRect(0, 0, canvas.value.width, canvas.value.height);
+    context.drawImage(img, 0, 0, canvas.value.width, canvas.value.height);
+  };
+  imageURL.value = blobURL;
+  img.src = blobURL;
+  hasPreview.value = true;
+  return true;
+};
+
 const render = async () => {
+  const cacheKey = `${props.item._id}`;
+  const cachedBlobURL = previewBlobURLCache.get(cacheKey);
+  if (cachedBlobURL && renderFromCachedBlobURL(cachedBlobURL)) {
+    return;
+  }
+
   if (!isVisible.value || isRendering.value || hasPreview.value) {
     return;
   }
@@ -112,36 +148,31 @@ const render = async () => {
     }
     isRendering.value = true;
     try {
-    const cacheKey = `${props.item._id}`;
     const inMemoryCached = previewBlobURLCache.get(cacheKey);
-    if (inMemoryCached) {
-      const img = new Image();
-      img.onload = () => {
-        if (!canvas.value) {
-          return;
-        }
-        const context = canvas.value.getContext("2d");
-        if (!context) {
-          return;
-        }
-        canvas.value.width = img.width;
-        canvas.value.height = img.height;
-        context.clearRect(0, 0, img.width, img.height);
-        context.drawImage(img, 0, 0, img.width, img.height);
-      };
-      imageURL.value = inMemoryCached;
-      img.src = inMemoryCached;
-      hasPreview.value = true;
+    if (inMemoryCached && renderFromCachedBlobURL(inMemoryCached)) {
       return;
     }
 
     const cachedThumbnail = await PLAPI.cacheService.loadThumbnail(props.item);
     if (cachedThumbnail?.blob && cachedThumbnail.blob.byteLength > 0) {
+      thumbnailBinaryCache.set(cacheKey, {
+        blob: cachedThumbnail.blob.slice(0),
+        width: cachedThumbnail.width,
+        height: cachedThumbnail.height,
+      });
       await renderCanvas(
         cachedThumbnail.blob,
         cachedThumbnail.width,
         cachedThumbnail.height
       );
+      previewBlobURLCache.set(cacheKey, imageURL.value);
+      hasPreview.value = true;
+      return;
+    }
+
+    const binaryCached = thumbnailBinaryCache.get(cacheKey);
+    if (binaryCached?.blob && binaryCached.blob.byteLength > 0) {
+      await renderCanvas(binaryCached.blob, binaryCached.width, binaryCached.height);
       previewBlobURLCache.set(cacheKey, imageURL.value);
       hasPreview.value = true;
       return;
@@ -162,6 +193,11 @@ const render = async () => {
         width: canvas.value.width || 720,
         height: canvas.value.height || 960,
       });
+      thumbnailBinaryCache.set(cacheKey, {
+        blob: thumbnailBuffer.buffer.slice(0),
+        width: canvas.value.width || 720,
+        height: canvas.value.height || 960,
+      });
       await renderCanvas(
         thumbnailBuffer,
         canvas.value.width || 720,
@@ -179,6 +215,11 @@ const render = async () => {
 watch(
   () => props.item._id,
   () => {
+    const cacheKey = `${props.item._id}`;
+    const cachedBlobURL = previewBlobURLCache.get(cacheKey);
+    if (cachedBlobURL && renderFromCachedBlobURL(cachedBlobURL)) {
+      return;
+    }
     hasPreview.value = false;
     if (isVisible.value) {
       void render();

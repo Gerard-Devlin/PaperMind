@@ -78,12 +78,6 @@ export class MenuService extends Eventable<IMenuServiceState> {
                     this.fire("preference");
                   },
                 },
-                {
-                  label: this._locales.t("menu.checkforupdate"),
-                  click: () => {
-                    this._upgradeService.checkForUpdates();
-                  },
-                },
                 { type: "separator" },
                 { role: "services" },
                 { type: "separator" },

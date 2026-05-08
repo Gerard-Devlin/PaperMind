@@ -1,5 +1,4 @@
-﻿import { MessageBoxOptions, dialog } from "electron";
-import updater from "electron-updater";
+import { app } from "electron";
 
 import { Eventable } from "@/base/event";
 import { createDecorator } from "@/base/injection/injection";
@@ -16,8 +15,6 @@ export interface IUpgradeServiceState {
 export const IUpgradeService = createDecorator("upgradeService");
 
 export class UpgradeService extends Eventable<IUpgradeServiceState> {
-  private _downloadingProgress: number = 0;
-
   constructor() {
     super("upgradeService", {
       checking: 0,
@@ -27,72 +24,13 @@ export class UpgradeService extends Eventable<IUpgradeServiceState> {
       downloaded: 0,
       downloading: 0,
     });
-
-    updater.autoUpdater.on("checking-for-update", () => {
-      this.fire("checking");
-    });
-
-    updater.autoUpdater.on("update-available", async () => {
-      this.fire("available");
-      const dialogOpts = {
-        type: "info",
-        buttons: ["Close"],
-        title: "A new version of PaperMind is available",
-        message: "A new version of PaperMind is available",
-        detail: "It is downloading and will notify you when it is ready.",
-      } as MessageBoxOptions;
-      await dialog.showMessageBox(dialogOpts);
-    });
-
-    updater.autoUpdater.on("update-not-available", () => {
-      this.fire("notAvailable");
-    });
-
-    updater.autoUpdater.on("error", (error) => {
-      this.fire({ error: error });
-    });
-
-    updater.autoUpdater.on("update-downloaded", async (info) => {
-      this.fire({ downloading: 100 });
-      this.fire("downloaded");
-      if (!info.releaseNotes) {
-        info.releaseNotes = "";
-      }
-
-      const dialogOpts = {
-        type: "info",
-        buttons: ["Update Now", "Cancel"],
-        title: `A new version ${
-          info.version || ""
-        } of PaperMind is automatically downloaded.`,
-        message: `A new version ${
-          info.version || ""
-        } of PaperMind is automatically downloaded.`,
-        detail: `${info.releaseNotes}`,
-      } as MessageBoxOptions;
-
-      const response = await dialog.showMessageBox(dialogOpts);
-      if (response.response === 0) {
-        updater.autoUpdater.quitAndInstall();
-      }
-    });
-
-    updater.autoUpdater.on("download-progress", (progressObj) => {
-      if (progressObj.percent - this._downloadingProgress > 5) {
-        this.fire({ downloading: progressObj.percent });
-      }
-      this._downloadingProgress = progressObj.percent;
-    });
-
-    updater.autoUpdater.checkForUpdates();
   }
 
   public checkForUpdates(): void {
-    updater.autoUpdater.checkForUpdates();
+    this.fire({ error: "Auto update is disabled in this build." });
   }
 
   public currentVersion(): string {
-    return updater.autoUpdater.currentVersion.version;
+    return app.getVersion();
   }
 }
-

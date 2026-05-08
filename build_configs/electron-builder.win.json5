@@ -2,9 +2,13 @@
  * @see https://www.electron.build/configuration/configuration
  */
 {
-  appId: "dev.paperlib.app",
+  appId: "com.papermind.app",
   productName: "PaperMind",
+  copyright: "Copyright (c) 2026 PaperMind. All rights reserved.",
   asar: true,
+  npmRebuild: false,
+  buildDependenciesFromSource: false,
+  electronDist: "node_modules/electron/dist",
   publish: [
     {
       provider: "generic",
@@ -15,6 +19,9 @@
     output: "release/${version}",
   },
   win: {
+    executableName: "PaperMind",
+    publisherName: "PaperMind",
+    legalTrademarks: "PaperMind",
     target: [
       {
         target: "nsis",
