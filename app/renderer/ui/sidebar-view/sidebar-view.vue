@@ -8,7 +8,6 @@ import SwitcherTitle from "./components/switcher-title.vue";
 import WindowControlBar from "./components/window-control-bar.vue";
 import SidebarFeedsView from "./sidebar-feeds-view.vue";
 import SidebarLibraryView from "./sidebar-library-view.vue";
-import SidebarAskView from "./sidebar-ask-view.vue";
 
 const uiState = PLUIAPILocal.uiStateService.useState();
 
@@ -21,7 +20,7 @@ const onViewContentSwitch = (view: number) => {
     uiState.selectedIndex = [];
     uiState.selectedFeed = "feed-all";
   }
-  uiState.contentType = ["library", "feed", "ask"][view];
+  uiState.contentType = ["library", "feed"][view];
 };
 
 const darkMode = ref(false);
@@ -48,7 +47,7 @@ PLMainAPI.preferenceService.on("preferedTheme", async () => {
 
     <SwitcherTitle
       class="h-7"
-      :titles="[$t('mainview.library'), $t('mainview.feeds'), 'Ask']"
+      :titles="[$t('mainview.library'), $t('mainview.feeds')]"
       @changed="onViewContentSwitch"
     />
 
@@ -59,10 +58,6 @@ PLMainAPI.preferenceService.on("preferedTheme", async () => {
     <SidebarFeedsView
       class="w-full min-w-0 h-[calc(100vh-5rem)] px-2 overflow-y-auto no-scrollbar"
       v-if="uiState.contentType === 'feed'"
-    />
-    <SidebarAskView
-      class="w-full min-w-0 h-[calc(100vh-5rem)] overflow-hidden"
-      v-if="uiState.contentType === 'ask'"
     />
 
     <NotificationBar class="flex-none" />

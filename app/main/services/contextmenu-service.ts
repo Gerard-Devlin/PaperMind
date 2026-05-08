@@ -68,6 +68,7 @@ export interface IContextMenuServiceState {
   dataContextMenuEditClicked: number;
   dataContextMenuScrapeClicked: number;
   dataContextMenuFuzzyScrapeClicked: number;
+  dataContextMenuGenerateAITagsClicked: number;
   dataContextMenuDeleteClicked: number;
   dataContextMenuFlagClicked: number;
   dataContextMenuExportBibTexClicked: number;
@@ -75,6 +76,7 @@ export interface IContextMenuServiceState {
   dataContextMenuExportCSVClicked: number;
   dataContextMenuExportBibTexKeyClicked: number;
   dataContextMenuExportPlainTextClicked: number;
+  dataContextMenuExportCitationStyleClicked: string;
   feedContextMenuAddToLibraryClicked: number;
   feedContextMenuToggleReadClicked: number;
   sidebarContextMenuFeedRefreshClicked: { data: string; type: string };
@@ -116,6 +118,7 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
       dataContextMenuEditClicked: 0,
       dataContextMenuScrapeClicked: 0,
       dataContextMenuFuzzyScrapeClicked: 0,
+      dataContextMenuGenerateAITagsClicked: 0,
       dataContextMenuDeleteClicked: 0,
       dataContextMenuFlagClicked: 0,
       dataContextMenuExportBibTexClicked: 0,
@@ -123,6 +126,7 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
       dataContextMenuExportCSVClicked: 0,
       dataContextMenuExportBibTexKeyClicked: 0,
       dataContextMenuExportPlainTextClicked: 0,
+      dataContextMenuExportCitationStyleClicked: "",
       feedContextMenuAddToLibraryClicked: 0,
       feedContextMenuToggleReadClicked: 0,
       sidebarContextMenuFeedRefreshClicked: { data: "", type: "" },
@@ -253,6 +257,12 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
           this.fire("dataContextMenuFuzzyScrapeClicked");
         },
       },
+      {
+        label: "Generate AI Tags",
+        click: () => {
+          this.fire("dataContextMenuGenerateAITagsClicked");
+        },
+      },
       { type: "separator" },
       {
         label: this._locales.t("menu.edit"),
@@ -293,6 +303,53 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
       {
         label: this._locales.t("menu.export"),
         submenu: [
+          {
+            label: "IEEE",
+            click: () => {
+              this.fire({ dataContextMenuExportCitationStyleClicked: "IEEE" });
+            },
+          },
+          {
+            label: "MLA 9th Edition",
+            click: () => {
+              this.fire({ dataContextMenuExportCitationStyleClicked: "MLA" });
+            },
+          },
+          {
+            label: "Harvard",
+            click: () => {
+              this.fire({
+                dataContextMenuExportCitationStyleClicked: "Harvard",
+              });
+            },
+          },
+          {
+            label: "AAA",
+            click: () => {
+              this.fire({ dataContextMenuExportCitationStyleClicked: "AAA" });
+            },
+          },
+          {
+            label: "AMA 11th Edition",
+            click: () => {
+              this.fire({ dataContextMenuExportCitationStyleClicked: "AMA" });
+            },
+          },
+          {
+            label: "Chicago 17th (Author-Date)",
+            click: () => {
+              this.fire({
+                dataContextMenuExportCitationStyleClicked: "Chicago",
+              });
+            },
+          },
+          {
+            label: "APA 7th Edition",
+            click: () => {
+              this.fire({ dataContextMenuExportCitationStyleClicked: "APA" });
+            },
+          },
+          { type: "separator" },
           {
             label: "BibTex",
             accelerator: isMac ? "cmd+shift+c" : "ctrl+shift+c",

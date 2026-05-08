@@ -42,11 +42,8 @@ disposable(
 );
 
 const onInput = (payload: Event) => {
-  if (
-    !isCommand.value &&
-    uiState.commandBarSearchMode !== "fulltext" &&
-    uiState.commandBarSearchMode !== "advanced"
-  ) {
+  if (!isCommand.value) {
+    uiState.commandBarSearchMode = "general";
     onSearchTextChanged();
   }
 };

@@ -43,19 +43,18 @@ export class AskService extends Eventable<{}> {
     }
 
     const apiKey =
-      (await PLMainAPI.preferenceService.getPassword("askAPIKey")) ||
-      process.env.OPENAI_API_KEY ||
+      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
       process.env.DASHSCOPE_API_KEY ||
       process.env.QWEN_API_KEY ||
       "";
     if (!apiKey) {
-      throw new Error("Ask API key is missing.");
+      throw new Error("Qwen API key is missing.");
     }
 
     const baseURL = `${await PLMainAPI.preferenceService.get(
-      "askAPIBaseURL"
+      "qwenChatBaseURL"
     )}`.replace(/\/+$/, "");
-    const model = `${await PLMainAPI.preferenceService.get("askModel")}`;
+    const model = `${await PLMainAPI.preferenceService.get("qwenChatModel")}`;
 
     const papers = await this._semanticSearchService.search(trimmedQuestion, 8);
     const sources = papers.map((paper) => ({
@@ -104,7 +103,7 @@ export class AskService extends Eventable<{}> {
     });
 
     if (!response.ok) {
-      throw new Error(`Ask API failed: ${response.status} ${await response.text()}`);
+      throw new Error(`Qwen chat API failed: ${response.status} ${await response.text()}`);
     }
 
     const body = await response.json();
@@ -120,10 +119,10 @@ export class AskService extends Eventable<{}> {
     year?: string;
     publication?: string;
     abstract?: string;
+    existingTags?: string[];
   }): Promise<string[]> {
     const apiKey =
-      (await PLMainAPI.preferenceService.getPassword("askAPIKey")) ||
-      process.env.OPENAI_API_KEY ||
+      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
       process.env.DASHSCOPE_API_KEY ||
       process.env.QWEN_API_KEY ||
       "";
@@ -132,9 +131,9 @@ export class AskService extends Eventable<{}> {
     }
 
     const baseURL = `${await PLMainAPI.preferenceService.get(
-      "askAPIBaseURL"
+      "qwenChatBaseURL"
     )}`.replace(/\/+$/, "");
-    const model = `${await PLMainAPI.preferenceService.get("askModel")}`;
+    const model = `${await PLMainAPI.preferenceService.get("qwenChatModel")}`;
 
     const response = await fetch(`${baseURL}/chat/completions`, {
       method: "POST",
@@ -148,7 +147,13 @@ export class AskService extends Eventable<{}> {
           {
             role: "system",
             content:
-              "Return only a JSON array of 3 to 6 short research tags. No markdown.",
+              [
+                "Return only a JSON array of 0 to 1 broad English research area tags. No markdown.",
+                "If existingTags is not empty, choose a tag from existingTags whenever possible.",
+                "If existingTags already covers the paper reasonably, return only that existing tag.",
+                "Avoid narrow method names, dataset names, benchmark names, paper-specific phrases, and near-duplicate tags.",
+                "Each tag should be 1 to 3 words and useful across multiple papers in a small research library.",
+              ].join(" "),
           },
           {
             role: "user",
@@ -169,8 +174,8 @@ export class AskService extends Eventable<{}> {
       if (Array.isArray(parsed)) {
         return parsed
           .map((tag) => `${tag}`.trim())
-          .filter(Boolean)
-          .slice(0, 6);
+          .filter((tag) => tag.length > 0 && tag.length <= 40)
+          .slice(0, 1);
       }
     } catch (error) {
       this._logService.warn(

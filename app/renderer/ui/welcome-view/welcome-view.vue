@@ -72,7 +72,7 @@ onMounted(async () => {
         </div>
         <div>|</div>
         <div class="underline cursor-pointer" @click="language = 'zh-CN'">
-          绠€浣撲腑鏂?
+          简体中文
         </div>
       </div>
       <div class="flex flex-col" v-if="language === 'en-GB'">
@@ -155,7 +155,7 @@ onMounted(async () => {
         <div class="mb-2">Other updates please refer to the release notes.</div>
 
         <hr class="my-8" />
-        <div>馃摚 Seeking contributors 馃摚</div>
+        <div>Seeking contributors</div>
         <div>
           If you are interested in contributing, please
           <a class="underline" href="https://github.com/GeoffreyChen777"
@@ -165,78 +165,72 @@ onMounted(async () => {
       </div>
       <div class="flex flex-col" v-else>
         <div class="mx-auto mb-8 font-semibold">
-          娆㈣繋鏉ュ埌鍏ㄦ柊鐨勭増鏈?--- PaperMind 3.0銆?
+          欢迎来到全新的 PaperMind 3.0。
         </div>
-        <div>鍦?PaperMind 3.0 涓紝鎴戜滑涓烘偍甯︽潵浜嗚澶氫护浜哄叴濂嬬殑鏂板姛鑳斤細</div>
+        <div>在 PaperMind 3.0 中，我们带来了这些新功能：</div>
         <ul class="list-disc px-4 mx-1">
-          <li class="font-semibold">鎵╁睍鎻掍欢绯荤粺</li>
-          <li class="font-semibold">灞傜骇缁勫拰灞傜骇鏅鸿兘杩囨护鍣?/li>
-          <li class="font-semibold">涓€浜?UI 閲嶆柊璁捐</li>
-          <li>鍜岃璁稿澶?..</li>
+          <li class="font-semibold">扩展插件系统</li>
+          <li class="font-semibold">层级分组和层级智能过滤器</li>
+          <li class="font-semibold">全新的 UI 设计</li>
+          <li>以及更多改进...</li>
         </ul>
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">鎵╁睍鎻掍欢绯荤粺</div>
+        <div class="font-bold text-xl mb-4">扩展插件系统</div>
         <div class="mb-2">
-          PaperMind 3.0 寮曞叆浜嗕竴涓柊鐨勬墿灞曠郴缁燂紝鍏佽鎮ㄦ墿灞?PaperMind
-          鐨勫姛鑳姐€傜幇鍦ㄦ偍鍙互浠庢墿灞曞競鍦哄畨瑁呮墿灞曪紝鎴栬€呭紑鍙戝苟鍙戝竷鎮ㄨ嚜宸辩殑鎵╁睍銆?
+          PaperMind 3.0 引入了新的扩展系统。现在你可以从扩展市场安装扩展，也可以开发并发布自己的扩展。
         </div>
         <div class="mb-2">
-          <span>鎴戜滑涔熸彁渚涗簡涓€浜涚敱瀹樻柟寮€鍙戠淮鎶ょ殑鎵╁睍鎻掍欢锛屾瘮濡傦細</span>
+          <span>我们也提供了一些官方维护的扩展，例如：</span>
           <ul class="list-disc px-4 mx-1">
             <li class="space-x-2">
               <span class="font-semibold">metadata-scrape</span>
               <span>-</span>
-              <span>甯姪浣犳悳绱㈣鏂囩殑鍏冩暟鎹€?/span>
+              <span>帮助你搜索论文元数据。</span>
             </li>
             <li class="space-x-2">
               <span class="font-semibold">ai-summary / ai-chat</span>
               <span>-</span>
-              <span
-                >浣跨敤 LLM
-                鎬荤粨璁烘枃锛岀粰璁烘枃鑷姩鎵撴爣绛撅紝鐢ㄨ嚜鐒惰瑷€鎼滅储浣犵殑璁烘枃搴擄紝鍜?LLM
-                璁ㄨ璁烘枃绛夈€?/span
-              >
+              <span>使用 LLM 总结论文、自动打标签、用自然语言搜索论文库，并与 LLM 讨论论文。</span>
             </li>
             <li class="space-x-2">
               <span class="font-semibold">format-pubname</span>
               <span>-</span>
-              <span>甯姪浣犺嚜鍔ㄦ牸寮忓寲璁烘枃鐨勫彂琛ㄤ俊鎭€?/span>
+              <span>帮助你自动格式化论文发表信息。</span>
             </li>
             <li class="space-x-2">
               <span class="font-semibold">api-host</span>
               <span>-</span>
-              <span>甯姪杩炴帴鍏朵粬搴旂敤绋嬪簭锛屾瘮濡?Raycast锛孫bsidian 绛夈€?/span>
+              <span>帮助连接其他应用，例如 Raycast、Obsidian 等。</span>
             </li>
-            <li>绛夌瓑...</li>
+            <li>等等...</li>
           </ul>
         </div>
         <div class="mb-2">
-          瀵逛簬寮€鍙戣€咃紝鎴戜滑鎻愪緵浜嗕竴濂椾赴瀵岀殑
-          API锛屼互甯姪鎮ㄥ紑鍙戣嚜宸辩殑鎵╁睍銆傛偍鍙互鍦ㄦ垜浠殑<a
+          对开发者来说，我们提供了一套丰富的 API，帮助你开发自己的扩展。你可以在我们的
+          <a
             class="underline"
             href="https://paperlib.app/en/extension-doc/"
-            >鏂囨。</a
-          >涓壘鍒版洿澶氫俊鎭€?
+            >文档</a
+          >中找到更多信息。
         </div>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">灞傜骇缁勫拰灞傜骇鏅鸿兘杩囨护鍣?/div>
+        <div class="font-bold text-xl mb-4">层级分组和层级智能过滤器</div>
         <div class="mb-2">
-          PaperMind 3.0
-          寮曞叆浜嗕竴涓柊鍔熻兘锛屽眰绾х粍鍜屽眰绾ф櫤鑳借繃婊ゅ櫒銆傛偍鐜板湪鍙互鍦ㄥ彟涓€涓粍涓垱寤轰竴涓瓙缁勩€傛澶栵紝鏅鸿兘杩囨护鍣ㄤ篃鍙互浠ュ眰绾ф柟寮忕粍缁囥€?
+          PaperMind 3.0 支持在分组中创建子分组，智能过滤器也可以按层级组织。
         </div>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">鏇村鏇存柊...</div>
-        <div class="mb-2">鍏朵粬鏇存柊璇峰弬闃呮洿鏂版棩蹇椼€?/div>
+        <div class="font-bold text-xl mb-4">更多更新...</div>
+        <div class="mb-2">其他更新请参考发布日志。</div>
 
         <hr class="my-8" />
-        <div>馃摚 瀵绘眰鍚堜綔寮€鍙戣€?馃摚</div>
+        <div>正在寻找贡献者</div>
         <div>
-          濡傛灉浣犳劅鍏磋叮鍙備笌 PaperMind 鐨勬牳蹇冨紑鍙戯紝璇?
+          如果你对参与 PaperMind 的核心开发感兴趣，请
           <a class="underline" href="https://github.com/GeoffreyChen777"
-            >鑱旂郴鎴?/a
-          >銆?
+            >联系我们</a
+          >。
         </div>
       </div>
 

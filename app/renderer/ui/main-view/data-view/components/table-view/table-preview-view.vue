@@ -131,7 +131,7 @@ const onItemDraged = (event: DragEvent, index: number, id: OID) => {
 <template>
   <div class="h-[calc(100vh-4rem)] overflow-y-auto px-3 py-4">
     <div
-      class="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,9rem))] justify-evenly gap-x-4 gap-y-7"
+      class="grid grid-cols-[repeat(auto-fill,minmax(8.25rem,1fr))] gap-x-5 gap-y-7"
     >
       <PaperGalleryItem
         v-for="(item, index) in entities"

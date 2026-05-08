@@ -547,6 +547,148 @@ export class ReferenceService {
     return outStr;
   }
 
+  async exportCitationStyle(
+    paperEntities: Entity[],
+    style: string
+  ): Promise<string> {
+    const paperEntityDrafts = paperEntities.map((paperEntity) => {
+      return new Entity(paperEntity);
+    });
+
+    if (style === "bibtex") {
+      return this.exportBibTexBody(paperEntityDrafts);
+    }
+
+    const lines = paperEntityDrafts.map((paper, index) =>
+      this._formatCitation(paper, style, index + 1)
+    );
+
+    return lines.join("\n");
+  }
+
+  private _formatCitation(paper: Entity, style: string, index: number) {
+    const authors = this._splitAuthorNames(paper.authors);
+    const year = paper.year || "n.d.";
+    const title = paper.title || "Untitled";
+    const venue = paper.journal || paper.booktitle || paper.howpublished || "";
+    const volume = paper.volume ? `, vol. ${paper.volume}` : "";
+    const number = paper.number ? `, no. ${paper.number}` : "";
+    const pages = paper.pages ? `, pp. ${paper.pages}` : "";
+    const doi = paper.doi ? ` doi: ${paper.doi}.` : "";
+
+    switch (style) {
+      case "ieee":
+        return `[${index}] ${this._formatAuthorsInitials(authors)}, "${title}," ${venue}${volume}${number}${pages}, ${year}.${doi}`;
+      case "mla":
+        return `${this._formatAuthorsMLA(authors)}. "${title}." ${venue}${pages ? `, pp. ${paper.pages}` : ""}, ${year}.${doi}`;
+      case "harvard":
+        return `${this._formatAuthorsHarvard(authors)} (${year}) '${title}', ${venue}${pages ? `, pp. ${paper.pages}` : ""}.${doi}`;
+      case "aaa":
+        return `${this._formatAuthorsHarvard(authors)} ${year}. ${title}. ${venue}${pages ? `: ${paper.pages}` : ""}.${doi}`;
+      case "ama":
+        return `${index}. ${this._formatAuthorsAMA(authors)} ${title}. ${venue}. ${year}${volume}${number}${pages}.${doi}`;
+      case "chicago-author-date":
+        return `${this._formatAuthorsChicago(authors)}. ${year}. "${title}." ${venue}${pages ? `: ${paper.pages}` : ""}.${doi}`;
+      case "apa":
+      default:
+        return `${this._formatAuthorsAPA(authors)} (${year}). ${title}. ${venue}.${doi}`;
+    }
+  }
+
+  private _splitAuthorNames(authors: string) {
+    return (authors || "")
+      .split(authors.includes(";") ? ";" : ",")
+      .map((name) => name.trim())
+      .filter(Boolean);
+  }
+
+  private _nameParts(name: string) {
+    const parts = name.trim().split(/\s+/);
+    return {
+      given: parts.slice(0, -1).join(" "),
+      family: parts[parts.length - 1] || name,
+    };
+  }
+
+  private _initials(given: string) {
+    return given
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => `${part[0].toUpperCase()}.`)
+      .join(" ");
+  }
+
+  private _formatAuthorsInitials(authors: string[]) {
+    if (authors.length === 0) {
+      return "Anonymous";
+    }
+    return authors
+      .map((author) => {
+        const { given, family } = this._nameParts(author);
+        return `${this._initials(given)} ${family}`.trim();
+      })
+      .join(", ");
+  }
+
+  private _formatAuthorsAPA(authors: string[]) {
+    if (authors.length === 0) {
+      return "Anonymous";
+    }
+    return authors
+      .map((author) => {
+        const { given, family } = this._nameParts(author);
+        return `${family}, ${this._initials(given)}`.trim();
+      })
+      .join(", ");
+  }
+
+  private _formatAuthorsMLA(authors: string[]) {
+    if (authors.length === 0) {
+      return "Anonymous";
+    }
+    const first = this._nameParts(authors[0]);
+    const firstAuthor = `${first.family}, ${first.given}`.trim();
+    if (authors.length === 1) {
+      return firstAuthor;
+    }
+    if (authors.length === 2) {
+      return `${firstAuthor}, and ${authors[1]}`;
+    }
+    return `${firstAuthor}, et al`;
+  }
+
+  private _formatAuthorsHarvard(authors: string[]) {
+    if (authors.length === 0) {
+      return "Anonymous";
+    }
+    if (authors.length === 1) {
+      return this._nameParts(authors[0]).family;
+    }
+    if (authors.length === 2) {
+      return `${this._nameParts(authors[0]).family} and ${
+        this._nameParts(authors[1]).family
+      }`;
+    }
+    return `${this._nameParts(authors[0]).family} et al.`;
+  }
+
+  private _formatAuthorsAMA(authors: string[]) {
+    return this._formatAuthorsInitials(authors).replaceAll(".", "");
+  }
+
+  private _formatAuthorsChicago(authors: string[]) {
+    if (authors.length === 0) {
+      return "Anonymous";
+    }
+    if (authors.length === 1) {
+      return authors[0];
+    }
+    if (authors.length === 2) {
+      return `${authors[0]} and ${authors[1]}`;
+    }
+    return `${authors[0]} et al.`;
+  }
+
   /**
    * Export plain text in folder.
    * @param folderName - The folder name.
@@ -640,6 +782,30 @@ export class ReferenceService {
         break;
       case "PlainText":
         copyStr = await this.exportPlainText(paperEntityDrafts);
+        break;
+      case "Citation-IEEE":
+        copyStr = await this.exportCitationStyle(paperEntityDrafts, "ieee");
+        break;
+      case "Citation-MLA":
+        copyStr = await this.exportCitationStyle(paperEntityDrafts, "mla");
+        break;
+      case "Citation-Harvard":
+        copyStr = await this.exportCitationStyle(paperEntityDrafts, "harvard");
+        break;
+      case "Citation-AAA":
+        copyStr = await this.exportCitationStyle(paperEntityDrafts, "aaa");
+        break;
+      case "Citation-AMA":
+        copyStr = await this.exportCitationStyle(paperEntityDrafts, "ama");
+        break;
+      case "Citation-Chicago":
+        copyStr = await this.exportCitationStyle(
+          paperEntityDrafts,
+          "chicago-author-date"
+        );
+        break;
+      case "Citation-APA":
+        copyStr = await this.exportCitationStyle(paperEntityDrafts, "apa");
         break;
       case "CSV":
         copyStr = this.exportCSV(paperEntityDrafts);

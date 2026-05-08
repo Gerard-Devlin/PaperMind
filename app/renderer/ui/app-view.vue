@@ -65,7 +65,10 @@ provide(
 const reloadPaperEntities = async () => {
   let querySentence: string;
   let fulltextQuerySetence: string | undefined = undefined;
-  if (uiState.commandBarSearchMode === "semantic") {
+  if (
+    uiState.commandBarSearchMode === "semantic" &&
+    uiState.querySentenceCommandbar.startsWith("semantic:")
+  ) {
     paperEntities.value = await PLAPI.semanticSearchService.search(
       uiState.commandBarText,
       20

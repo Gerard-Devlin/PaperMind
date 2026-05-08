@@ -9,8 +9,30 @@ import { HookService, IHookService } from "./hook-service";
 import { IEntityCollection, Entity } from "@/models/entity";
 import { PaperEntity } from "@/models/paper-entity";
 import { Supplementary } from "@/models/supplementary";
+import fs from "fs/promises";
+import path from "path";
 
 export const IScrapeService = createDecorator("scrapeService");
+
+type CommunityMetadataItem = {
+  title?: string;
+  authors?: string | { first_name?: string; last_name?: string }[];
+  publication?: string;
+  pubTime?: string;
+  pubType?: number;
+  doi?: string;
+  arxiv?: string;
+  pages?: string;
+  volume?: string;
+  number?: string;
+  publisher?: string;
+};
+
+type CommunityMetadataIndex = {
+  byDOI: Map<string, CommunityMetadataItem>;
+  byArxiv: Map<string, CommunityMetadataItem>;
+  byTitle: Map<string, CommunityMetadataItem>;
+};
 
 /**
  * ScrapeService transforms a data source, such as a local file, web page, etc., into a PaperEntity with fullfilled metadata.
@@ -32,6 +54,8 @@ export const IScrapeService = createDecorator("scrapeService");
  * | ----------------
  */
 export class ScrapeService extends Eventable<{}> {
+  private _communityMetadataIndex?: Promise<CommunityMetadataIndex>;
+
   constructor(
     @IHookService private readonly _hookService: HookService,
     @ILogService private readonly _logService: LogService
@@ -253,7 +277,13 @@ export class ScrapeService extends Eventable<{}> {
         );
     }
 
-    return scrapedPaperEntityDrafts.map((p) => this._toCurrentEntity(p));
+    const currentEntities = scrapedPaperEntityDrafts.map((p) =>
+      this._toCurrentEntity(p)
+    );
+
+    await this._fillCommunityMetadata(currentEntities);
+
+    return currentEntities;
   }
 
   /**
@@ -505,5 +535,237 @@ export class ScrapeService extends Eventable<{}> {
       default:
         return 0;
     }
+  }
+
+  private async _fillCommunityMetadata(entities: Entity[]) {
+    try {
+      const index = await this._loadCommunityMetadataIndex();
+
+      for (const entity of entities) {
+        const match = this._findCommunityMetadata(entity, index);
+        if (!match) {
+          continue;
+        }
+
+        this._mergeCommunityMetadata(entity, match);
+      }
+    } catch (error) {
+      this._logService.warn(
+        "Failed to load community metadata collection.",
+        `${(error as Error).message}`,
+        false,
+        "ScrapeService"
+      );
+    }
+  }
+
+  private async _loadCommunityMetadataIndex(): Promise<CommunityMetadataIndex> {
+    if (!this._communityMetadataIndex) {
+      this._communityMetadataIndex = this._buildCommunityMetadataIndex();
+    }
+
+    return this._communityMetadataIndex;
+  }
+
+  private async _buildCommunityMetadataIndex(): Promise<CommunityMetadataIndex> {
+    const index: CommunityMetadataIndex = {
+      byDOI: new Map(),
+      byArxiv: new Map(),
+      byTitle: new Map(),
+    };
+
+    const metadataRoot = await this._findCommunityMetadataRoot();
+    if (!metadataRoot) {
+      return index;
+    }
+
+    const jsonFiles = await this._walkJSONFiles(metadataRoot);
+    for (const file of jsonFiles) {
+      try {
+        const raw = JSON.parse(await fs.readFile(file, "utf8"));
+        const collection = Array.isArray(raw?.collection)
+          ? raw.collection
+          : Array.isArray(raw)
+            ? raw
+            : [];
+
+        for (const item of collection) {
+          this._addCommunityMetadataItem(index, item);
+        }
+      } catch (error) {
+        this._logService.warn(
+          "Failed to read a community metadata file.",
+          `${file}: ${(error as Error).message}`,
+          false,
+          "ScrapeService"
+        );
+      }
+    }
+
+    this._logService.info(
+      `Loaded ${index.byTitle.size} community metadata item(s).`,
+      "",
+      false,
+      "ScrapeService"
+    );
+
+    return index;
+  }
+
+  private async _findCommunityMetadataRoot() {
+    const resourcesPath =
+      (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath ||
+      "";
+    const candidates = [
+      path.join(
+        process.cwd(),
+        "paperlib-community-metadata-collection-main",
+        "metadata"
+      ),
+      path.join(
+        resourcesPath,
+        "bundled-extensions",
+        "paperlib-community-metadata-collection-main",
+        "metadata"
+      ),
+      path.join(resourcesPath, "paperlib-community-metadata-collection-main", "metadata"),
+    ];
+
+    for (const candidate of candidates) {
+      try {
+        const stat = await fs.stat(candidate);
+        if (stat.isDirectory()) {
+          return candidate;
+        }
+      } catch {
+        // Try the next candidate.
+      }
+    }
+
+    return undefined;
+  }
+
+  private async _walkJSONFiles(root: string): Promise<string[]> {
+    const entries = await fs.readdir(root, { withFileTypes: true });
+    const files: string[] = [];
+
+    for (const entry of entries) {
+      const fullPath = path.join(root, entry.name);
+      if (entry.isDirectory()) {
+        files.push(...(await this._walkJSONFiles(fullPath)));
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith(".json")) {
+        files.push(fullPath);
+      }
+    }
+
+    return files;
+  }
+
+  private _addCommunityMetadataItem(
+    index: CommunityMetadataIndex,
+    item: CommunityMetadataItem
+  ) {
+    const doi = this._normalizeIdentifier(item.doi);
+    const arxiv = this._normalizeIdentifier(item.arxiv);
+    const title = this._normalizeTitle(item.title);
+
+    if (doi && !index.byDOI.has(doi)) {
+      index.byDOI.set(doi, item);
+    }
+    if (arxiv && !index.byArxiv.has(arxiv)) {
+      index.byArxiv.set(arxiv, item);
+    }
+    if (title && !index.byTitle.has(title)) {
+      index.byTitle.set(title, item);
+    }
+  }
+
+  private _findCommunityMetadata(
+    entity: Entity,
+    index: CommunityMetadataIndex
+  ) {
+    const doi = this._normalizeIdentifier(entity.doi);
+    if (doi && index.byDOI.has(doi)) {
+      return index.byDOI.get(doi);
+    }
+
+    const arxiv = this._normalizeIdentifier(entity.arxiv);
+    if (arxiv && index.byArxiv.has(arxiv)) {
+      return index.byArxiv.get(arxiv);
+    }
+
+    const title = this._normalizeTitle(entity.title);
+    if (title && index.byTitle.has(title)) {
+      return index.byTitle.get(title);
+    }
+
+    return undefined;
+  }
+
+  private _mergeCommunityMetadata(
+    entity: Entity,
+    item: CommunityMetadataItem
+  ) {
+    entity.title = entity.title || item.title || "";
+    entity.authors = entity.authors || this._formatCommunityAuthors(item.authors);
+    entity.year = entity.year || `${item.pubTime || ""}`.slice(0, 4);
+    entity.doi = entity.doi || item.doi || undefined;
+    entity.arxiv = entity.arxiv || item.arxiv || undefined;
+    entity.pages = entity.pages || item.pages || undefined;
+    entity.volume = entity.volume || item.volume || undefined;
+    entity.number = entity.number || item.number || undefined;
+    entity.publisher = entity.publisher || item.publisher || undefined;
+
+    const publication = item.publication || "";
+    if (
+      item.pubType !== undefined &&
+      !entity.journal &&
+      !entity.booktitle &&
+      !entity.howpublished
+    ) {
+      entity.type = this._legacyPubTypeToEntityType(item.pubType);
+    }
+
+    if (publication) {
+      if (entity.type === "inproceedings") {
+        entity.booktitle = entity.booktitle || publication;
+      } else if (entity.type === "article") {
+        entity.journal = entity.journal || publication;
+      } else {
+        entity.howpublished = entity.howpublished || publication;
+      }
+    }
+  }
+
+  private _formatCommunityAuthors(
+    authors: CommunityMetadataItem["authors"]
+  ): string {
+    if (!authors) {
+      return "";
+    }
+
+    if (typeof authors === "string") {
+      return authors;
+    }
+
+    return authors
+      .map((author) =>
+        [author.first_name, author.last_name].filter(Boolean).join(" ").trim()
+      )
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  private _normalizeIdentifier(identifier?: string) {
+    return `${identifier || ""}`.trim().toLowerCase();
+  }
+
+  private _normalizeTitle(title?: string) {
+    return `${title || ""}`
+      .toLowerCase()
+      .replace(/[\u2010-\u2015]/g, "-")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .replace(/\s+/g, " ");
   }
 }

@@ -347,6 +347,15 @@ const fuzzyScrapeSelectedEntities = async () => {
   }
 };
 
+const generateAITagsForSelectedEntities = async () => {
+  if (uiState.contentType === "library") {
+    const paperEntityDrafts = uiState.selectedPaperEntities.map(
+      (paperEntity) => new Entity(paperEntity)
+    );
+    await PLAPI.paperService.generateAITags(paperEntityDrafts);
+  }
+};
+
 const removeSelectedEntitiesFrom = (
   categorizeType: CategorizerType,
   categorizeId: OID
@@ -591,6 +600,15 @@ disposable(
 
 disposable(
   PLMainAPI.contextMenuService.on(
+    "dataContextMenuGenerateAITagsClicked",
+    () => {
+      void generateAITagsForSelectedEntities();
+    }
+  )
+);
+
+disposable(
+  PLMainAPI.contextMenuService.on(
     "dataContextMenuRemoveFromClicked",
     (newValues: { value: { type: CategorizerType; id: OID } }) => {
       removeSelectedEntitiesFrom(newValues.value.type, newValues.value.id);
@@ -635,6 +653,15 @@ disposable(
     "dataContextMenuExportPlainTextClicked",
     () => {
       exportSelectedEntities("PlainText");
+    }
+  )
+);
+
+disposable(
+  PLMainAPI.contextMenuService.on(
+    "dataContextMenuExportCitationStyleClicked",
+    (newValues: { value: string }) => {
+      exportSelectedEntities(`Citation-${newValues.value}`);
     }
   )
 );

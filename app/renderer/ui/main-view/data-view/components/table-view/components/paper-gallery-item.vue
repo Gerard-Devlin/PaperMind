@@ -117,11 +117,11 @@ watch(
 
 <template>
   <div
-    class="group w-36 select-none cursor-pointer"
+    class="group w-full min-w-[8.25rem] max-w-[10rem] select-none cursor-pointer"
     :class="active ? 'text-accentlight dark:text-accentdark' : ''"
   >
     <div
-      class="h-48 w-36 overflow-hidden rounded border-[1px] bg-neutral-100 shadow-sm transition dark:border-neutral-700 dark:bg-neutral-700"
+      class="aspect-[3/4] w-full overflow-hidden rounded border-[1px] bg-neutral-100 shadow-sm transition dark:border-neutral-700 dark:bg-neutral-700"
       :class="
         active
           ? 'ring-2 ring-accentlight dark:ring-accentdark'

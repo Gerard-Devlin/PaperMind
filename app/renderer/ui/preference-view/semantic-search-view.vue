@@ -7,7 +7,6 @@ import Toggle from "./components/toggle.vue";
 
 const prefState = PLMainAPI.preferenceService.useState();
 const qwenKey = ref("");
-const askKey = ref("");
 const testing = ref(false);
 const indexing = ref(false);
 const statusText = ref("");
@@ -20,13 +19,6 @@ const saveQwenKey = async (value: string) => {
   qwenKey.value = value;
   if (value.trim()) {
     await PLMainAPI.preferenceService.setPassword("qwenEmbedding", value.trim());
-  }
-};
-
-const saveAskKey = async (value: string) => {
-  askKey.value = value;
-  if (value.trim()) {
-    await PLMainAPI.preferenceService.setPassword("askAPIKey", value.trim());
   }
 };
 
@@ -67,44 +59,31 @@ const rebuildIndex = async () => {
     <Toggle
       class="mb-5"
       title="Auto AI Tags"
-      info="When papers are imported or updated, PaperMind asks the chat model to add short research tags."
+      info="When papers are imported or updated, PaperMind uses the Qwen API key above to add short research tags automatically."
       :enable="prefState.autoAITagging"
       @event:change="(value) => updatePref('autoAITagging', value)"
     />
 
-    <div class="text-sm font-semibold mb-3 mt-2">Ask</div>
-
     <Input
       class="mb-5"
-      title="Ask API Key"
-      info="Stored in the system keychain. Any OpenAI-compatible chat API works."
-      :value="askKey"
-      type="password"
-      placeholder="sk-..."
-      show-saving-status
-      @event:submit="saveAskKey"
+      title="AI Tagging Base URL"
+      info="OpenAI-compatible chat completions endpoint root for automatic tags."
+      :value="prefState.qwenChatBaseURL"
+      type="text"
+      placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1"
+      @event:change="(value) => updatePref('qwenChatBaseURL', value)"
+      @event:submit="(value) => updatePref('qwenChatBaseURL', value)"
     />
 
     <Input
       class="mb-5"
-      title="Ask API Base URL"
-      info="OpenAI-compatible chat completions endpoint root."
-      :value="prefState.askAPIBaseURL"
+      title="AI Tagging Model"
+      info="Qwen chat model used to generate automatic tags."
+      :value="prefState.qwenChatModel"
       type="text"
-      placeholder="https://api.openai.com/v1"
-      @event:change="(value) => updatePref('askAPIBaseURL', value)"
-      @event:submit="(value) => updatePref('askAPIBaseURL', value)"
-    />
-
-    <Input
-      class="mb-5"
-      title="Ask Model"
-      info="The chat model used by the Ask panel."
-      :value="prefState.askModel"
-      type="text"
-      placeholder="gpt-4o-mini"
-      @event:change="(value) => updatePref('askModel', value)"
-      @event:submit="(value) => updatePref('askModel', value)"
+      placeholder="qwen-plus"
+      @event:change="(value) => updatePref('qwenChatModel', value)"
+      @event:submit="(value) => updatePref('qwenChatModel', value)"
     />
 
     <Input

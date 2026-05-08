@@ -101,8 +101,8 @@ export interface IPreferenceStore {
   qwenEmbeddingBaseURL: string;
   qwenEmbeddingModel: string;
   qwenEmbeddingDimensions: number;
-  askAPIBaseURL: string;
-  askModel: string;
+  qwenChatBaseURL: string;
+  qwenChatModel: string;
   autoAITagging: boolean;
 }
 
@@ -231,8 +231,8 @@ const _defaultPreferences: IPreferenceStore = {
   qwenEmbeddingBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenEmbeddingModel: "text-embedding-v4",
   qwenEmbeddingDimensions: 1024,
-  askAPIBaseURL: "https://api.openai.com/v1",
-  askModel: "gpt-4o-mini",
+  qwenChatBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  qwenChatModel: "qwen-plus",
   autoAITagging: true,
 };
 

@@ -96,8 +96,8 @@ export interface IPreferenceStore {
   qwenEmbeddingBaseURL: string;
   qwenEmbeddingModel: string;
   qwenEmbeddingDimensions: number;
-  askAPIBaseURL: string;
-  askModel: string;
+  qwenChatBaseURL: string;
+  qwenChatModel: string;
   autoAITagging: boolean;
 }
 

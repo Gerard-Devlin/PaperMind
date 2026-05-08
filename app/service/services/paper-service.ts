@@ -164,7 +164,8 @@ export class PaperService extends Eventable<IPaperServiceState> {
     paperEntityDrafts: IEntityCollection,
     updateCache: boolean = true,
     isUpdate = false,
-    fromSync: boolean = false
+    fromSync: boolean = false,
+    applyAITags: boolean = true
   ): Promise<IEntityCollection> {
     if (this._databaseCore.getState("dbInitializing")) {
       return [];
@@ -211,7 +212,9 @@ export class PaperService extends Eventable<IPaperServiceState> {
       );
     });
 
-    await this._applyAITags(fileMovedPaperEntityDrafts);
+    if (applyAITags) {
+      await this._applyAITags(fileMovedPaperEntityDrafts);
+    }
 
     // #endregion ========================================================
 
@@ -310,11 +313,37 @@ export class PaperService extends Eventable<IPaperServiceState> {
       return;
     }
 
-    await Promise.all(
-      paperEntities.map(async (paperEntity) => {
+    await this._generateAITagsForDrafts(paperEntities);
+  }
+
+  @processing(ProcessingKey.General)
+  @errorcatching("Failed to generate AI tags.", true, "PaperService", [])
+  async generateAITags(paperEntities: IEntityCollection) {
+    if (this._databaseCore.getState("dbInitializing")) {
+      return [];
+    }
+
+    const paperEntityDrafts = paperEntities.map(
+      (paperEntity) => new Entity(paperEntity)
+    );
+    await this._generateAITagsForDrafts(paperEntityDrafts);
+
+    return await this.update(paperEntityDrafts, false, true, false, false);
+  }
+
+  private async _generateAITagsForDrafts(paperEntities: IEntityCollection) {
+    const paperEntityDrafts = [...paperEntities];
+    const libraryTags = await this._loadLibraryTagNames();
+    const reusableTags = [...libraryTags];
+    const maxTagCount = Math.max(
+      4,
+      Math.min(8, Math.ceil(paperEntityDrafts.length / 3) + 2)
+    );
+
+    for (const paperEntity of paperEntityDrafts) {
         try {
           const existingTags = new Set(
-            (paperEntity.tags || []).map((tag) => tag.name?.toLowerCase())
+            (paperEntity.tags || []).map((tag) => this._normalizeTagName(tag.name))
           );
           const tags = await this._askService.suggestTags({
             title: paperEntity.title,
@@ -326,11 +355,15 @@ export class PaperService extends Eventable<IPaperServiceState> {
               paperEntity.publisher ||
               paperEntity.howpublished,
             abstract: paperEntity.abstract,
+            existingTags: reusableTags,
           });
 
-          for (const tag of tags) {
-            if (!existingTags.has(tag.toLowerCase())) {
+          for (const tag of this._canonicalizeAITags(tags, reusableTags, maxTagCount)) {
+            if (!existingTags.has(this._normalizeTagName(tag))) {
               paperEntity.tags.push(new PaperTag({ name: tag }, true));
+              if (!reusableTags.some((t) => this._normalizeTagName(t) === this._normalizeTagName(tag))) {
+                reusableTags.push(tag);
+              }
             }
           }
         } catch (error) {
@@ -341,8 +374,79 @@ export class PaperService extends Eventable<IPaperServiceState> {
             "PaperService"
           );
         }
-      })
+    }
+  }
+
+  private async _loadLibraryTagNames() {
+    const tagNames = new Set<string>();
+
+    try {
+      const realm = await this._databaseCore.realm();
+      realm.objects<PaperTag>("PaperTag").forEach((tag) => {
+        if (tag.name && tag.name !== "Tags") {
+          tagNames.add(tag.name);
+        }
+      });
+    } catch {
+      // Tag reuse is a quality improvement. If Realm is not ready here, continue without it.
+    }
+
+    return [...tagNames].slice(0, 80);
+  }
+
+  private _canonicalizeAITags(
+    tags: string[],
+    libraryTags: string[],
+    maxTagCount: number
+  ) {
+    const canonicalTags = new Map(
+      libraryTags.map((tag) => [this._normalizeTagName(tag), tag])
     );
+    const result: string[] = [];
+    const seen = new Set<string>();
+    const canCreateNewTag = libraryTags.length < maxTagCount;
+
+    for (const rawTag of tags) {
+      const normalized = this._normalizeTagName(rawTag);
+      if (!normalized || seen.has(normalized)) {
+        continue;
+      }
+
+      const existingTag = canonicalTags.get(normalized);
+      if (!existingTag && !canCreateNewTag) {
+        continue;
+      }
+
+      const tag = existingTag || this._formatTagName(rawTag);
+      result.push(tag);
+      seen.add(normalized);
+
+      if (result.length >= 1) {
+        break;
+      }
+    }
+
+    return result;
+  }
+
+  private _normalizeTagName(tag?: string) {
+    return `${tag || ""}`
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  private _formatTagName(tag: string) {
+    return tag
+      .trim()
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .split(" ")
+      .slice(0, 3)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(" ");
   }
 
   /**
