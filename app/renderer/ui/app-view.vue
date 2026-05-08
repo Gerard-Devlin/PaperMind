@@ -281,7 +281,7 @@ const armLoadingWatchdog = () => {
     PLAPI.logService.warn(
       "Initialization timeout fallback triggered.",
       "Continue launching UI without blocking splash screen.",
-      true,
+      false,
       "UI"
     );
     removeLoading();
