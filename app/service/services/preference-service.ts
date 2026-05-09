@@ -99,6 +99,7 @@ export interface IPreferenceStore {
   qwenChatBaseURL: string;
   qwenChatModel: string;
   autoAITagging: boolean;
+  showAPISetupPrompt: boolean;
 }
 
 export const IPreferenceService = createDecorator("preferenceService");

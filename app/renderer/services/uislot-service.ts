@@ -95,8 +95,9 @@ export class UISlotService extends PiniaEventable<IUISlotState> {
     return (
       merged.includes("research topic is cs") ||
       merged.includes("metadata scraper bundle") ||
-      merged.includes("cs 学科") ||
-      merged.includes("metadata scrape 扩展首选项")
+      merged.includes("official scrape extension is not") ||
+      merged.includes("failed to prepare bundled scrape extensions") ||
+      merged.includes("extension initialization fallback is applied")
     );
   }
 }

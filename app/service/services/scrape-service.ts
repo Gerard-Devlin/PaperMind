@@ -74,7 +74,7 @@ export class ScrapeService extends Eventable<{}> {
       this._logService.warn(
         "Official scrape extension is not installed yet.",
         "",
-        true,
+        false,
         "ScrapeService"
       );
       return false;
@@ -85,7 +85,7 @@ export class ScrapeService extends Eventable<{}> {
         this._logService.warn(
           "Failed to prepare bundled scrape extensions.",
           `${(error as Error).message}`,
-          true,
+          false,
           "ScrapeService"
         );
       }
@@ -105,7 +105,7 @@ export class ScrapeService extends Eventable<{}> {
       this._logService.warn(
         "Official scrape extension is not ready yet.",
         `Current status: ${status}`,
-        true,
+        false,
         "ScrapeService"
       );
       return false;
