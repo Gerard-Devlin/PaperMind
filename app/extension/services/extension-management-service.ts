@@ -38,15 +38,6 @@ const BUNDLED_SCRAPER_EXTENSION_PATHS: Record<
     ),
     preferPackage: true,
   },
-  "@future-scholars/paperlib-citation-count-extension": {
-    sourceDir: "paperlib-citation-count-extension-main",
-    packageDir: path.join(
-      "node_modules",
-      "@future-scholars",
-      "paperlib-citation-count-extension"
-    ),
-    preferPackage: true,
-  },
 };
 
 export const IExtensionManagementService = createDecorator(
@@ -160,10 +151,7 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
         continue;
       }
 
-      // Force clean old extracted files first to avoid stale/mixed asset bundles
-      // (e.g. index.html points to a hashed JS chunk that no longer exists).
-      await this.clean(extensionID, true);
-      await this.install(bundledPath, false, "latest", true);
+      await this.install(bundledPath, false);
       const info = this._installedExtensionInfos[extensionID];
       if (info) {
         info.verified = true;
@@ -412,8 +400,7 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
   async install(
     extensionIDorPath: string,
     notify = true,
-    version: string = "latest",
-    force = false
+    version: string = "latest"
   ) {
     let extensionID;
     try {
@@ -430,7 +417,7 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
       if (isLocalPath(extensionIDorPath)) {
         if (fs.existsSync(extensionIDorPath)) {
           info = await this._extManager.installFromPath(extensionIDorPath, {
-            force,
+            force: false,
           });
           installFromFile = true;
           extensionID = info.name;

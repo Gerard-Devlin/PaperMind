@@ -19,7 +19,6 @@ import DevView from "./dev-view/dev-view.vue";
 import EditView from "./edit-view/edit-view.vue";
 import FeedEditView from "./edit-view/feed-edit-view.vue";
 import PaperSmartFilterEditView from "./edit-view/smartfilter-edit-view.vue";
-import FirstRunAPIView from "./first-run-api-view/first-run-api-view.vue";
 import MainView from "./main-view/main-view.vue";
 import PreferenceView from "./preference-view/preference-view.vue";
 import PresettingView from "./presetting-view/presetting-view.vue";
@@ -132,41 +131,6 @@ const removeBuiltInWelcomePapers = async () => {
   }
 
   await PLAPI.paperService.delete(seededWelcomePapers.map((paper) => paper._id));
-};
-
-const firstRunAPIViewShown = ref(false);
-
-const checkFirstRunAPISetup = async () => {
-  const shouldPrompt = (await PLMainAPI.preferenceService.get(
-    "showAPISetupPrompt"
-  )) as boolean;
-  if (!shouldPrompt) {
-    return;
-  }
-
-  const existingKey =
-    (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) || "";
-  if (!existingKey.trim()) {
-    firstRunAPIViewShown.value = true;
-  }
-};
-
-const onFirstRunAPILater = async () => {
-  await PLMainAPI.preferenceService.set({ showAPISetupPrompt: false });
-  firstRunAPIViewShown.value = false;
-};
-
-const onFirstRunAPISave = async (apiKey: string) => {
-  const trimmed = apiKey.trim();
-  if (!trimmed) {
-    return;
-  }
-  await PLMainAPI.preferenceService.setPassword("qwenEmbedding", trimmed);
-  await PLMainAPI.preferenceService.set({
-    showAPISetupPrompt: false,
-    semanticSearchEnabled: true,
-  });
-  firstRunAPIViewShown.value = false;
 };
 
 disposable(
@@ -349,7 +313,6 @@ disposable(
     await reloadFolders();
     await reloadPaperSmartFilters();
     removeLoading();
-    await checkFirstRunAPISetup();
     reloadFeedEntities();
     reloadFeeds();
     var endTime = Date.now();
@@ -671,11 +634,5 @@ onMounted(async () => {
     >
       <WelcomeView v-if="prefState.showWelcome" />
     </Transition>
-
-    <FirstRunAPIView
-      :open="firstRunAPIViewShown"
-      @event:later="onFirstRunAPILater"
-      @event:save="onFirstRunAPISave"
-    />
   </div>
 </template>

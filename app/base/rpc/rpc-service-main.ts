@@ -1,4 +1,4 @@
-import { MessageChannelMain, MessagePortMain, UtilityProcess } from "electron";
+import { MessageChannelMain, UtilityProcess } from "electron";
 import { Graph } from "graph-data-structure";
 
 import { ProcessStorage } from "@/base/process-storage";
@@ -33,20 +33,6 @@ export class MainProcessRPCService extends RPCService {
     }
 
     this._processGraph = Graph();
-  }
-
-  private _postResponsePortToWindow(
-    windows: WindowStorage,
-    windowId: string,
-    processID: string,
-    port: MessagePortMain
-  ) {
-    const win = windows.get(windowId);
-    const webPreferences = (win.webContents as any).getLastWebPreferences?.();
-    const channel = webPreferences?.contextIsolation
-      ? "forward-response-port"
-      : "response-port";
-    win.webContents.postMessage(channel, processID, [port]);
   }
 
   // ============================================================
@@ -89,12 +75,13 @@ export class MainProcessRPCService extends RPCService {
           this._exposeAPIGroup && protocol.sendExposedAPI(this._exposeAPIGroup);
 
           if (windows?.has(senderID)) {
-            this._postResponsePortToWindow(
-              windows,
-              senderID,
-              this._processID,
-              portForRequester
-            );
+            windows
+              .get(senderID)
+              .webContents.postMessage(
+                "forward-response-port",
+                this._processID,
+                [portForRequester]
+              );
           }
 
           if (processes?.has(senderID)) {
@@ -111,12 +98,11 @@ export class MainProcessRPCService extends RPCService {
             new MessageChannelMain();
           // Send the port to the requester
           if (windows?.has(senderID)) {
-            this._postResponsePortToWindow(
-              windows,
-              senderID,
-              processID,
-              portForRequester
-            );
+            windows
+              .get(senderID)
+              .webContents.postMessage("forward-response-port", processID, [
+                portForRequester,
+              ]);
           }
           if (processes?.has(senderID)) {
             processes
@@ -127,12 +113,11 @@ export class MainProcessRPCService extends RPCService {
           }
           // Send the port to the registered process
           if (windows?.has(processID)) {
-            this._postResponsePortToWindow(
-              windows,
-              processID,
-              senderID,
-              portForTheir
-            );
+            windows
+              .get(processID)
+              .webContents.postMessage("forward-response-port", senderID, [
+                portForTheir,
+              ]);
           }
           if (processes?.has(processID)) {
             processes
