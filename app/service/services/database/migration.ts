@@ -216,6 +216,14 @@ export function migrate(oldRealm: Realm, newRealm: Realm) {
     }
     newRealm.deleteModel("PaperPaperSmartFilter");
   }
+
+  if (oldVersion <= 10) {
+    const newEntities = newRealm.objects<any>("Entity");
+    for (const objectIndex in newEntities) {
+      const newEntity = newEntities[objectIndex];
+      newEntity["codes"] = newEntity["codes"] || [];
+    }
+  }
 }
 
 export function syncMigrate(
@@ -336,6 +344,14 @@ export function syncMigrate(
         }
       );
       smartFilterRoot.children.push(newSmartFilter);
+    }
+  }
+
+  if (oldVersion <= 10) {
+    const entities = realm.objects<any>("Entity");
+    for (const objectIndex in entities) {
+      const entity = entities[objectIndex];
+      entity["codes"] = entity["codes"] || [];
     }
   }
 }

@@ -258,7 +258,9 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
         },
       },
       {
-        label: "Generate AI Tags",
+        label: `${this._preferenceService.get("language")}`.startsWith("zh")
+          ? "生成 AI 标签"
+          : "Generate AI Tags",
         click: () => {
           this.fire("dataContextMenuGenerateAITagsClicked");
         },

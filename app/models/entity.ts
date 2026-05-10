@@ -57,6 +57,7 @@ export interface IEntity {
   school?: string;
   institution?: string;
   address?: string;
+  codes?: string[];
 
   // For papers
   rating?: number;
@@ -106,6 +107,10 @@ export class Entity implements IEntity {
       school: "string?",
       institution: "string?",
       address: "string?",
+      codes: {
+        type: "list",
+        objectType: "string",
+      },
 
       rating: "int?",
       tags: {
@@ -154,6 +159,7 @@ export class Entity implements IEntity {
   school?: string;
   institution?: string;
   address?: string;
+  codes?: string[];
   rating?: number;
   tags!: PaperTag[];
   folders!: PaperFolder[];
@@ -245,6 +251,7 @@ export class Entity implements IEntity {
     this.school = object?.school;
     this.institution = object?.institution;
     this.address = object?.address;
+    this.codes = object?.codes?.map((code) => code) || [];
 
     this.rating = object?.rating;
     this.tags = object?.tags?.map((tag) => new PaperTag(tag, false)) || [];
@@ -297,6 +304,7 @@ export type IEntityRealmObject = Entity &
     | "school"
     | "institution"
     | "address"
+    | "codes"
     | "rating"
     | "tags"
     | "folders"

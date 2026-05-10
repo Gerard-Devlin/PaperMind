@@ -33,11 +33,20 @@ import { uid } from "@/base/misc";
 // ================================
 
 const uiState = PLUIAPILocal.uiStateService.useState();
+const uiSlotState = PLUIAPILocal.uiSlotService.useState();
 const prefState = PLMainAPI.preferenceService.useState();
 const showAPISetup = ref(false);
 const setupAPIKey = ref("");
 const setupSaving = ref(false);
 const setupIsCN = computed(() => prefState.language === "zh-CN");
+const hasRenderableOverlayNotifications = computed(() => {
+  const notifications = Object.values(uiSlotState.overlayNotifications || {});
+  return notifications.some((item: any) => {
+    const title = `${item?.title || ""}`.trim();
+    const content = `${item?.content || ""}`.trim();
+    return title.length > 0 || content.length > 0;
+  });
+});
 
 // ================================
 // Data
@@ -68,6 +77,10 @@ provide(
 const reloadPaperEntities = async () => {
   let querySentence: string;
   let fulltextQuerySetence: string | undefined = undefined;
+  const hasCommandSearch =
+    `${uiState.commandBarText || ""}`.trim().length > 0 ||
+    `${uiState.querySentenceCommandbar || ""}`.startsWith("semantic:");
+
   if (
     uiState.commandBarSearchMode === "semantic" &&
     uiState.querySentenceCommandbar.startsWith("semantic:")
@@ -81,15 +94,15 @@ const reloadPaperEntities = async () => {
   }
 
   if (uiState.querySentenceCommandbar.includes("(fulltext contains")) {
-    querySentence = uiState.querySentencesSidebar
-      .map((x) => `(${x})`)
-      .join(" AND ");
+    querySentence = hasCommandSearch
+      ? ""
+      : uiState.querySentencesSidebar.map((x) => `(${x})`).join(" AND ");
     fulltextQuerySetence = uiState.querySentenceCommandbar;
   } else {
-    querySentence = [
-      uiState.querySentenceCommandbar,
-      ...uiState.querySentencesSidebar,
-    ]
+    const sentenceParts = hasCommandSearch
+      ? [uiState.querySentenceCommandbar]
+      : [uiState.querySentenceCommandbar, ...uiState.querySentencesSidebar];
+    querySentence = sentenceParts
       .filter((x) => x)
       .map((x) => `(${x})`)
       .join(" AND ");
@@ -635,7 +648,9 @@ onMounted(async () => {
       leave-from-class="transform opacity-100"
       leave-to-class="transform opacity-0"
     >
-      <OverlayNotificationView v-if="uiState.overlayNoticationShown" />
+      <OverlayNotificationView
+        v-if="uiState.overlayNoticationShown && hasRenderableOverlayNotifications"
+      />
     </Transition>
 
     <Transition

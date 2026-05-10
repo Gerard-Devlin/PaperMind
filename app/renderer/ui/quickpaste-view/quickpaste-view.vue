@@ -46,11 +46,11 @@ const onSearchTextChanged = debounce(async () => {
         flaged: false,
         tag: "",
         folder: "",
-        limit: 8,
       }).toString(),
       mainviewSortBy.value,
       mainviewSortOrder.value
     )) as unknown as PaperEntity[];
+    paperEntities.value = paperEntities.value.slice(0, 8);
 
     // @ts-ignore
     paperEntities.value.push({

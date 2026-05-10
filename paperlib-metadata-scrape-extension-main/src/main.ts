@@ -1,4 +1,4 @@
-import { PLAPI, PLExtAPI, PLExtension, PLMainAPI } from "paperlib-api/api";
+﻿import { PLAPI, PLExtAPI, PLExtension, PLMainAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 
 import { MetadataScrapeService } from "@/services/metadata-scrape-service";
@@ -298,39 +298,11 @@ class PaperlibMetadataScrapeExtension extends PLExtension {
     }
   }
 
-  private async _showPresettingHint() {
+    private async _showPresettingHint() {
     if (!PLExtAPI.extensionPreferenceService.get(this.id, "show-presetting-hint")) {
       return;
     }
-    // PaperMind customization: disable this onboarding popup.
-    PLExtAPI.extensionPreferenceService.set(this.id, {
-      "show-presetting-hint": false,
-    });
-    return;
 
-    const presetting = PLExtAPI.extensionPreferenceService.get(
-      this.id,
-      "presetting",
-    ) as string;
-
-    const lang = (await PLAPI.preferenceService.get("language")) as string;
-
-    const title = lang === "zh-CN" ? "选择最佳的元数据抓取器组合" : "Choose Your Best Metadata Scraper Bundle";
-    const content = lang === "zh-CN" ? "<div>如果您是 CS 学科，使用默认的元数据抓取器组合没有问题。</div><div>但是对于其他学科，您需要在 Metadata Scrape 扩展首选项中自定义元数据抓取器组合。比如医学生物学科的用户，请手动打开 PubMed。<p style='color: rgb(239 68 68)'>合适的组合可以加快元数据抓取的速度，提高准确度。</p></div><div>请点击<b>右上角设置</b>-进入<b>插件界面</b>-点击 paperlib-metadata-scraper-extension 的<b>小齿轮</b>进行设置。</div><div>抓取器并非越多越好，合适的组合才能取得速度与精度的权衡。</div>" : "<div>Using the default metadata scraper bundle may not be a problem if your research topic is CS.</div><div>But for other research fields, it would be nessasary to customize your metadata scraper bundle in the extension preference. For example, users in the field of medical biology, please manually turn on PubMed. <p style='color: rgb(239 68 68)'>A suitable bundle can speed up your metadata scraping and improve accuracy.</p></div><div>Please click the <b>setting button in the upper right corner</b> - enter the <b>extension tab</b> - click the <b>small gear</b> of paperlib-metadata-scraper-extension to set.</div><div>More scrapers are not always better. A suitable bundle gives you a trade-off between speed and accuracy.</div>";
-
-    if (presetting === "general") {
-      await PLAPI.uiSlotService.updateSlot("overlayNotifications", {
-        [`${this.id}-presetting-hint`]: {
-          title,
-          content,
-        }
-      })
-      await PLAPI.uiStateService.setState({
-        "overlayNoticationShown": true
-      })
-
-
-    }
     PLExtAPI.extensionPreferenceService.set(this.id, {
       "show-presetting-hint": false,
     });
@@ -345,3 +317,4 @@ async function initialize() {
 }
 
 export { initialize };
+

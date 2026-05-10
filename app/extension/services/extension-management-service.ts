@@ -181,10 +181,6 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
     bundled: { sourceDir: string; packageDir: string; preferPackage?: boolean },
     force = false
   ) {
-    if (this._installedExtensions[extensionID] && !force) {
-      return;
-    }
-
     const bundledPath = this._resolveBundledExtensionPath(bundled);
     if (!bundledPath) {
       PLAPI.logService.warn(
@@ -193,6 +189,16 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
         false,
         "ExtManagementService"
       );
+      return;
+    }
+
+    const installedInfo = this._installedExtensionInfos[extensionID];
+    const sameOrigin =
+      installedInfo &&
+      installedInfo.originLocation &&
+      path.normalize(installedInfo.originLocation) === path.normalize(bundledPath);
+
+    if (this._installedExtensions[extensionID] && !force && sameOrigin) {
       return;
     }
 

@@ -444,6 +444,7 @@ export class ScrapeService extends Eventable<{}> {
         folders: raw.folders || [],
         flag: raw.flag || false,
         note: raw.note || "",
+        codes: raw.codes || [],
         supplementaries,
         defaultSup,
       });
@@ -498,6 +499,7 @@ export class ScrapeService extends Eventable<{}> {
       folders: entity?.folders || [],
       flag: entity?.flag || false,
       note: entity?.note || "",
+      codes: entity?.codes || [],
       pages: entity?.pages || "",
       volume: entity?.volume || "",
       number: entity?.number || "",

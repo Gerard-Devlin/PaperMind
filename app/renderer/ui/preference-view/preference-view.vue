@@ -10,6 +10,7 @@ import {
   BIconLayoutSidebar,
   // BIconPuzzle,
   BIconSearch,
+  BIconFunnel,
   BIconViewList,
 } from "bootstrap-icons-vue";
 import { onMounted, ref } from "vue";
@@ -25,6 +26,7 @@ import HotkeyView from "./hotkey-view.vue";
 import ImportView from "./import-view.vue";
 import MainviewView from "./mainview-view.vue";
 import ProxyView from "./proxy-view.vue";
+import ScrapeView from "./scrape-view.vue";
 import SemanticSearchView from "./semantic-search-view.vue";
 import SidebarView from "./sidebar-view.vue";
 
@@ -125,6 +127,13 @@ onMounted(async () => {
           >
             <BIconSearch class="my-auto text-xs" />
           </SectionItem>
+          <SectionItem
+            :name="$i18n.locale.startsWith('zh') ? '抓取设置' : 'Scrape'"
+            :active="preferenceTab === 'scrape'"
+            @click="preferenceTab = 'scrape'"
+          >
+            <BIconFunnel class="my-auto text-xs" />
+          </SectionItem>
           <!-- <SectionItem
             :name="$t('preference.extension')"
             :active="preferenceTab === 'extension'"
@@ -160,6 +169,7 @@ onMounted(async () => {
         <ExportView v-if="preferenceTab === 'export'" />
         <HotkeyView v-if="preferenceTab === 'hotkey'" />
         <SemanticSearchView v-if="preferenceTab === 'semantic-search'" />
+        <ScrapeView v-if="preferenceTab === 'scrape'" />
         <!-- <AboutView v-if="preferenceTab === 'about'" /> -->
         <!-- <ExtensionView v-if="preferenceTab === 'extension'" /> -->
       </div>

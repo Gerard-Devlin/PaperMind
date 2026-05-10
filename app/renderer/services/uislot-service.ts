@@ -51,7 +51,10 @@ export class UISlotService extends PiniaEventable<IUISlotState> {
       if (
         slotID === "overlayNotifications" &&
         value &&
-        this._shouldSuppressOverlayNotification(value)
+        (
+          this._isEmptyOverlayNotification(value) ||
+          this._shouldSuppressOverlayNotification(value)
+        )
       ) {
         continue;
       }
@@ -98,5 +101,11 @@ export class UISlotService extends PiniaEventable<IUISlotState> {
       merged.includes("cs 学科") ||
       merged.includes("metadata scrape 扩展首选项")
     );
+  }
+
+  private _isEmptyOverlayNotification(value: any) {
+    const title = `${value?.title || ""}`.trim();
+    const content = `${value?.content || ""}`.trim();
+    return !title && !content;
   }
 }

@@ -70,10 +70,14 @@ async function initialize() {
   });
   // 4.1 Expose the instances to the global scope for convenience.
   for (const [key, instance] of Object.entries(instances)) {
+    if (!globalThis["PLQPUIAPILocal"]) {
+      globalThis["PLQPUIAPILocal"] = {} as any;
+    }
     if (!globalThis["PLQPUIAPI"]) {
       globalThis["PLQPUIAPI"] = {} as any;
     }
     globalThis[key] = instance;
+    globalThis["PLQPUIAPILocal"][key] = instance;
     globalThis["PLQPUIAPI"][key] = instance;
   }
 
@@ -106,4 +110,20 @@ async function initialize() {
   app.mount("#quickpaste");
 }
 
-initialize();
+initialize().catch((error) => {
+  console.error("Quickpaste initialization failed:", error);
+  const root = document.getElementById("quickpaste");
+  if (!root) {
+    return;
+  }
+  const details = error instanceof Error ? `${error.message}\n${error.stack || ""}` : `${error}`;
+  root.innerHTML = `
+    <div style="padding:12px;font-family:Segoe UI,sans-serif;color:#222;background:#fff;">
+      <div style="font-weight:600;margin-bottom:6px;">Quickpaste failed to initialize</div>
+      <pre style="white-space:pre-wrap;font-size:11px;line-height:1.4;margin:0;">${details
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")}</pre>
+    </div>
+  `;
+});

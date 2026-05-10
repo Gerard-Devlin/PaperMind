@@ -18,7 +18,7 @@ import { migrate, syncMigrate } from "@/service/services/database/migration";
 import { FileService, IFileService } from "../file-service";
 import { Supplementary } from "@/models/supplementary";
 
-export const DATABASE_SCHEMA_VERSION = 10;
+export const DATABASE_SCHEMA_VERSION = 11;
 
 enum ConfigType {
   Cloud,

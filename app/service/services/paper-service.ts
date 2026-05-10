@@ -711,18 +711,115 @@ export class PaperService extends Eventable<IPaperServiceState> {
       "PaperService"
     );
 
-    const scrapedPaperEntityDrafts = await this._scrapeService.scrape(
-      paperEntities.map((paperEntity) => {
-        return {
-          type: "PaperEntity",
-          value: paperEntity,
-        };
-      }),
+    const force = true;
+    const originalDrafts = paperEntities.map((paperEntity) => new Entity(paperEntity));
+    let scrapedPaperEntityDrafts = await this._scrapeService.scrapeMetadata(
+      originalDrafts,
       specificScrapers || [],
-      specificScrapers ? true : false
+      force
     );
 
+    const needFuzzyFallback = scrapedPaperEntityDrafts.some((draft, index) => {
+      const original = originalDrafts[index];
+      return this._needsFuzzyFallback(original, draft);
+    });
+
+    if (needFuzzyFallback) {
+      const fuzzyCandidatesById = await this._scrapeService.fuzzyScrape(originalDrafts);
+      scrapedPaperEntityDrafts = scrapedPaperEntityDrafts.map((draft, index) => {
+        const original = originalDrafts[index];
+        if (!this._needsFuzzyFallback(original, draft)) {
+          return draft;
+        }
+
+        const candidates = fuzzyCandidatesById[`${original._id}`] || [];
+        const bestCandidate = this._pickBestMetadataCandidate(candidates);
+        if (!bestCandidate) {
+          return draft;
+        }
+
+        return this._mergeScrapedCoreFields(draft, bestCandidate);
+      });
+    }
+
     await this.update(scrapedPaperEntityDrafts, false, true);
+  }
+
+  private _normalizeText(value?: string) {
+    return `${value || ""}`.trim();
+  }
+
+  private _hasCoreMetadata(entity: Entity) {
+    return (
+      this._normalizeText(entity.title).length > 0 &&
+      this._normalizeText(entity.authors).length > 0 &&
+      this._normalizeText(entity.year).length > 0
+    );
+  }
+
+  private _needsFuzzyFallback(original: Entity, scraped: Entity) {
+    if (this._hasCoreMetadata(scraped)) {
+      return false;
+    }
+
+    const originalTitle = this._normalizeText(original.title);
+    const scrapedTitle = this._normalizeText(scraped.title);
+    const originalAuthors = this._normalizeText(original.authors);
+    const scrapedAuthors = this._normalizeText(scraped.authors);
+    const originalYear = this._normalizeText(original.year);
+    const scrapedYear = this._normalizeText(scraped.year);
+
+    return (
+      scrapedTitle === originalTitle &&
+      scrapedAuthors === originalAuthors &&
+      scrapedYear === originalYear
+    );
+  }
+
+  private _pickBestMetadataCandidate(candidates: Entity[]) {
+    if (candidates.length === 0) {
+      return undefined;
+    }
+
+    const scored = candidates
+      .map((candidate) => {
+        let score = 0;
+        if (this._normalizeText(candidate.title)) score += 3;
+        if (this._normalizeText(candidate.authors)) score += 3;
+        if (this._normalizeText(candidate.year)) score += 3;
+        if (this._normalizeText(candidate.doi)) score += 2;
+        if (this._normalizeText(candidate.arxiv)) score += 2;
+        if (
+          this._normalizeText(candidate.journal) ||
+          this._normalizeText(candidate.booktitle) ||
+          this._normalizeText(candidate.publisher) ||
+          this._normalizeText(candidate.howpublished)
+        ) {
+          score += 1;
+        }
+        return { candidate, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    return scored[0]?.score > 0 ? scored[0].candidate : undefined;
+  }
+
+  private _mergeScrapedCoreFields(base: Entity, incoming: Entity) {
+    const merged = new Entity(base);
+
+    if (this._normalizeText(incoming.title)) merged.title = incoming.title;
+    if (this._normalizeText(incoming.authors)) merged.authors = incoming.authors;
+    if (this._normalizeText(incoming.year)) merged.year = incoming.year;
+    if (this._normalizeText(incoming.journal)) merged.journal = incoming.journal;
+    if (this._normalizeText(incoming.booktitle)) merged.booktitle = incoming.booktitle;
+    if (this._normalizeText(incoming.publisher)) merged.publisher = incoming.publisher;
+    if (this._normalizeText(incoming.howpublished)) merged.howpublished = incoming.howpublished;
+    if (this._normalizeText(incoming.doi)) merged.doi = incoming.doi;
+    if (this._normalizeText(incoming.arxiv)) merged.arxiv = incoming.arxiv;
+    if (this._normalizeText(incoming.abstract)) merged.abstract = incoming.abstract;
+    if ((incoming.codes || []).length > 0) merged.codes = incoming.codes;
+
+    return merged;
   }
 
   /**

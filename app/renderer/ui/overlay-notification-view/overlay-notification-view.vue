@@ -1,10 +1,18 @@
 <script setup lang="ts">
+import { computed, watch } from "vue";
 import { sanitizeHTML } from "@/renderer/utils/sanitize";
 
 // ======================
 // State
 // ======================
 const uiSlotState = PLUIAPILocal.uiSlotService.useState();
+const notifications = computed(() => {
+  return Object.values(uiSlotState.overlayNotifications || {}).filter((item: any) => {
+    const title = `${item?.title || ""}`.trim();
+    const content = `${item?.content || ""}`.trim();
+    return title.length > 0 || content.length > 0;
+  });
+});
 
 // ======================
 // Event Handler
@@ -14,6 +22,18 @@ const onClick = () => {
     overlayNoticationShown: false,
   });
 };
+
+watch(
+  notifications,
+  (items) => {
+    if (!items.length) {
+      PLUIAPILocal.uiStateService.setUIState({
+        overlayNoticationShown: false,
+      });
+    }
+  },
+  { immediate: true }
+);
 
 </script>
 
@@ -31,7 +51,7 @@ const onClick = () => {
         <div class="mx-auto font-semibold text-xl flex-none">Notifications</div>
         <div class="grow overflow-scroll">
           <div
-            v-for="notification in uiSlotState.overlayNotifications"
+            v-for="notification in notifications"
             class="flex flex-col p-2 border-t-[1px] space-y-1"
           >
             <div class="flex space-x-2">

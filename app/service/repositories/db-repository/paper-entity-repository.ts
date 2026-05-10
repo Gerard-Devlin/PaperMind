@@ -145,6 +145,7 @@ export class PaperEntityRepository extends Eventable<IPaperEntityRepositoryState
     paperEntity.tags = paperEntity.tags || [];
     paperEntity.folders = paperEntity.folders || [];
     paperEntity.flag = paperEntity.flag || false;
+    paperEntity.codes = paperEntity.codes || [];
 
     return paperEntity;
   }
@@ -241,6 +242,7 @@ export class PaperEntityRepository extends Eventable<IPaperEntityRepositoryState
         object.organization = paperEntity.organization;
         object.school = paperEntity.school;
         object.institution = paperEntity.institution;
+        object.codes = paperEntity.codes || [];
 
         object.rating = paperEntity.rating;
         object.tags = tags;
