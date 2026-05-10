@@ -11,7 +11,6 @@ import { disposable } from "@/base/dispose";
 import { debounce } from "@/base/misc";
 import { CategorizerType, PaperFolder } from "@/models/categorizer";
 import { PaperEntity } from "@/models/paper-entity";
-import { PaperFilterOptions } from "@/base/filter";
 import { cmdOrCtrl } from "@/base/shortcut";
 
 import TableItem from "./components/table-item.vue";
@@ -33,42 +32,44 @@ const selectedIndex: Ref<number> = ref(0);
 const linkedFolder = ref("");
 const mainviewSortBy = ref("addTime");
 const mainviewSortOrder: Ref<"desc" | "asce"> = ref("desc");
+let searchRequestSeq = 0;
 
 // ====================
 // Event Handler
 // ====================
 const onSearchTextChanged = debounce(async () => {
-  if (searchText.value) {
-    const semanticEnabled = await PLMainAPI.preferenceService.get(
-      "semanticSearchEnabled"
-    );
+  const query = `${searchText.value || ""}`.trim();
+  const requestSeq = ++searchRequestSeq;
 
-    if (semanticEnabled) {
-      try {
-        paperEntities.value = (await PLAPI.semanticSearchService.search(
-          searchText.value,
-          8
-        )) as unknown as PaperEntity[];
-      } catch {
-        paperEntities.value = [];
-      }
-    }
+  if (query) {
+    paperEntities.value = [];
+    selectedIndex.value = 0;
 
-    if (!paperEntities.value || paperEntities.value.length === 0) {
-      paperEntities.value = (await PLAPI.paperService.load(
-        new PaperFilterOptions({
-          search: searchText.value,
-          searchMode: "general",
-          flaged: false,
-          tag: "",
-          folder: "",
-        }).toString(),
-        mainviewSortBy.value,
-        mainviewSortOrder.value
+    let semanticResults: PaperEntity[] = [];
+    try {
+      semanticResults = (await PLAPI.semanticSearchService.search(
+        query,
+        8
       )) as unknown as PaperEntity[];
-      paperEntities.value = paperEntities.value.slice(0, 8);
+    } catch {
+      semanticResults = [];
+    }
+    if (requestSeq !== searchRequestSeq) {
+      return;
+    }
+    paperEntities.value = semanticResults.slice(0, 8);
+    if (paperEntities.value.length === 0) {
+      // @ts-ignore
+      paperEntities.value.push({
+        id: "semantic-empty",
+        title: "No semantic result (try Rebuild Index)",
+      });
     }
 
+    paperEntities.value = paperEntities.value.filter(
+      // @ts-ignore
+      (item) => item.id !== "search-in-google-scholar"
+    );
     // @ts-ignore
     paperEntities.value.push({
       id: "search-in-google-scholar",
@@ -94,7 +95,9 @@ const onSearchTextChanged = debounce(async () => {
 
 const exportSelectedCiteKeys = async () => {
   const selectedEntity = paperEntities.value[selectedIndex.value];
-  if (selectedEntity && selectedEntity.id === "search-in-google-scholar") {
+  if (selectedEntity && selectedEntity.id === "semantic-empty") {
+    return;
+  } else if (selectedEntity && selectedEntity.id === "search-in-google-scholar") {
     await PLAPI.fileService.open(
       `https://scholar.google.com/scholar?q=${searchText.value}`
     );
@@ -121,7 +124,9 @@ const exportSelectedCiteKeys = async () => {
 
 const exportSelectedCiteBodies = async () => {
   const selectedEntity = paperEntities.value[selectedIndex.value];
-  if (selectedEntity && selectedEntity.id === "search-in-google-scholar") {
+  if (selectedEntity && selectedEntity.id === "semantic-empty") {
+    return;
+  } else if (selectedEntity && selectedEntity.id === "search-in-google-scholar") {
     await PLAPI.fileService.open(
       `https://scholar.google.com/scholar?q=${searchText.value}`
     );
@@ -151,7 +156,9 @@ const exportSelectedCiteBodies = async () => {
 
 const exportSelectedCiteBodiesInFolder = async () => {
   const selectedEntity = paperEntities.value[selectedIndex.value];
-  if (selectedEntity && selectedEntity.id === "search-in-google-scholar") {
+  if (selectedEntity && selectedEntity.id === "semantic-empty") {
+    return;
+  } else if (selectedEntity && selectedEntity.id === "search-in-google-scholar") {
     await PLAPI.fileService.open(
       `https://scholar.google.com/scholar?q=${searchText.value}`
     );
