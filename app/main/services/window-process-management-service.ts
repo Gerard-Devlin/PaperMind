@@ -75,6 +75,10 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
     });
   }
 
+  public isQuitting(): boolean {
+    return this._isQuitting;
+  }
+
   /**
    * Create Process with a BrowserWindow
    * @param id - window id
@@ -427,7 +431,10 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
         )) {
           win.close();
         }
-        app.quit();
+        // Only quit the app when a real quit was requested (e.g. via tray Exit or before-quit).
+        if (this._isQuitting && process.platform !== "darwin") {
+          app.quit();
+        }
       } else {
         const win = this.browserWindows.get(windowId);
         win.close();

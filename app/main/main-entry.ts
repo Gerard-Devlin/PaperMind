@@ -133,7 +133,12 @@ async function initialize() {
   app.on("window-all-closed", () => {
     PLMainAPILocal.utilityProcessManagementService.close();
 
-    if (process.platform !== "darwin") app.quit();
+    // Only quit automatically when a real quit was requested.
+    if (
+      process.platform !== "darwin" &&
+      PLMainAPILocal.windowProcessManagementService.isQuitting()
+    )
+      app.quit();
   });
 
   app.on("second-instance", () => {
