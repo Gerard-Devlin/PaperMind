@@ -16,8 +16,16 @@ import { UpgradeService } from "./services/upgrade-service";
 import { UtilityProcessManagementService } from "./services/utility-process-management-service";
 import { WindowProcessManagementService } from "./services/window-process-management-service";
 
+function findDeepLinkArg(args: string[]) {
+  return args.find((arg) => typeof arg === "string" && arg.startsWith("paperlib:"));
+}
+
 function handleDeeplink(urlStr: string) {
   try {
+    if (!urlStr || !urlStr.startsWith("paperlib:")) {
+      return;
+    }
+
     const { protocol, hostname, pathname, search } = new URL(urlStr);
     if (protocol === "paperlib:") {
       const [_, apiGroup, serviceName, methodName] = pathname.split("/");
@@ -62,7 +70,7 @@ if (!app.requestSingleInstanceLock()) {
         .focus();
 
       if (commandLine.length > 1) {
-        const deepLink = commandLine.pop();
+        const deepLink = findDeepLinkArg(commandLine);
         if (deepLink) {
           handleDeeplink(deepLink);
         }
