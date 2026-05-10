@@ -660,7 +660,7 @@ onMounted(async () => {
       leave-from-class="transform opacity-100"
       leave-to-class="transform opacity-0"
     >
-      <GuideView v-if="prefState.showGuide" />
+      <GuideView v-if="prefState.showGuide && !showAPISetup" />
     </Transition>
 
     <!-- <Transition
@@ -682,7 +682,7 @@ onMounted(async () => {
       leave-from-class="transform opacity-100"
       leave-to-class="transform opacity-0"
     >
-      <WelcomeView v-if="prefState.showWelcome" />
+      <WelcomeView v-if="prefState.showWelcome && !showAPISetup" />
     </Transition>
 
     <Transition
@@ -695,7 +695,7 @@ onMounted(async () => {
     >
       <div
         v-if="showAPISetup"
-        class="fixed inset-0 z-50 flex bg-black/30 backdrop-blur-sm"
+        class="fixed inset-0 z-[70] flex bg-black/30 backdrop-blur-sm"
       >
         <div
           class="m-auto w-[420px] max-w-[calc(100vw-32px)] rounded-lg bg-white dark:bg-neutral-800 shadow-xl border border-neutral-200 dark:border-neutral-700 p-6"

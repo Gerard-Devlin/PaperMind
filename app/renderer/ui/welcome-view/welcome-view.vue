@@ -56,14 +56,14 @@ onMounted(async () => {
       class="typing-style text-xl font-bold font-mono mx-auto my-40"
       v-if="isShowSlogan"
     >
-      WELCOME TO PAPERMIND 3.2.0
+      WELCOME TO PAPERMIND 3.5.0
     </div>
     <div class="w-[45rem] px-3 mx-auto my-20 flex flex-col" v-else>
       <div class="mx-auto font-semibold mb-8 space-x-2 flex">
         <span class="text-3xl my-auto">PAPERMIND</span>
         <span
           class="text-xl bg-neutral-700 text-white dark:bg-neutral-300 dark:text-neutral-800 rounded-md px-2 py-1 my-auto"
-          >3.2.0</span
+          >3.5.0</span
         >
       </div>
       <div class="flex space-x-2 mx-auto mb-4">
@@ -77,10 +77,10 @@ onMounted(async () => {
       </div>
       <div class="flex flex-col" v-if="language === 'en-GB'">
         <div class="mx-auto mb-8 font-semibold">
-          Welcome to the new major version --- PaperMind 3.2.0.
+          Welcome to the new major version --- PaperMind 3.5.0.
         </div>
         <div>
-          In PaperMind 3.2.0, we bring you a new experience with many exciting new
+          In PaperMind 3.5.0, we bring you a new experience with many exciting new
           features:
         </div>
         <ul class="list-disc px-4 mx-1">
@@ -92,7 +92,7 @@ onMounted(async () => {
         <hr class="my-8" />
         <div class="font-bold text-xl mb-4">Extension System</div>
         <div class="mb-2">
-          PaperMind 3.2.0 introduces a new extension system that allows you to
+          PaperMind 3.5.0 introduces a new extension system that allows you to
           extend the functionality of PaperMind. You can now install extensions
           from the Extension Marketplace, or develop and publish your own
           extension.
@@ -143,7 +143,7 @@ onMounted(async () => {
           Hierarchy Folders / SmartFilters
         </div>
         <div class="mb-2">
-          PaperMind 3.2.0 introduces a new feature called Nested Folders /
+          PaperMind 3.5.0 introduces a new feature called Nested Folders /
           SmartFilters. You can now create a folder inside another folder. Also,
           the smartfilters can be organised in hierarchy.
         </div>
@@ -161,9 +161,9 @@ onMounted(async () => {
       </div>
       <div class="flex flex-col" v-else>
         <div class="mx-auto mb-8 font-semibold">
-          欢迎来到全新的 PaperMind 3.2.0。
+          欢迎来到全新的 PaperMind 3.5.0。
         </div>
-        <div>在 PaperMind 3.2.0 中，我们带来了这些新功能：</div>
+        <div>在 PaperMind 3.5.0 中，我们带来了这些新功能：</div>
         <ul class="list-disc px-4 mx-1">
           <li class="font-semibold">扩展插件系统</li>
           <li class="font-semibold">层级分组和层级智能过滤器</li>
@@ -173,7 +173,7 @@ onMounted(async () => {
         <hr class="my-8" />
         <div class="font-bold text-xl mb-4">扩展插件系统</div>
         <div class="mb-2">
-          PaperMind 3.2.0 引入了新的扩展系统。现在你可以从扩展市场安装扩展，也可以开发并发布自己的扩展。
+          PaperMind 3.5.0 引入了新的扩展系统。现在你可以从扩展市场安装扩展，也可以开发并发布自己的扩展。
         </div>
         <div class="mb-2">
           <span>我们也提供了一些官方维护的扩展，例如：</span>
@@ -209,7 +209,7 @@ onMounted(async () => {
         <hr class="my-8" />
         <div class="font-bold text-xl mb-4">层级分组和层级智能过滤器</div>
         <div class="mb-2">
-          PaperMind 3.2.0 支持在分组中创建子分组，智能过滤器也可以按层级组织。
+          PaperMind 3.5.0 支持在分组中创建子分组，智能过滤器也可以按层级组织。
         </div>
 
         <hr class="my-8" />
