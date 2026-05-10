@@ -18,11 +18,11 @@ const openURL = (url: string) => {
 <template>
   <div class="flex flex-col">
     <img
-      class="w-12 mx-auto mb-2"
-      src="../../assets/logo-dark.png"
+      class="w-14 mx-auto mb-2"
+      src="../../assets/logo-sticky-note.png"
       v-if="darkMode"
     />
-    <img class="w-10 mx-auto mb-2" src="../../assets/logo-light.png" v-else />
+    <img class="w-12 mx-auto mb-2" src="../../assets/logo-sticky-note.png" v-else />
 
     <div class="mx-auto text-xl font-semibold mb-4">PAPERMIND</div>
 

@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import darkLogo from "@/renderer/assets/logo-dark.png?asset";
-import lightLogo from "@/renderer/assets/logo-light.png?asset";
+import stickyNoteLogo from "@/renderer/assets/logo-sticky-note.png?asset";
 
 import NotificationBar from "./components/notification-bar.vue";
 import SwitcherTitle from "./components/switcher-title.vue";
@@ -23,13 +21,6 @@ const onViewContentSwitch = (view: number) => {
   uiState.contentType = ["library", "feed"][view];
 };
 
-const darkMode = ref(false);
-onMounted(async () => {
-  darkMode.value = await PLMainAPI.windowProcessManagementService.isDarkMode();
-});
-PLMainAPI.preferenceService.on("preferedTheme", async () => {
-  darkMode.value = await PLMainAPI.windowProcessManagementService.isDarkMode();
-});
 </script>
 
 <template>
@@ -40,7 +31,7 @@ PLMainAPI.preferenceService.on("preferedTheme", async () => {
       v-if="uiState.os === 'win32'"
     >
       <div class="flex-row flex items-center space-x-3 min-w-0">
-        <img class="w-4 flex-none" :src="darkMode ? darkLogo : lightLogo" />
+        <img class="w-8 flex-none" :src="stickyNoteLogo" />
         <span class="text-sm font-semibold truncate">PAPERMIND</span>
       </div>
     </div>

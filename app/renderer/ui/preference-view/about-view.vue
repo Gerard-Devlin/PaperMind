@@ -24,11 +24,11 @@ onMounted(async () => {
     class="flex flex-col text-neutral-800 dark:text-neutral-300 w-[400px] md:w-[500px] lg:w-[700px]"
   >
     <img
-      src="../../assets/logo-dark.png"
-      class="w-8 mb-2 ml-1"
+      src="../../assets/logo-sticky-note.png"
+      class="w-10 mb-2 ml-1"
       v-if="darkMode"
     />
-    <img src="../../assets/logo-light.png" class="w-8 mb-2 ml-1" v-else />
+    <img src="../../assets/logo-sticky-note.png" class="w-10 mb-2 ml-1" v-else />
     <div class="text-base font-semibold mb-4">PaperMind</div>
     <div class="text-xs mb-4">
       created by Future Scholars, a simple academic paper management tool.
