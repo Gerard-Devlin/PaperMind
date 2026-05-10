@@ -51,6 +51,10 @@
   ],
   extraResources: [
     {
+      from: "build/icon_v2.ico",
+      to: "icon_v2.ico",
+    },
+    {
       from: "paperlib-entry-scrape-extension-main",
       to: "bundled-extensions/paperlib-entry-scrape-extension-main",
       filter: ["package.json", "dist/**", "public/**", "pdf-worker/**"],

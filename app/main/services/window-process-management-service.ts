@@ -1,14 +1,18 @@
 ﻿import {
   BrowserWindow,
   BrowserWindowConstructorOptions,
+  Menu,
   Rectangle,
+  Tray,
   app,
   dialog,
   ipcMain,
+  nativeImage,
   nativeTheme,
   screen,
   shell,
 } from "electron";
+import { existsSync } from "fs";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -47,6 +51,8 @@ export const IWindowProcessManagementService = createDecorator(
 
 export class WindowProcessManagementService extends Eventable<IWindowProcessManagementServiceState> {
   public browserWindows: WindowStorage;
+  private _tray?: Tray;
+  private _isQuitting = false;
 
   constructor(
     @IPreferenceService private readonly _preferenceService: PreferenceService
@@ -63,6 +69,10 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
     ipcMain.on("request-port", (event, senderID) => {
       this.fire({ requestPort: senderID });
     });
+
+    app.on("before-quit", () => {
+      this._isQuitting = true;
+    });
   }
 
   /**
@@ -76,7 +86,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
   create(
     id: string,
     options: WindowOptions,
-    eventCallbacks?: Record<string, (win: BrowserWindow) => void>,
+    eventCallbacks?: Record<string, (win: BrowserWindow, event?: any) => void>,
     additionalHeaders?: Record<string, string>
   ) {
     if (this.browserWindows.has(id)) {
@@ -175,7 +185,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
         this.fire({ [id]: eventName });
 
         if (eventCallbacks && eventCallbacks[eventName]) {
-          eventCallbacks[eventName](win);
+          eventCallbacks[eventName](win, e);
         }
       });
     }
@@ -214,7 +224,14 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
         visualEffectState: "active",
       },
       {
-        close: (win: BrowserWindow) => {
+        close: (win: BrowserWindow, event?: any) => {
+          if (!this._isQuitting) {
+            event?.preventDefault?.();
+            win.hide();
+            this._ensureTray(win);
+            return;
+          }
+
           const winSize = win.getNormalBounds();
           if (winSize) {
             this._preferenceService.set({
@@ -474,6 +491,60 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
     const { width, height } = currentDisplay.workAreaSize;
 
     return { width, height };
+  }
+
+  private _ensureTray(mainWindow: BrowserWindow) {
+    if (this._tray) {
+      return;
+    }
+
+    const iconCandidates = [
+      path.join(process.resourcesPath, "icon_v2.ico"),
+      path.join(process.cwd(), "build", "icon_v2.ico"),
+      path.join(app.getAppPath(), "build", "icon_v2.ico"),
+      path.join(process.resourcesPath, "app.asar.unpacked", "build", "icon_v2.ico"),
+    ];
+    const iconPath =
+      iconCandidates.find((candidate) => {
+        try {
+          return !!candidate && existsSync(candidate);
+        } catch {
+          return false;
+        }
+      }) || iconCandidates[0];
+    const icon = nativeImage.createFromPath(iconPath);
+
+    this._tray = new Tray(icon);
+    this._tray.setToolTip("PaperMind");
+    this._tray.setContextMenu(
+      Menu.buildFromTemplate([
+        {
+          label: "Show PaperMind",
+          click: () => {
+            if (mainWindow.isMinimized()) {
+              mainWindow.restore();
+            }
+            mainWindow.show();
+            mainWindow.focus();
+          },
+        },
+        {
+          label: "Exit",
+          click: () => {
+            this._isQuitting = true;
+            app.quit();
+          },
+        },
+      ])
+    );
+
+    this._tray.on("double-click", () => {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.show();
+      mainWindow.focus();
+    });
   }
 
   private _constructEntryURL(url: string) {
