@@ -1,5 +1,5 @@
 <div align="center">
-<img src="./build/icon_v1.ico" height="95" />
+<img src="./build/icon_v2.ico" height="95" />
 <br />
 <img src="https://img.shields.io/badge/dynamic/json?label=Release&query=version&url=https://raw.githubusercontent.com/Future-Scholars/paperlib/master/package.json" />
 <img src="https://img.shields.io/github/license/Future-Scholars/paperlib" />
