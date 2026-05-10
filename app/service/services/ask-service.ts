@@ -54,10 +54,20 @@ export class AskService extends Eventable<{}> {
       throw new Error("Qwen API key is missing.");
     }
 
-    const baseURL = `${await PLMainAPI.preferenceService.get(
+    const askBaseURL = `${await PLMainAPI.preferenceService.get(
+      "qwenAskBaseURL"
+    )}`.trim();
+    const askModel = `${await PLMainAPI.preferenceService.get(
+      "qwenAskModel"
+    )}`.trim();
+    const legacyChatBaseURL = `${await PLMainAPI.preferenceService.get(
       "qwenChatBaseURL"
-    )}`.replace(/\/+$/, "");
-    const model = `${await PLMainAPI.preferenceService.get("qwenChatModel")}`;
+    )}`.trim();
+    const legacyChatModel = `${await PLMainAPI.preferenceService.get(
+      "qwenChatModel"
+    )}`.trim();
+    const baseURL = (askBaseURL || legacyChatBaseURL).replace(/\/+$/, "");
+    const model = askModel || legacyChatModel;
 
     const results = await this._semanticSearchService.searchForAsk(
       trimmedQuestion,
@@ -193,10 +203,20 @@ export class AskService extends Eventable<{}> {
       return [];
     }
 
-    const baseURL = `${await PLMainAPI.preferenceService.get(
+    const tagBaseURL = `${await PLMainAPI.preferenceService.get(
+      "qwenAITagBaseURL"
+    )}`.trim();
+    const tagModel = `${await PLMainAPI.preferenceService.get(
+      "qwenAITagModel"
+    )}`.trim();
+    const legacyChatBaseURL = `${await PLMainAPI.preferenceService.get(
       "qwenChatBaseURL"
-    )}`.replace(/\/+$/, "");
-    const model = `${await PLMainAPI.preferenceService.get("qwenChatModel")}`;
+    )}`.trim();
+    const legacyChatModel = `${await PLMainAPI.preferenceService.get(
+      "qwenChatModel"
+    )}`.trim();
+    const baseURL = (tagBaseURL || legacyChatBaseURL).replace(/\/+$/, "");
+    const model = tagModel || legacyChatModel;
 
     const response = await fetch(`${baseURL}/chat/completions`, {
       method: "POST",

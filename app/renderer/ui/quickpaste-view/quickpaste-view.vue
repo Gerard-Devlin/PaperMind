@@ -12,6 +12,7 @@ import { debounce } from "@/base/misc";
 import { CategorizerType, PaperFolder } from "@/models/categorizer";
 import { PaperEntity } from "@/models/paper-entity";
 import { cmdOrCtrl } from "@/base/shortcut";
+import { sanitizeHTML } from "@/renderer/utils/sanitize";
 
 import TableItem from "./components/table-item.vue";
 
@@ -21,6 +22,7 @@ import TableItem from "./components/table-item.vue";
 const paperEntities: Ref<PaperEntity[]> = ref([]);
 const folders: Ref<PaperFolder[]> = ref([]);
 const askAnswer = ref("");
+const renderedAskAnswer = ref("");
 const askStatus = ref("");
 const asking = ref(false);
 
@@ -40,7 +42,7 @@ const isAskMode = computed(() => exportMode.value === "Ask");
 
 const resizeQuickpaste = async () => {
   const paperHeight = paperEntities.value.length * 28;
-  const answerHeight = isAskMode.value && askAnswer.value ? 170 : 0;
+  const answerHeight = isAskMode.value && renderedAskAnswer.value ? 170 : 0;
   const newHeight = Math.min(paperHeight + answerHeight + 78, 620);
 
   await PLMainAPI.windowProcessManagementService.resize(
@@ -58,10 +60,27 @@ const cycleMode = () => {
         ? "Ask"
         : "BibTex";
   askAnswer.value = "";
+  renderedAskAnswer.value = "";
   askStatus.value = "";
   // @ts-ignore
   searchInput.value?.focus();
   void onSearchTextChanged();
+};
+
+const applyLaunchMode = async () => {
+  const launchMode = await PLMainAPI.preferenceService.get(
+    "quickpasteLaunchMode"
+  );
+  exportMode.value = launchMode === "ask" ? "Ask" : "BibTex";
+  askAnswer.value = "";
+  renderedAskAnswer.value = "";
+  askStatus.value = "";
+  await nextTick();
+  // @ts-ignore
+  searchInput.value?.focus();
+  if (`${searchText.value || ""}`.trim()) {
+    void onSearchTextChanged();
+  }
 };
 
 // ====================
@@ -75,6 +94,7 @@ const onSearchTextChanged = debounce(async () => {
     paperEntities.value = [];
     selectedIndex.value = 0;
     askAnswer.value = "";
+    renderedAskAnswer.value = "";
     askStatus.value = isAskMode.value ? "Finding related papers..." : "";
 
     let semanticResults: PaperEntity[] = [];
@@ -120,6 +140,7 @@ const onSearchTextChanged = debounce(async () => {
     );
     paperEntities.value = [];
     askAnswer.value = "";
+    renderedAskAnswer.value = "";
     askStatus.value = "";
   }
 }, searchDebounce.value);
@@ -132,6 +153,7 @@ const askLibrary = async () => {
 
   asking.value = true;
   askAnswer.value = "";
+  renderedAskAnswer.value = "";
   askStatus.value = "Thinking with your library...";
   await nextTick();
   await resizeQuickpaste();
@@ -139,10 +161,14 @@ const askLibrary = async () => {
   try {
     const result = await PLAPI.askService.ask(query);
     askAnswer.value = result.answer || "No answer.";
+    renderedAskAnswer.value = (
+      await PLAPI.renderService.renderMarkdown(askAnswer.value, true)
+    ).renderedStr;
     askStatus.value =
       result.sources.length === 0 ? "No semantic result found." : "";
   } catch (error) {
     askAnswer.value = "";
+    renderedAskAnswer.value = "";
     askStatus.value = `Ask failed: ${(error as Error).message || error}`;
   } finally {
     asking.value = false;
@@ -443,7 +469,11 @@ disposable(
       if (payload.value === "show" || payload.value === "hide") {
         paperEntities.value = [];
         askAnswer.value = "";
+        renderedAskAnswer.value = "";
         askStatus.value = "";
+      }
+      if (payload.value === "show") {
+        void applyLaunchMode();
       }
     }
   )
@@ -494,12 +524,13 @@ onMounted(() => {
     </div>
 
     <div
-      v-if="isAskMode && askAnswer"
+      v-if="isAskMode && renderedAskAnswer"
       class="mx-2 mt-2 h-[150px] overflow-y-auto rounded-md bg-neutral-100 px-3 py-2 text-xs leading-5 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
     >
-      <div v-if="askAnswer" class="whitespace-pre-wrap">
-        {{ askAnswer }}
-      </div>
+      <div
+        class="quickpaste-markdown"
+        v-html="sanitizeHTML(renderedAskAnswer)"
+      />
     </div>
 
     <div
@@ -578,3 +609,45 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.quickpaste-markdown :deep(p) {
+  margin: 0 0 0.5rem;
+}
+
+.quickpaste-markdown :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.quickpaste-markdown :deep(ul),
+.quickpaste-markdown :deep(ol) {
+  margin: 0.25rem 0 0.5rem 1rem;
+}
+
+.quickpaste-markdown :deep(ul) {
+  list-style: disc;
+}
+
+.quickpaste-markdown :deep(ol) {
+  list-style: decimal;
+}
+
+.quickpaste-markdown :deep(strong) {
+  font-weight: 650;
+}
+
+.quickpaste-markdown :deep(code) {
+  border-radius: 0.25rem;
+  background: rgb(229 229 229);
+  padding: 0.05rem 0.25rem;
+  font-size: 0.72rem;
+}
+
+.quickpaste-markdown :deep(.katex) {
+  font-size: 1em;
+}
+
+:global(.dark) .quickpaste-markdown :deep(code) {
+  background: rgb(64 64 64);
+}
+</style>

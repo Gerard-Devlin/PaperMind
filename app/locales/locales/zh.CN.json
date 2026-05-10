@@ -229,7 +229,8 @@
     "hotkeysDuplicateKeysInfo": "该快捷键已被其他功能使用。",
     "hotkeysOpenPDFLabel": "打开 PDF",
     "hotkeysEditLabel": "编辑元数据",
-    "hotkeysPluginLabel": "打开快速引用插件"
+    "hotkeysPluginLabel": "打开快速引用插件",
+    "hotkeysAskLabel": "打开 Ask 模式"
   },
   "confirmation": {
     "title": "确认",
@@ -281,7 +282,11 @@
     "statusFailed": "语义搜索配置失败。",
     "statusRebuilding": "正在重建语义索引...",
     "statusIndexFailed": "索引失败",
-    "statusIndexed": "已索引 {indexed} / {total} 篇论文。"
+    "statusIndexed": "已索引 {indexed} / {total} 篇论文。",
+    "askBaseURLTitle": "Ask Base URL",
+    "askBaseURLInfo": "?? Ask ???RAG ???? OpenAI ?? chat completions ??????",
+    "askModelTitle": "Ask ??",
+    "askModelInfo": "?? Ask ????? Qwen ?????"
   },
   "guide": {
     "import1title": "1. 导入到文献库",

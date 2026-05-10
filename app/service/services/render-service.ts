@@ -71,6 +71,7 @@ export class RenderService {
       overflow = false;
       renderContent = content;
     }
+    renderContent = this._normalizeMathDelimiters(renderContent);
     const rawHtml = this._markdownIt.render(renderContent);
     const cleanHtml =
       domPurifyInstance?.sanitize(rawHtml, {
@@ -81,6 +82,23 @@ export class RenderService {
       renderedStr: cleanHtml,
       overflow: overflow,
     };
+  }
+
+  private _normalizeMathDelimiters(content: string) {
+    return `${content || ""}`
+      .replace(
+        /\$\$\s*([\s\S]*?)\s*\$\$/g,
+        (_match, math) => `\n\n$$\n${math.trim()}\n$$\n\n`
+      )
+      .replace(
+        /(^|[^\\$])\$([ \t]+)([^$\n]+?)([ \t]+)\$/g,
+        (_match, prefix, _leading, math) => `${prefix}$${math.trim()}$`
+      )
+      .replace(/\\\(\s*([\s\S]*?)\s*\\\)/g, (_match, math) => `$${math.trim()}$`)
+      .replace(
+        /\\\[\s*([\s\S]*?)\s*\\\]/g,
+        (_match, math) => `\n\n$$\n${math.trim()}\n$$\n\n`
+      );
   }
 
   /**

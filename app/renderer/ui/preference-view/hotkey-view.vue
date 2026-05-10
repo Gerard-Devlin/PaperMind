@@ -66,6 +66,7 @@ const onUpdate = (key: string, value: string) => {
   }
   let existingShortcuts = {
     shortcutPlugin: prefState.shortcutPlugin,
+    shortcutAsk: prefState.shortcutAsk,
     shortcutPreview: prefState.shortcutPreview,
     shortcutOpen: prefState.shortcutOpen,
     shortcutCopy: prefState.shortcutCopy,
@@ -92,6 +93,12 @@ const onUpdate = (key: string, value: string) => {
 };
 const onGlobalShortcutChange = (key: string) => {
   onUpdate("shortcutPlugin", key);
+  PLMainAPI.menuService.disableGlobalShortcuts();
+  PLMainAPI.menuService.enableGlobalShortcuts();
+};
+
+const onAskShortcutChange = (key: string) => {
+  onUpdate("shortcutAsk", key);
   PLMainAPI.menuService.disableGlobalShortcuts();
   PLMainAPI.menuService.enableGlobalShortcuts();
 };
@@ -129,6 +136,11 @@ const onGlobalShortcutChange = (key: string) => {
         :title="$t('preference.hotkeysPluginLabel')"
         :choosed-key="prefState.shortcutPlugin"
         @event:change="onGlobalShortcutChange"
+      />
+      <HotkeyOption
+        :title="$t('preference.hotkeysAskLabel')"
+        :choosed-key="prefState.shortcutAsk"
+        @event:change="onAskShortcutChange"
       />
       <HotkeyOption
         :title="$t('menu.copybibtext')"

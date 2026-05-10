@@ -1,6 +1,7 @@
 import { removeLoading } from "@/base/loading";
 import type { IInjectable } from "./services/injectable";
 import "@future-scholars/vue-virtual-scroller/dist/vue-virtual-scroller.css";
+import "katex/dist/katex.min.css";
 
 let globalLoadingWatchdog: ReturnType<typeof setTimeout> | null = null;
 let mounted = false;

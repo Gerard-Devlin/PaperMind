@@ -71,6 +71,7 @@ export interface IPreferenceStore {
   shortcutEdit: string;
   shortcutFlag: string;
   shortcutCopyKey: string;
+  shortcutAsk: string;
 
   shortcutDelete: string;
 
@@ -84,6 +85,7 @@ export interface IPreferenceStore {
   mainviewShortAuthor: boolean;
 
   pluginLinkedFolder: string;
+  quickpasteLaunchMode: "cite" | "ask";
 
   selectedPDFViewer: string;
   selectedPDFViewerPath: string;
@@ -102,6 +104,10 @@ export interface IPreferenceStore {
   qwenEmbeddingBaseURL: string;
   qwenEmbeddingModel: string;
   qwenEmbeddingDimensions: number;
+  qwenAskBaseURL: string;
+  qwenAskModel: string;
+  qwenAITagBaseURL: string;
+  qwenAITagModel: string;
   qwenChatBaseURL: string;
   qwenChatModel: string;
   autoAITagging: boolean;
@@ -204,6 +210,7 @@ const _defaultPreferences: IPreferenceStore = {
   shortcutEdit: `${cmdOrCtrl}+E`,
   shortcutFlag: `${cmdOrCtrl}+F`,
   shortcutCopyKey: `${cmdOrCtrl}+Shift+K`,
+  shortcutAsk: `${cmdOrCtrl}+Shift+A`,
 
   shortcutDelete: "Delete",
 
@@ -217,6 +224,7 @@ const _defaultPreferences: IPreferenceStore = {
   mainviewShortAuthor: false,
 
   pluginLinkedFolder: "",
+  quickpasteLaunchMode: "cite",
 
   selectedPDFViewer: "default",
   selectedPDFViewerPath: "",
@@ -235,6 +243,10 @@ const _defaultPreferences: IPreferenceStore = {
   qwenEmbeddingBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenEmbeddingModel: "text-embedding-v4",
   qwenEmbeddingDimensions: 1024,
+  qwenAskBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  qwenAskModel: "qwen-plus",
+  qwenAITagBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  qwenAITagModel: "qwen-plus",
   qwenChatBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenChatModel: "qwen-plus",
   autoAITagging: true,
@@ -358,6 +370,32 @@ function _migrate(
   const currentSortBy = store.get("mainviewSortBy");
   if (currentSortBy === "pubTime") {
     store.set("mainviewSortBy", "year");
+  }
+
+  // Backward compatibility: split Ask and AI-tag model configs from legacy qwenChat* keys.
+  if (!store.has("qwenAskBaseURL")) {
+    store.set(
+      "qwenAskBaseURL",
+      (store.get("qwenChatBaseURL") as string) || _defaultPreferences.qwenAskBaseURL
+    );
+  }
+  if (!store.has("qwenAskModel")) {
+    store.set(
+      "qwenAskModel",
+      (store.get("qwenChatModel") as string) || _defaultPreferences.qwenAskModel
+    );
+  }
+  if (!store.has("qwenAITagBaseURL")) {
+    store.set(
+      "qwenAITagBaseURL",
+      (store.get("qwenChatBaseURL") as string) || _defaultPreferences.qwenAITagBaseURL
+    );
+  }
+  if (!store.has("qwenAITagModel")) {
+    store.set(
+      "qwenAITagModel",
+      (store.get("qwenChatModel") as string) || _defaultPreferences.qwenAITagModel
+    );
   }
 
   store.set("preferenceVersion", preferenceVersion);

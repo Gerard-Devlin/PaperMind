@@ -229,7 +229,8 @@
     "hotkeysDuplicateKeysInfo": "This shortcut is already used by another shortcut.",
     "hotkeysOpenPDFLabel": "Open PDF",
     "hotkeysEditLabel": "Edit Metadata",
-    "hotkeysPluginLabel": "Open Quick Reference Plugin"
+    "hotkeysPluginLabel": "Open Quick Reference Plugin",
+    "hotkeysAskLabel": "Open Ask Mode"
   },
   "confirmation": {
     "title": "Confirmation",
@@ -262,6 +263,10 @@
     "title": "Semantic Search",
     "qwenApiKeyTitle": "Qwen API Key",
     "qwenApiKeyInfo": "Stored in the system keychain. DashScope compatible-mode embeddings are used.",
+    "askBaseURLTitle": "Ask Base URL",
+    "askBaseURLInfo": "OpenAI-compatible chat completions endpoint root used by Ask mode (RAG answers).",
+    "askModelTitle": "Ask Model",
+    "askModelInfo": "Qwen chat model used for Ask mode answers.",
     "autoAITagsTitle": "Auto AI Tags",
     "autoAITagsInfo": "When papers are imported or updated, PaperMind uses the Qwen API key above to add short research tags automatically.",
     "aiTaggingBaseURLTitle": "AI Tagging Base URL",

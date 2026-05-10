@@ -12,6 +12,7 @@ import { IInjectable } from "./services/injectable";
 import { ShortcutService } from "./services/shortcut-service";
 import QuickpasteView from "./ui/quickpaste-view/quickpaste-view.vue";
 
+import "katex/dist/katex.min.css";
 import "./css/index.css";
 
 const normalizeLanguage = (language: string) => {

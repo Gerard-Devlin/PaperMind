@@ -248,23 +248,32 @@ export class MenuService extends Eventable<IMenuServiceState> {
    * Enable all global shortcuts.
    */
   enableGlobalShortcuts() {
-    const pluginKey = this._preferenceService.get("shortcutPlugin");
-    if (!pluginKey) {
-      return;
-    }
-    if (!globalShortcut.isRegistered(pluginKey as string)) {
-      globalShortcut.register(pluginKey as string, async () => {
-        if (
-          !PLMainAPILocal.windowProcessManagementService.browserWindows.has(
-            "quickpasteProcess"
-          )
-        ) {
-          PLMainAPILocal.windowProcessManagementService.createQuickpasteRenderer();
-        }
+    const openQuickpaste = async (mode: "cite" | "ask") => {
+      this._preferenceService.set({ quickpasteLaunchMode: mode });
+      if (
+        !PLMainAPILocal.windowProcessManagementService.browserWindows.has(
+          "quickpasteProcess"
+        )
+      ) {
+        PLMainAPILocal.windowProcessManagementService.createQuickpasteRenderer();
+      }
 
-        PLMainAPILocal.windowProcessManagementService.browserWindows
-          .get("quickpasteProcess")
-          .show();
+      PLMainAPILocal.windowProcessManagementService.browserWindows
+        .get("quickpasteProcess")
+        .show();
+    };
+
+    const pluginKey = this._preferenceService.get("shortcutPlugin");
+    if (pluginKey && !globalShortcut.isRegistered(pluginKey as string)) {
+      globalShortcut.register(pluginKey as string, async () => {
+        await openQuickpaste("cite");
+      });
+    }
+
+    const askKey = this._preferenceService.get("shortcutAsk");
+    if (askKey && !globalShortcut.isRegistered(askKey as string)) {
+      globalShortcut.register(askKey as string, async () => {
+        await openQuickpaste("ask");
       });
     }
   }

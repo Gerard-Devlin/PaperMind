@@ -66,6 +66,7 @@ export interface IPreferenceStore {
   shortcutEdit: string;
   shortcutFlag: string;
   shortcutCopyKey: string;
+  shortcutAsk: string;
 
   shortcutDelete: string;
 
@@ -79,6 +80,7 @@ export interface IPreferenceStore {
   mainviewShortAuthor: boolean;
 
   pluginLinkedFolder: string;
+  quickpasteLaunchMode: "cite" | "ask";
 
   selectedPDFViewer: string;
   selectedPDFViewerPath: string;
@@ -97,6 +99,10 @@ export interface IPreferenceStore {
   qwenEmbeddingBaseURL: string;
   qwenEmbeddingModel: string;
   qwenEmbeddingDimensions: number;
+  qwenAskBaseURL: string;
+  qwenAskModel: string;
+  qwenAITagBaseURL: string;
+  qwenAITagModel: string;
   qwenChatBaseURL: string;
   qwenChatModel: string;
   autoAITagging: boolean;

@@ -75,24 +75,46 @@ const rebuildIndex = async () => {
 
     <Input
       class="mb-5"
-      :title="$t('semanticsearch.aiTaggingBaseURLTitle')"
-      :info="$t('semanticsearch.aiTaggingBaseURLInfo')"
-      :value="prefState.qwenChatBaseURL"
+      :title="$t('semanticsearch.askBaseURLTitle')"
+      :info="$t('semanticsearch.askBaseURLInfo')"
+      :value="prefState.qwenAskBaseURL"
       type="text"
       placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1"
-      @event:change="(value) => updatePref('qwenChatBaseURL', value)"
-      @event:submit="(value) => updatePref('qwenChatBaseURL', value)"
+      @event:change="(value) => updatePref('qwenAskBaseURL', value)"
+      @event:submit="(value) => updatePref('qwenAskBaseURL', value)"
+    />
+
+    <Input
+      class="mb-5"
+      :title="$t('semanticsearch.askModelTitle')"
+      :info="$t('semanticsearch.askModelInfo')"
+      :value="prefState.qwenAskModel"
+      type="text"
+      placeholder="qwen-plus"
+      @event:change="(value) => updatePref('qwenAskModel', value)"
+      @event:submit="(value) => updatePref('qwenAskModel', value)"
+    />
+
+    <Input
+      class="mb-5"
+      :title="$t('semanticsearch.aiTaggingBaseURLTitle')"
+      :info="$t('semanticsearch.aiTaggingBaseURLInfo')"
+      :value="prefState.qwenAITagBaseURL"
+      type="text"
+      placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1"
+      @event:change="(value) => updatePref('qwenAITagBaseURL', value)"
+      @event:submit="(value) => updatePref('qwenAITagBaseURL', value)"
     />
 
     <Input
       class="mb-5"
       :title="$t('semanticsearch.aiTaggingModelTitle')"
       :info="$t('semanticsearch.aiTaggingModelInfo')"
-      :value="prefState.qwenChatModel"
+      :value="prefState.qwenAITagModel"
       type="text"
       placeholder="qwen-plus"
-      @event:change="(value) => updatePref('qwenChatModel', value)"
-      @event:submit="(value) => updatePref('qwenChatModel', value)"
+      @event:change="(value) => updatePref('qwenAITagModel', value)"
+      @event:submit="(value) => updatePref('qwenAITagModel', value)"
     />
 
     <Input
