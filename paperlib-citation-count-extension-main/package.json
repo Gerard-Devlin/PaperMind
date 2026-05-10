@@ -1,12 +1,12 @@
 {
   "name": "@future-scholars/paperlib-citation-count-extension",
   "version": "0.0.5",
-  "author": "Paperlib",
-  "description": "Show the citation count in the detail panel.",
+  "author": "PaperMind",
+  "description": "Show Semantic Scholar citation counts in the detail panel.",
   "main": "dist/main.js",
   "type": "commonjs",
   "manifest_version": "0.0.16",
-  "homepage": "https://github.com/Future-Scholars/paperlib-citation-count-extension",
+  "homepage": "",
   "scripts": {
     "prebuild": "tsc --noEmit",
     "build": "tsc --noEmit && vite build"

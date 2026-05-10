@@ -89,6 +89,7 @@ export interface IPreferenceStore {
   showPresetting: boolean;
   showGuide: boolean;
   showWelcome: boolean;
+  apiSetupDismissed: boolean;
   fontsize: "normal" | "large" | "larger";
 
   semanticSearchEnabled: boolean;

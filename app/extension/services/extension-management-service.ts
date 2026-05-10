@@ -16,7 +16,7 @@ import {
 } from "./extension-preference-service";
 import { SimpleIntervalJob, Task, ToadScheduler } from "toad-scheduler";
 
-const BUNDLED_SCRAPER_EXTENSION_PATHS: Record<
+const BUNDLED_EXTENSION_PATHS: Record<
   string,
   { sourceDir: string; packageDir: string; preferPackage?: boolean }
 > = {
@@ -38,7 +38,20 @@ const BUNDLED_SCRAPER_EXTENSION_PATHS: Record<
     ),
     preferPackage: true,
   },
+  "@future-scholars/paperlib-citation-count-extension": {
+    sourceDir: "paperlib-citation-count-extension-main",
+    packageDir: path.join(
+      "node_modules",
+      "@future-scholars",
+      "paperlib-citation-count-extension"
+    ),
+  },
 };
+
+const OFFICIAL_SCRAPE_EXTENSION_IDS = [
+  "@future-scholars/paperlib-entry-scrape-extension",
+  "@future-scholars/paperlib-metadata-scrape-extension",
+];
 
 export const IExtensionManagementService = createDecorator(
   "extensionManagementService"
@@ -98,10 +111,22 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
       updated: "",
       installedLoaded: false,
     });
-    this._extStore = new ElectronStore({
-      name: "extensions",
-      cwd: globalThis["extensionWorkingDir"],
-    });
+    this._repairExtensionStoreFile();
+    try {
+      this._extStore = new ElectronStore({
+        name: "extensions",
+        cwd: globalThis["extensionWorkingDir"],
+      });
+    } catch (error) {
+      const storePath = path.join(globalThis["extensionWorkingDir"], "extensions.json");
+      if (fs.existsSync(storePath)) {
+        fs.renameSync(storePath, `${storePath}.broken-${Date.now()}`);
+      }
+      this._extStore = new ElectronStore({
+        name: "extensions",
+        cwd: globalThis["extensionWorkingDir"],
+      });
+    }
 
     // ENHANCE: different npm url for China
     this._extManager = new PluginManager(_networkTool, {
@@ -116,48 +141,77 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
 
   async initialize() {
     await this._chooseNPMRegistry();
-    await this.ensureOfficialScrapeExtensionsInstalled();
+    await this.ensureBundledExtensionsInstalled();
     await this.loadInstalledExtensions();
     await this.checkUpdate();
     await this.startUpdateCheckDaemon();
   }
 
-  async ensureOfficialScrapeExtensionsInstalled() {
+  async ensureBundledExtensionsInstalled() {
     for (const [extensionID, bundled] of Object.entries(
-      BUNDLED_SCRAPER_EXTENSION_PATHS
+      BUNDLED_EXTENSION_PATHS
     )) {
-      if (this._installedExtensions[extensionID]) {
-        continue;
-      }
+      await this._ensureBundledExtensionInstalled(extensionID, bundled);
+    }
+  }
 
-      const bundledPath = this._resolveBundledExtensionPath(bundled);
-      if (!bundledPath) {
-        PLAPI.logService.warn(
-          `Bundled scraper extension is not available.`,
-          extensionID,
-          false,
-          "ExtManagementService"
-        );
-        continue;
-      }
+  private _repairExtensionStoreFile() {
+    const storePath = path.join(globalThis["extensionWorkingDir"], "extensions.json");
+    if (!fs.existsSync(storePath)) {
+      return;
+    }
 
-      if (!fs.existsSync(path.join(bundledPath, "dist", "main.js"))) {
-        PLAPI.logService.warn(
-          `Bundled scraper extension is not built.`,
-          `${bundledPath} is missing dist/main.js`,
-          true,
-          "ExtManagementService"
-        );
-        continue;
-      }
+    const content = fs.readFileSync(storePath, "utf8");
+    if (content.charCodeAt(0) === 0xfeff) {
+      fs.writeFileSync(storePath, content.slice(1), "utf8");
+    }
+  }
 
-      await this.install(bundledPath, false);
-      const info = this._installedExtensionInfos[extensionID];
-      if (info) {
-        info.verified = true;
-        info.originLocation = bundledPath;
-        this._extStore.set(extensionID, info);
-      }
+  async ensureOfficialScrapeExtensionsInstalled() {
+    for (const extensionID of OFFICIAL_SCRAPE_EXTENSION_IDS) {
+      await this._ensureBundledExtensionInstalled(
+        extensionID,
+        BUNDLED_EXTENSION_PATHS[extensionID]
+      );
+    }
+  }
+
+  private async _ensureBundledExtensionInstalled(
+    extensionID: string,
+    bundled: { sourceDir: string; packageDir: string; preferPackage?: boolean },
+    force = false
+  ) {
+    if (this._installedExtensions[extensionID] && !force) {
+      return;
+    }
+
+    const bundledPath = this._resolveBundledExtensionPath(bundled);
+    if (!bundledPath) {
+      PLAPI.logService.warn(
+        `Bundled extension is not available.`,
+        extensionID,
+        false,
+        "ExtManagementService"
+      );
+      return;
+    }
+
+    if (!fs.existsSync(path.join(bundledPath, "dist", "main.js"))) {
+      PLAPI.logService.warn(
+        `Bundled extension is not built.`,
+        `${bundledPath} is missing dist/main.js`,
+        false,
+        "ExtManagementService"
+      );
+      return;
+    }
+
+    await this.install(bundledPath, false, "latest", true);
+    const info = this._installedExtensionInfos[extensionID];
+    if (info) {
+      info.verified = true;
+      info.originLocation = bundledPath;
+      this._extStore.set(extensionID, info);
     }
   }
 
@@ -400,7 +454,8 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
   async install(
     extensionIDorPath: string,
     notify = true,
-    version: string = "latest"
+    version: string = "latest",
+    forceLocal = false
   ) {
     let extensionID;
     try {
@@ -417,7 +472,7 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
       if (isLocalPath(extensionIDorPath)) {
         if (fs.existsSync(extensionIDorPath)) {
           info = await this._extManager.installFromPath(extensionIDorPath, {
-            force: false,
+            force: forceLocal,
           });
           installFromFile = true;
           extensionID = info.name;
@@ -735,16 +790,36 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
     try {
       if (
         !this._installedExtensions[extensionID] &&
-        BUNDLED_SCRAPER_EXTENSION_PATHS[extensionID]
+        BUNDLED_EXTENSION_PATHS[extensionID]
       ) {
-        await this.ensureOfficialScrapeExtensionsInstalled();
+        await this.ensureBundledExtensionsInstalled();
       }
 
       if (!this._installedExtensions[extensionID]) {
         throw new Error(`Extension ${extensionID} is not loaded.`);
       }
 
-      return await this._installedExtensions[extensionID][methodName](...args);
+      const instance = this._installedExtensions[extensionID];
+      let targetMethod = instance[methodName];
+      if (typeof targetMethod !== "function") {
+        // Self-heal for broken in-memory extension instances.
+        if (BUNDLED_EXTENSION_PATHS[extensionID]) {
+          await this._ensureBundledExtensionInstalled(
+            extensionID,
+            BUNDLED_EXTENSION_PATHS[extensionID],
+            true
+          );
+          targetMethod = this._installedExtensions[extensionID]?.[methodName];
+        }
+      }
+
+      if (typeof targetMethod !== "function") {
+        throw new TypeError(
+          `Extension method ${extensionID}.${methodName} is not callable.`
+        );
+      }
+
+      return await targetMethod.apply(this._installedExtensions[extensionID], args);
     } catch (e) {
       console.error(e);
       PLAPI.logService.error(
@@ -828,7 +903,7 @@ export class ExtensionManagementService extends Eventable<IExtensionManagementSe
         PLAPI.logService.warn(
           `Extension initialization fallback is applied.`,
           `${extensionID}: ${message}`,
-          true,
+          false,
           "ExtManagementService"
         );
         return extension;

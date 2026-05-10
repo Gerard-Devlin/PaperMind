@@ -65,5 +65,10 @@
       to: "bundled-extensions/paperlib-community-metadata-collection-main",
       filter: ["package.json", "metadata/**", "pipeline/**"],
     },
+    {
+      from: "paperlib-citation-count-extension-main",
+      to: "bundled-extensions/paperlib-citation-count-extension-main",
+      filter: ["package.json", "dist/**"],
+    },
   ],
 }

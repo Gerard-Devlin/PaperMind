@@ -94,6 +94,7 @@ export interface IPreferenceStore {
   showPresetting: boolean;
   showGuide: boolean;
   showWelcome: boolean;
+  apiSetupDismissed: boolean;
   fontsize: "normal" | "large" | "larger";
 
   semanticSearchEnabled: boolean;
@@ -110,7 +111,7 @@ const _defaultPreferences: IPreferenceStore = {
   preferenceVersion: 1,
   windowSize: { height: 800, width: 1440 },
 
-  appLibFolder: join(os.homedir(), "Documents", "paperlib"),
+  appLibFolder: join(os.homedir(), "Documents", "papermind"),
   sourceFileOperation: "copy",
 
   showSidebarCount: true,
@@ -224,6 +225,7 @@ const _defaultPreferences: IPreferenceStore = {
   showPresetting: true,
   showGuide: true,
   showWelcome: true,
+  apiSetupDismissed: false,
   fontsize: "normal",
 
   semanticSearchEnabled: false,
@@ -264,6 +266,11 @@ function _migrate(
         } catch (e) {}
       }
     }
+  }
+
+  const legacyDefaultFolder = join(os.homedir(), "Documents", "paperlib");
+  if (!store.has("appLibFolder") || store.get("appLibFolder") === legacyDefaultFolder) {
+    store.set("appLibFolder", _defaultPreferences.appLibFolder);
   }
 
   if (prevVersion <= 1) {
@@ -410,7 +417,10 @@ export class PreferenceService extends Eventable<IPreferenceStore> {
    */
   @errorcatching("Failed to get password.", true, "PrefService", null)
   async getPassword(key: string) {
-    return await keytar.getPassword("paperlib", key);
+    return (
+      (await keytar.getPassword("papermind", key)) ||
+      (await keytar.getPassword("paperlib", key))
+    );
   }
 
   /**
@@ -420,7 +430,7 @@ export class PreferenceService extends Eventable<IPreferenceStore> {
    */
   @errorcatching("Failed to set password.", true, "PrefService")
   async setPassword(key: string, pwd: string) {
-    await keytar.setPassword("paperlib", key, pwd);
+    await keytar.setPassword("papermind", key, pwd);
   }
 }
 

@@ -44,22 +44,25 @@ class PaperlibEntryScrapeExtension extends PLExtension {
       PLAPI.hookService.hookTransform("scrapeEntry", this.id, "scrapeEntry"),
     );
 
-    this.disposeCallbacks.push(
-      PLAPI.commandService.on(
-        "@future-scholars/paperlib-entry-scrape-extension:import" as any,
-        (args) => {
-          this._import(args);
-        },
-      ),
-    );
+    const commandService = (globalThis as any).PLUIAPI?.commandService;
+    if (commandService) {
+      this.disposeCallbacks.push(
+        commandService.on(
+          "@future-scholars/paperlib-entry-scrape-extension:import" as any,
+          (args) => {
+            this._import(args);
+          },
+        ),
+      );
 
-    this.disposeCallbacks.push(
-      PLAPI.commandService.registerExternel({
-        id: `import-from`,
-        description: "Import papers from given DOIs, ArXiv IDs, Webpage URLs or Titles (separated by ;).",
-        event: "@future-scholars/paperlib-entry-scrape-extension:import",
-      }),
-    );
+      this.disposeCallbacks.push(
+        commandService.registerExternel({
+          id: `import-from`,
+          description: "Import papers from given DOIs, ArXiv IDs, Webpage URLs or Titles (separated by ;).",
+          event: "@future-scholars/paperlib-entry-scrape-extension:import",
+        }),
+      );
+    }
   }
 
   async dispose() {

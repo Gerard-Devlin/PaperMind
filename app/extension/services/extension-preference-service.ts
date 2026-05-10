@@ -1,5 +1,6 @@
 import ElectronStore from "electron-store";
 import keytar from "keytar";
+import fs from "fs";
 import path from "path";
 
 import { errorcatching } from "@/base/error";
@@ -17,11 +18,22 @@ class ExtensionPreferenceStore<
     preferenceFilePath?: string
   ) {
     super(`${extensionID}-preferenceStore`, defaultValues);
-
-    this._store = new ElectronStore({
-      name: extensionID,
-      cwd: preferenceFilePath,
-    });
+    const storePath = path.join(preferenceFilePath || "", `${extensionID}.json`);
+    this._repairPreferenceStoreFile(storePath);
+    try {
+      this._store = new ElectronStore({
+        name: extensionID,
+        cwd: preferenceFilePath,
+      });
+    } catch (error) {
+      if (fs.existsSync(storePath)) {
+        fs.renameSync(storePath, `${storePath}.broken-${Date.now()}`);
+      }
+      this._store = new ElectronStore({
+        name: extensionID,
+        cwd: preferenceFilePath,
+      });
+    }
 
     for (const [key, value] of Object.entries(defaultValues)) {
       if (!this._store.has(key)) {
@@ -38,6 +50,17 @@ class ExtensionPreferenceStore<
           this._store.set(key, curValue);
         }
       }
+    }
+  }
+
+  private _repairPreferenceStoreFile(storePath: string) {
+    if (!storePath || !fs.existsSync(storePath)) {
+      return;
+    }
+
+    const content = fs.readFileSync(storePath, "utf8");
+    if (content.charCodeAt(0) === 0xfeff) {
+      fs.writeFileSync(storePath, content.slice(1), "utf8");
     }
   }
 
