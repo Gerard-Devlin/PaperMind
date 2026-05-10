@@ -39,18 +39,35 @@ const mainviewSortOrder: Ref<"desc" | "asce"> = ref("desc");
 // ====================
 const onSearchTextChanged = debounce(async () => {
   if (searchText.value) {
-    paperEntities.value = (await PLAPI.paperService.load(
-      new PaperFilterOptions({
-        search: searchText.value,
-        searchMode: "general",
-        flaged: false,
-        tag: "",
-        folder: "",
-      }).toString(),
-      mainviewSortBy.value,
-      mainviewSortOrder.value
-    )) as unknown as PaperEntity[];
-    paperEntities.value = paperEntities.value.slice(0, 8);
+    const semanticEnabled = await PLMainAPI.preferenceService.get(
+      "semanticSearchEnabled"
+    );
+
+    if (semanticEnabled) {
+      try {
+        paperEntities.value = (await PLAPI.semanticSearchService.search(
+          searchText.value,
+          8
+        )) as unknown as PaperEntity[];
+      } catch {
+        paperEntities.value = [];
+      }
+    }
+
+    if (!paperEntities.value || paperEntities.value.length === 0) {
+      paperEntities.value = (await PLAPI.paperService.load(
+        new PaperFilterOptions({
+          search: searchText.value,
+          searchMode: "general",
+          flaged: false,
+          tag: "",
+          folder: "",
+        }).toString(),
+        mainviewSortBy.value,
+        mainviewSortOrder.value
+      )) as unknown as PaperEntity[];
+      paperEntities.value = paperEntities.value.slice(0, 8);
+    }
 
     // @ts-ignore
     paperEntities.value.push({

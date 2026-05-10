@@ -92,6 +92,7 @@ onMounted(async () => {
           >
             <BIconGlobe class="my-auto text-xs" />
           </SectionItem>
+          <!--
           <SectionItem
             :name="$t('preference.cloud')"
             :active="preferenceTab === 'cloud'"
@@ -99,6 +100,7 @@ onMounted(async () => {
           >
             <BIconCloudArrowUp class="my-auto text-xs" />
           </SectionItem>
+          -->
           <SectionItem
             :name="$t('preference.import')"
             :active="preferenceTab === 'import'"
@@ -164,7 +166,7 @@ onMounted(async () => {
         <SidebarView v-if="preferenceTab === 'sidebar'" />
         <MainviewView v-if="preferenceTab === 'mainview'" />
         <ProxyView v-if="preferenceTab === 'proxy'" />
-        <CloudView v-if="preferenceTab === 'cloud'" />
+        <!-- <CloudView v-if="preferenceTab === 'cloud'" /> -->
         <ImportView v-if="preferenceTab === 'import'" />
         <ExportView v-if="preferenceTab === 'export'" />
         <HotkeyView v-if="preferenceTab === 'hotkey'" />

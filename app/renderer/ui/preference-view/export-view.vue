@@ -75,7 +75,7 @@ const exportCSVClicked = async () => {
   if (csvExportPath.value) {
     const paperCollection = await PLAPI.paperService.load("", "title", "asce");
     const csv = await PLAPI.referenceService.exportCSV(Array.from(paperCollection));
-    const filePath = csvExportPath.value + `/paperlib_CSV_${Date.now()}.csv`;
+    const filePath = csvExportPath.value + `/papermind_CSV_${Date.now()}.csv`;
     PLMainAPI.fileSystemService.writeToFile(filePath, csv);
   }
 };

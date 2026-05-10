@@ -8,6 +8,9 @@ class PaperMindCitationCountExtension extends PLExtension {
   private readonly _cache: Map<string, { content: string; at: number }>;
   private readonly _inflight: Set<string>;
   private _rateLimitedUntil: number;
+  private _requestChain: Promise<void>;
+  private _nextAllowedAt: number;
+  private _backoffMs: number;
 
   constructor() {
     super({
@@ -19,6 +22,9 @@ class PaperMindCitationCountExtension extends PLExtension {
     this._cache = new Map();
     this._inflight = new Set();
     this._rateLimitedUntil = 0;
+    this._requestChain = Promise.resolve();
+    this._nextAllowedAt = 0;
+    this._backoffMs = 0;
   }
 
   async initialize() {
@@ -64,20 +70,6 @@ class PaperMindCitationCountExtension extends PLExtension {
       return;
     }
 
-    if (Date.now() < this._rateLimitedUntil) {
-      const waitSeconds = Math.ceil((this._rateLimitedUntil - Date.now()) / 1000);
-      await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
-        "paperlib-citation-count": {
-          title,
-          content:
-            lang === "zh-CN"
-              ? `请求过快，请 ${waitSeconds}s 后重试`
-              : `Rate limited, retry in ${waitSeconds}s`,
-        },
-      });
-      return;
-    }
-
     this._inflight.add(paperKey);
     await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
       "paperlib-citation-count": {
@@ -103,123 +95,165 @@ class PaperMindCitationCountExtension extends PLExtension {
       )}&limit=15&fields=title,year,authors,citationCount,influentialCitationCount`;
     }
 
-    try {
-      const response = await PLExtAPI.networkTool.get(
-        scrapeURL,
-        {},
-        1,
-        8000,
-        true,
-        true
-      );
-      const parsedResponse = response.body;
-      const itemList = parsedResponse.data ? parsedResponse.data : [parsedResponse];
-
-      const existTitle = stringUtils.formatString({
-        str: paperEntity.title,
-        removeStr: "&amp;",
-        removeSymbol: true,
-        lowercased: true,
-      });
-      const targetYear = Number.parseInt(`${(paperEntity as any).year || ""}`, 10);
-      const targetAuthorToken = this._firstAuthorToken(`${paperEntity.authors || ""}`);
-
-      let bestScore = -1;
-      let bestItem: any = null;
-      for (const item of itemList) {
-        if (!item) {
-          continue;
-        }
-
-        const plainHitTitle = stringUtils.formatString({
-          str: item.title || "",
-          removeStr: "&amp;",
-          removeSymbol: true,
-          lowercased: true,
-        });
-        const sim = plainHitTitle
-          ? stringSimilarity.compareTwoStrings(plainHitTitle, existTitle)
-          : 0;
-
-        if (!useSearchEndpoint) {
-          bestItem = item;
-          break;
-        }
-
-        let score = sim;
-        const hitYear = Number.parseInt(`${item.year || ""}`, 10);
-        if (!Number.isNaN(targetYear) && !Number.isNaN(hitYear)) {
-          if (hitYear === targetYear) {
-            score += 0.15;
-          } else if (Math.abs(hitYear - targetYear) <= 1) {
-            score += 0.06;
-          }
-        }
-
-        const hitAuthorToken = this._firstAuthorTokenFromHit(item);
-        if (targetAuthorToken && hitAuthorToken && targetAuthorToken === hitAuthorToken) {
-          score += 0.15;
-        }
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestItem = item;
-        }
-      }
-
-      let citationCount = "N/A";
-      let influentialCitationCount = "N/A";
-      if (bestItem && (!useSearchEndpoint || bestScore >= 0.62)) {
-        citationCount = `${bestItem.citationCount ?? "N/A"}`;
-        influentialCitationCount = `${bestItem.influentialCitationCount ?? "N/A"}`;
-      }
-
-      let content = "N/A";
-      if (citationCount !== "N/A" && influentialCitationCount !== "N/A") {
-        content = `${citationCount} (${influentialCitationCount})`;
-      } else if (citationCount !== "N/A") {
-        content = `${citationCount}`;
-      } else if (influentialCitationCount !== "N/A") {
-        content = `N/A (${influentialCitationCount})`;
-      }
-
-      await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
-        "paperlib-citation-count": {
-          title,
-          content,
-        },
-      });
-      this._cache.set(paperKey, { content, at: Date.now() });
-    } catch (err) {
-      const message = `${(err as Error).message || err}`;
-      if (message.includes("429")) {
-        this._rateLimitedUntil = Date.now() + 60 * 1000;
+    await this._enqueueRequest(async () => {
+      if (Date.now() < this._rateLimitedUntil) {
+        const waitSeconds = Math.max(
+          1,
+          Math.ceil((this._rateLimitedUntil - Date.now()) / 1000)
+        );
         await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
           "paperlib-citation-count": {
             title,
             content:
               lang === "zh-CN"
-                ? "请求过快，请稍后再试"
-                : "Rate limited, please retry later",
+                ? `请求过快，请 ${waitSeconds}s 后重试`
+                : `Rate limited, retry in ${waitSeconds}s`,
           },
         });
-      } else {
-        PLAPI.logService.error(
-          "Failed to get citation count.",
-          err as Error,
-          false,
-          "CitationCountExt"
+        this._inflight.delete(paperKey);
+        return;
+      }
+
+      try {
+        const response = await PLExtAPI.networkTool.get(
+          scrapeURL,
+          {},
+          1,
+          8000,
+          true,
+          true
         );
+        const parsedResponse = response.body;
+        const itemList = parsedResponse.data ? parsedResponse.data : [parsedResponse];
+
+        const existTitle = stringUtils.formatString({
+          str: paperEntity.title,
+          removeStr: "&amp;",
+          removeSymbol: true,
+          lowercased: true,
+        });
+        const targetYear = Number.parseInt(`${(paperEntity as any).year || ""}`, 10);
+        const targetAuthorToken = this._firstAuthorToken(`${paperEntity.authors || ""}`);
+
+        let bestScore = -1;
+        let bestItem: any = null;
+        for (const item of itemList) {
+          if (!item) {
+            continue;
+          }
+
+          const plainHitTitle = stringUtils.formatString({
+            str: item.title || "",
+            removeStr: "&amp;",
+            removeSymbol: true,
+            lowercased: true,
+          });
+          const sim = plainHitTitle
+            ? stringSimilarity.compareTwoStrings(plainHitTitle, existTitle)
+            : 0;
+
+          if (!useSearchEndpoint) {
+            bestItem = item;
+            break;
+          }
+
+          let score = sim;
+          const hitYear = Number.parseInt(`${item.year || ""}`, 10);
+          if (!Number.isNaN(targetYear) && !Number.isNaN(hitYear)) {
+            if (hitYear === targetYear) {
+              score += 0.15;
+            } else if (Math.abs(hitYear - targetYear) <= 1) {
+              score += 0.06;
+            }
+          }
+
+          const hitAuthorToken = this._firstAuthorTokenFromHit(item);
+          if (targetAuthorToken && hitAuthorToken && targetAuthorToken === hitAuthorToken) {
+            score += 0.15;
+          }
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestItem = item;
+          }
+        }
+
+        let citationCount = "N/A";
+        let influentialCitationCount = "N/A";
+        if (bestItem && (!useSearchEndpoint || bestScore >= 0.62)) {
+          citationCount = `${bestItem.citationCount ?? "N/A"}`;
+          influentialCitationCount = `${bestItem.influentialCitationCount ?? "N/A"}`;
+        }
+
+        let content = "N/A";
+        if (citationCount !== "N/A" && influentialCitationCount !== "N/A") {
+          content = `${citationCount} (${influentialCitationCount})`;
+        } else if (citationCount !== "N/A") {
+          content = `${citationCount}`;
+        } else if (influentialCitationCount !== "N/A") {
+          content = `N/A (${influentialCitationCount})`;
+        }
+
         await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
           "paperlib-citation-count": {
             title,
-            content: "N/A",
+            content,
           },
         });
+        this._cache.set(paperKey, { content, at: Date.now() });
+        this._backoffMs = 0;
+      } catch (err) {
+        const message = `${(err as Error).message || err}`;
+        if (message.includes("429")) {
+          this._backoffMs = this._backoffMs > 0
+            ? Math.min(this._backoffMs * 2, 120000)
+            : 15000;
+          this._rateLimitedUntil = Date.now() + this._backoffMs;
+          const waitSeconds = Math.ceil(this._backoffMs / 1000);
+          await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
+            "paperlib-citation-count": {
+              title,
+              content:
+                lang === "zh-CN"
+                  ? `请求过快，请 ${waitSeconds}s 后重试`
+                  : `Rate limited, retry in ${waitSeconds}s`,
+            },
+          });
+        } else {
+          PLAPI.logService.error(
+            "Failed to get citation count.",
+            err as Error,
+            false,
+            "CitationCountExt"
+          );
+          await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
+            "paperlib-citation-count": {
+              title,
+              content: "N/A",
+            },
+          });
+        }
+      } finally {
+        this._inflight.delete(paperKey);
       }
-    } finally {
-      this._inflight.delete(paperKey);
-    }
+    });
+  }
+
+  private async _enqueueRequest(task: () => Promise<void>) {
+    this._requestChain = this._requestChain
+      .then(async () => {
+        const waitUntil = Math.max(this._nextAllowedAt, this._rateLimitedUntil);
+        const now = Date.now();
+        if (waitUntil > now) {
+          await new Promise((resolve) => setTimeout(resolve, waitUntil - now));
+        }
+        await task();
+        this._nextAllowedAt = Date.now() + 1200;
+      })
+      .catch(() => {})
+      .then(() => {});
+
+    await this._requestChain;
   }
 
   private _paperKey(paperEntity: PaperEntity) {
@@ -268,3 +302,4 @@ async function initialize() {
 }
 
 export { initialize };
+
