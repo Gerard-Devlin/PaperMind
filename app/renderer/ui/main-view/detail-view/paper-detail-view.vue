@@ -341,7 +341,7 @@ onUpdated(() => {
         :content="entity.note"
       />
       <Supplementaries :entity="entity"
-        v-if="Object.keys(entity.supplementaries).length > 0 || entity.doi || entity.arxiv"
+        v-if="Object.keys(entity.supplementaries).length > 0 || entity.doi || entity.arxiv || (entity.codes && entity.codes.length > 0)"
       />
       <!-- TODO: move this to a hover window -->
       <!-- <Markdown :title="'Markdown'" :sups="entity.supURLs" /> -->

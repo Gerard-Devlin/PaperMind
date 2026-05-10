@@ -48,6 +48,29 @@ const onlineSups: ComputedRef<Record<string, ISupplementary>> = computed(() => {
       onlineSups[key] = value;
     }
   });
+
+  // Also surface code links captured from metadata scrapers.
+  for (const [index, codeRaw] of (props.entity.codes || []).entries()) {
+    let url = "";
+    let isOfficial = false;
+    try {
+      const parsed = JSON.parse(codeRaw) as { url?: string; isOfficial?: boolean };
+      url = `${parsed?.url || ""}`.trim();
+      isOfficial = Boolean(parsed?.isOfficial);
+    } catch {
+      url = `${codeRaw || ""}`.trim();
+    }
+
+    if (!url || !/^https?:\/\//i.test(url)) {
+      continue;
+    }
+
+    onlineSups[`code-${index}-${url}`] = {
+      _id: `auto-generated-code-${index}`,
+      name: isOfficial ? "Official Code" : "Code",
+      url,
+    };
+  }
   return onlineSups;
 });
 
