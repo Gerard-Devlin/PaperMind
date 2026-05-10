@@ -100,6 +100,8 @@ export interface IPreferenceStore {
   qwenChatBaseURL: string;
   qwenChatModel: string;
   autoAITagging: boolean;
+  startAtLogin: boolean;
+  closeToTray: boolean;
 }
 
 export const IPreferenceService = createDecorator("preferenceService");

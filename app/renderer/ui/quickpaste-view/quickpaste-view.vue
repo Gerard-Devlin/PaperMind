@@ -5,7 +5,7 @@ import {
   BIconLink,
   BIconShift,
 } from "bootstrap-icons-vue";
-import { Ref, nextTick, onMounted, ref } from "vue";
+import { Ref, computed, nextTick, onMounted, ref } from "vue";
 
 import { disposable } from "@/base/dispose";
 import { debounce } from "@/base/misc";
@@ -20,12 +20,15 @@ import TableItem from "./components/table-item.vue";
 // ====================
 const paperEntities: Ref<PaperEntity[]> = ref([]);
 const folders: Ref<PaperFolder[]> = ref([]);
+const askAnswer = ref("");
+const askStatus = ref("");
+const asking = ref(false);
 
 // ====================
 // State
 // ====================
 const searchInput = ref(null);
-const exportMode = ref("BibTex");
+const exportMode = ref<"BibTex" | "PlainText" | "Ask">("BibTex");
 const searchText = ref("");
 const searchDebounce = ref(300);
 const selectedIndex: Ref<number> = ref(0);
@@ -33,6 +36,33 @@ const linkedFolder = ref("");
 const mainviewSortBy = ref("addTime");
 const mainviewSortOrder: Ref<"desc" | "asce"> = ref("desc");
 let searchRequestSeq = 0;
+const isAskMode = computed(() => exportMode.value === "Ask");
+
+const resizeQuickpaste = async () => {
+  const paperHeight = paperEntities.value.length * 28;
+  const answerHeight = isAskMode.value && askAnswer.value ? 170 : 0;
+  const newHeight = Math.min(paperHeight + answerHeight + 78, 620);
+
+  await PLMainAPI.windowProcessManagementService.resize(
+    "quickpasteProcess",
+    600,
+    Math.max(newHeight, 76)
+  );
+};
+
+const cycleMode = () => {
+  exportMode.value =
+    exportMode.value === "BibTex"
+      ? "PlainText"
+      : exportMode.value === "PlainText"
+        ? "Ask"
+        : "BibTex";
+  askAnswer.value = "";
+  askStatus.value = "";
+  // @ts-ignore
+  searchInput.value?.focus();
+  void onSearchTextChanged();
+};
 
 // ====================
 // Event Handler
@@ -44,6 +74,8 @@ const onSearchTextChanged = debounce(async () => {
   if (query) {
     paperEntities.value = [];
     selectedIndex.value = 0;
+    askAnswer.value = "";
+    askStatus.value = isAskMode.value ? "Finding related papers..." : "";
 
     let semanticResults: PaperEntity[] = [];
     try {
@@ -58,6 +90,7 @@ const onSearchTextChanged = debounce(async () => {
       return;
     }
     paperEntities.value = semanticResults.slice(0, 8);
+    askStatus.value = "";
     if (paperEntities.value.length === 0) {
       // @ts-ignore
       paperEntities.value.push({
@@ -66,23 +99,19 @@ const onSearchTextChanged = debounce(async () => {
       });
     }
 
-    paperEntities.value = paperEntities.value.filter(
+    if (!isAskMode.value) {
+      paperEntities.value = paperEntities.value.filter(
+        // @ts-ignore
+        (item) => item.id !== "search-in-google-scholar"
+      );
       // @ts-ignore
-      (item) => item.id !== "search-in-google-scholar"
-    );
-    // @ts-ignore
-    paperEntities.value.push({
-      id: "search-in-google-scholar",
-      title: "Search in Google Scholar...",
-    });
+      paperEntities.value.push({
+        id: "search-in-google-scholar",
+        title: "Search in Google Scholar...",
+      });
+    }
 
-    const newHeight = Math.min(28 * paperEntities.value.length + 78, 394);
-
-    await PLMainAPI.windowProcessManagementService.resize(
-      "quickpasteProcess",
-      600,
-      newHeight
-    );
+    await resizeQuickpaste();
   } else {
     await PLMainAPI.windowProcessManagementService.resize(
       "quickpasteProcess",
@@ -90,10 +119,45 @@ const onSearchTextChanged = debounce(async () => {
       76
     );
     paperEntities.value = [];
+    askAnswer.value = "";
+    askStatus.value = "";
   }
 }, searchDebounce.value);
 
+const askLibrary = async () => {
+  const query = `${searchText.value || ""}`.trim();
+  if (!query || asking.value) {
+    return;
+  }
+
+  asking.value = true;
+  askAnswer.value = "";
+  askStatus.value = "Thinking with your library...";
+  await nextTick();
+  await resizeQuickpaste();
+
+  try {
+    const result = await PLAPI.askService.ask(query);
+    askAnswer.value = result.answer || "No answer.";
+    askStatus.value =
+      result.sources.length === 0 ? "No semantic result found." : "";
+  } catch (error) {
+    askAnswer.value = "";
+    askStatus.value = `Ask failed: ${(error as Error).message || error}`;
+  } finally {
+    asking.value = false;
+    await resizeQuickpaste();
+    // @ts-ignore
+    searchInput.value?.focus();
+  }
+};
+
 const exportSelectedCiteKeys = async () => {
+  if (isAskMode.value) {
+    await askLibrary();
+    return;
+  }
+
   const selectedEntity = paperEntities.value[selectedIndex.value];
   if (selectedEntity && selectedEntity.id === "semantic-empty") {
     return;
@@ -123,6 +187,11 @@ const exportSelectedCiteKeys = async () => {
 };
 
 const exportSelectedCiteBodies = async () => {
+  if (isAskMode.value) {
+    await askLibrary();
+    return;
+  }
+
   const selectedEntity = paperEntities.value[selectedIndex.value];
   if (selectedEntity && selectedEntity.id === "semantic-empty") {
     return;
@@ -155,6 +224,11 @@ const exportSelectedCiteBodies = async () => {
 };
 
 const exportSelectedCiteBodiesInFolder = async () => {
+  if (isAskMode.value) {
+    await askLibrary();
+    return;
+  }
+
   const selectedEntity = paperEntities.value[selectedIndex.value];
   if (selectedEntity && selectedEntity.id === "semantic-empty") {
     return;
@@ -278,9 +352,7 @@ disposable(
   PLQPUIAPILocal.shortcutService.register(
     "Tab",
     () => {
-      exportMode.value = exportMode.value === "BibTex" ? "PlainText" : "BibTex";
-      // @ts-ignore
-      searchInput.value.focus();
+      cycleMode();
     },
     true,
     true,
@@ -370,6 +442,8 @@ disposable(
     (payload: { value: string }) => {
       if (payload.value === "show" || payload.value === "hide") {
         paperEntities.value = [];
+        askAnswer.value = "";
+        askStatus.value = "";
       }
     }
   )
@@ -396,7 +470,7 @@ onMounted(() => {
       />
       <div
         class="flex space-x-2 mr-2 text-xxs my-auto select-none text-neutral-400 border-[1px] border-neutral-400 dark:border-neutral-500 rounded-md px-2 py-1 hover:dark:border-neutral-200 hover:dark:text-neutral-200 hover:border-neutral-600 hover:text-neutral-600 transition-colors"
-        @click="exportMode = exportMode === 'BibTex' ? 'PlainText' : 'BibTex'"
+        @click="cycleMode"
       >
         {{ exportMode }}
       </div>
@@ -420,6 +494,15 @@ onMounted(() => {
     </div>
 
     <div
+      v-if="isAskMode && askAnswer"
+      class="mx-2 mt-2 h-[150px] overflow-y-auto rounded-md bg-neutral-100 px-3 py-2 text-xs leading-5 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+    >
+      <div v-if="askAnswer" class="whitespace-pre-wrap">
+        {{ askAnswer }}
+      </div>
+    </div>
+
+    <div
       class="h-[24px] p-2 text-xxs text-neutral-400 flex justify-between fixed bottom-[6px]"
     >
       <div
@@ -428,7 +511,7 @@ onMounted(() => {
         <div
           class="flex space-x-1"
           @click="onLinkClicked"
-          v-if="linkedFolder === ''"
+          v-if="linkedFolder === '' && !isAskMode"
         >
           <BIconLink class="my-auto text-base" />
           <span class="my-auto mr-1 select-none">{{
@@ -438,7 +521,7 @@ onMounted(() => {
         <div
           class="flex space-x-1"
           @click="onUnlinkClicked"
-          v-if="linkedFolder !== ''"
+          v-if="linkedFolder !== '' && !isAskMode"
           :class="
             linkedFolder !== ''
               ? 'text-neutral-600 dark:text-neutral-300'
@@ -448,9 +531,12 @@ onMounted(() => {
           <BIconLink class="my-auto text-base" />
           <span class="my-auto mr-1 select-none">{{ linkedFolder }}</span>
         </div>
+        <div v-if="isAskMode" class="flex space-x-1 text-neutral-500 dark:text-neutral-300">
+          <span class="my-auto mr-1 select-none">Ask library</span>
+        </div>
       </div>
 
-      <div class="flex my-auto space-x-4 right-2 fixed">
+      <div v-if="!isAskMode" class="flex my-auto space-x-4 right-2 fixed">
         <div class="flex">
           <span class="my-auto mr-1 select-none">{{
             $t("plugin.citekey")
@@ -478,6 +564,16 @@ onMounted(() => {
             <BIconArrowReturnLeft class="my-auto" />
           </div>
         </div>
+      </div>
+      <div v-if="isAskMode" class="flex my-auto space-x-1 right-2 fixed">
+        <span
+          v-if="asking"
+          class="my-auto inline-block h-3 w-3 animate-spin rounded-full border-2 border-neutral-300 border-t-accentlight dark:border-neutral-600 dark:border-t-accentdark"
+        />
+        <span class="my-auto mr-1 select-none">{{
+          asking ? "Answering" : "Answer"
+        }}</span>
+        <BIconArrowReturnLeft class="my-auto" />
       </div>
     </div>
   </div>

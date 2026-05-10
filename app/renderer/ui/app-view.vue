@@ -234,7 +234,7 @@ const changeFontsize = (fontsize: string) => {
 const checkFirstAPISetup = async () => {
   const existingKey = await PLMainAPI.preferenceService.getPassword("qwenEmbedding");
   showAPISetup.value = !existingKey;
-  if (import.meta.env.DEV) {
+  if (process.env.NODE_ENV === "development") {
     showAPISetup.value = true;
   }
 };

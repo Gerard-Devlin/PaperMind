@@ -8,6 +8,7 @@ import {
   ISemanticSearchService,
   SemanticSearchService,
 } from "./semantic-search-service";
+import { CacheService, ICacheService } from "./cache-service";
 
 export const IAskService = createDecorator("askService");
 
@@ -19,6 +20,7 @@ export interface AskAnswer {
     authors: string;
     year: string;
     publication: string;
+    quote?: string;
   }>;
 }
 
@@ -26,6 +28,7 @@ export class AskService extends Eventable<{}> {
   constructor(
     @ISemanticSearchService
     private readonly _semanticSearchService: SemanticSearchService,
+    @ICacheService private readonly _cacheService: CacheService,
     @ILogService private readonly _logService: LogService
   ) {
     super("askService", {});
@@ -56,27 +59,46 @@ export class AskService extends Eventable<{}> {
     )}`.replace(/\/+$/, "");
     const model = `${await PLMainAPI.preferenceService.get("qwenChatModel")}`;
 
-    const papers = await this._semanticSearchService.search(trimmedQuestion, 8);
-    const sources = papers.map((paper) => ({
-      id: `${paper._id}`,
-      title: paper.title,
-      authors: paper.authors,
-      year: paper.year,
-      publication: getPublicationString(paper),
-    }));
-    const context = papers
-      .map((paper, index) =>
-        [
-          `[${index + 1}] ${paper.title}`,
-          `Authors: ${paper.authors}`,
-          `Year: ${paper.year}`,
-          `Publication: ${getPublicationString(paper)}`,
-          paper.abstract ? `Abstract: ${paper.abstract}` : "",
-          paper.note ? `Note: ${paper.note}` : "",
-        ]
-          .filter(Boolean)
-          .join("\n")
-      )
+    const results = await this._semanticSearchService.searchForAsk(
+      trimmedQuestion,
+      8
+    );
+    const paperContexts = await Promise.all(
+      results.map(async ({ paper, contextText }, index) => {
+        const fulltext =
+          contextText || (await this._cacheService.loadFullText(paper));
+        const quote = this._bestQuote(
+          fulltext || paper.abstract || paper.note || "",
+          trimmedQuestion
+        );
+
+        return {
+          source: {
+            id: `${paper._id}`,
+            title: paper.title,
+            authors: paper.authors,
+            year: paper.year,
+            publication: getPublicationString(paper),
+            quote,
+          },
+          context: [
+            `[${index + 1}] ${paper.title}`,
+            `Authors: ${paper.authors}`,
+            `Year: ${paper.year}`,
+            `Publication: ${getPublicationString(paper)}`,
+            paper.abstract ? `Abstract: ${paper.abstract}` : "",
+            fulltext ? `Indexed text: ${fulltext.slice(0, 6000)}` : "",
+            quote ? `Exact excerpt: "${quote}"` : "",
+            paper.note ? `Note: ${paper.note}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        };
+      })
+    );
+    const sources = paperContexts.map(({ source }) => source);
+    const context = paperContexts
+      .map(({ context }) => context)
       .join("\n\n");
 
     const response = await fetch(`${baseURL}/chat/completions`, {
@@ -91,7 +113,15 @@ export class AskService extends Eventable<{}> {
           {
             role: "system",
             content:
-              "You are PaperMind, a research library assistant. Answer using the provided paper context. Cite papers with bracket numbers like [1]. If the context is insufficient, say so clearly.",
+              [
+                "You are PaperMind, a research library assistant.",
+                "Answer using only the provided paper context.",
+                "Start with the direct answer, then explain the evidence briefly.",
+                "Answer in the same language as the question.",
+                "Cite papers with bracket numbers like [1].",
+                "When an exact excerpt is useful, quote one short excerpt verbatim from the provided Exact excerpt fields.",
+                "If the context is insufficient, say so clearly.",
+              ].join(" "),
           },
           {
             role: "user",
@@ -111,6 +141,39 @@ export class AskService extends Eventable<{}> {
       answer: body?.choices?.[0]?.message?.content || "",
       sources,
     };
+  }
+
+  private _bestQuote(text: string, question: string) {
+    const normalized = `${text || ""}`.replace(/\s+/g, " ").trim();
+    if (!normalized) {
+      return "";
+    }
+
+    const terms = `${question || ""}`
+      .toLowerCase()
+      .split(/[^a-z0-9\u4e00-\u9fa5]+/i)
+      .map((term) => term.trim())
+      .filter((term) => term.length >= 2);
+    const sentences = normalized
+      .split(/(?<=[.!?。！？])\s+/)
+      .map((sentence) => sentence.trim())
+      .filter((sentence) => sentence.length >= 30);
+
+    let bestSentence = sentences[0] || normalized;
+    let bestScore = -1;
+    for (const sentence of sentences.slice(0, 220)) {
+      const lower = sentence.toLowerCase();
+      const score = terms.reduce(
+        (sum, term) => sum + (lower.includes(term) ? 1 : 0),
+        0
+      );
+      if (score > bestScore) {
+        bestScore = score;
+        bestSentence = sentence;
+      }
+    }
+
+    return bestSentence.slice(0, 360);
   }
 
   async suggestTags(paper: {

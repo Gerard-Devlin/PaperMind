@@ -105,8 +105,8 @@ export interface IPreferenceStore {
   qwenChatBaseURL: string;
   qwenChatModel: string;
   autoAITagging: boolean;
-  startAtLogin?: boolean;
-  closeToTray?: boolean;
+  startAtLogin: boolean;
+  closeToTray: boolean;
 }
 
 const _defaultPreferences: IPreferenceStore = {

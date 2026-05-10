@@ -229,9 +229,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       },
       {
         close: (win: BrowserWindow, event?: any) => {
-          const closeToTray = this._preferenceService.get(
-            "closeToTray" as any
-          ) as boolean;
+          const closeToTray = this._preferenceService.get("closeToTray");
 
           if (closeToTray && !this._isQuitting) {
             event?.preventDefault?.();
@@ -275,7 +273,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       minWidth: 600,
       minHeight: 76,
       maxWidth: 600,
-      maxHeight: 394,
+      maxHeight: 620,
       useContentSize: true,
       webPreferences: {
         preload: fileURLToPath(

@@ -24,10 +24,17 @@ interface ISemanticSearchRow {
   id: string;
   title: string | null;
   abstract: string | null;
+  document_text: string | null;
   authors: string[] | null;
   categories: string[] | null;
   year: string | null;
   publication: string | null;
+  distance: number;
+}
+
+export interface ISemanticAskResult {
+  paper: Entity;
+  contextText: string;
   distance: number;
 }
 
@@ -78,37 +85,38 @@ export class SemanticSearchService extends Eventable<{}> {
       ? await this._searchPgVector(trimmedQuery, embedding, topK)
       : await this._searchPGliteVector(trimmedQuery, embedding, topK);
 
-    const realmIds = rows
-      .map((row) => row.id)
-      .filter((id) => /^[a-fA-F0-9]{24}$/.test(id));
+    return this._rowsToEntities(rows);
+  }
 
-    if (realmIds.length > 0) {
-      const realm = await this._databaseCore.realm();
-      const realmObjects = Array.from(
-        this._paperEntityRepository.loadByIds(realm, realmIds as unknown as OID[])
-      );
-      const byId = new Map(realmObjects.map((entity) => [`${entity._id}`, entity]));
-      const ordered = realmIds
-        .map((id) => byId.get(`${id}`))
-        .filter((entity) => entity !== undefined) as Entity[];
-
-      if (ordered.length > 0) {
-        return ordered;
-      }
+  @processing(ProcessingKey.General)
+  @errorcatching("Failed to retrieve RAG context.", true, "SemanticSearch", [])
+  async searchForAsk(query: string, topK = 8): Promise<ISemanticAskResult[]> {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery || !(await this._isEnabled())) {
+      return [];
     }
 
-    return rows.map(
-      (row) =>
-        new Entity({
-          _id: /^[a-fA-F0-9]{24}$/.test(row.id) ? (row.id as OID) : undefined,
-          title: row.title || "",
-          abstract: row.abstract || undefined,
-          authors: (row.authors || []).join(", "),
-          year: row.year || "",
-          journal: row.publication || undefined,
-          tags: (row.categories || []).map((name) => ({ name })),
-        })
-    );
+    const embedding = await this._embed(trimmedQuery);
+    const rows = (await this._hasPostgresURL())
+      ? await this._searchPgVector(trimmedQuery, embedding, topK)
+      : await this._searchPGliteVector(trimmedQuery, embedding, topK);
+    const papers = await this._rowsToEntities(rows);
+    const byId = new Map(papers.map((paper) => [`${paper._id}`, paper]));
+
+    return rows
+      .map((row) => {
+        const paper = byId.get(row.id);
+        if (!paper) {
+          return null;
+        }
+
+        return {
+          paper,
+          contextText: row.document_text || "",
+          distance: row.distance,
+        };
+      })
+      .filter((item): item is ISemanticAskResult => item !== null);
   }
 
   @processing(ProcessingKey.General)
@@ -326,6 +334,7 @@ export class SemanticSearchService extends Eventable<{}> {
           p.id::text AS id,
           p.title,
           p.abstract,
+          p.document_text,
           COALESCE(p.year::text, '') AS year,
           COALESCE(p.publication, p.journal, p.booktitle, '') AS publication,
           array_remove(array_agg(DISTINCT a.name), NULL) AS authors,
@@ -365,6 +374,41 @@ export class SemanticSearchService extends Eventable<{}> {
     return result.rows;
   }
 
+  private async _rowsToEntities(rows: ISemanticSearchRow[]) {
+    const realmIds = rows
+      .map((row) => row.id)
+      .filter((id) => /^[a-fA-F0-9]{24}$/.test(id));
+
+    if (realmIds.length > 0) {
+      const realm = await this._databaseCore.realm();
+      const realmObjects = Array.from(
+        this._paperEntityRepository.loadByIds(realm, realmIds as unknown as OID[])
+      );
+      const byId = new Map(realmObjects.map((entity) => [`${entity._id}`, entity]));
+      const ordered = realmIds
+        .map((id) => byId.get(`${id}`))
+        .filter((entity) => entity !== undefined)
+        .map((entity) => new Entity(entity as Entity));
+
+      if (ordered.length > 0) {
+        return ordered;
+      }
+    }
+
+    return rows.map(
+      (row) =>
+        new Entity({
+          _id: /^[a-fA-F0-9]{24}$/.test(row.id) ? (row.id as OID) : undefined,
+          title: row.title || "",
+          abstract: row.abstract || undefined,
+          authors: (row.authors || []).join(", "),
+          year: row.year || "",
+          journal: row.publication || undefined,
+          tags: (row.categories || []).map((name) => ({ name })),
+        })
+    );
+  }
+
   private async _searchPgVector(query: string, embedding: number[], topK: number) {
     const pool = await this._getPool();
     await this._ensureSchema();
@@ -384,6 +428,7 @@ export class SemanticSearchService extends Eventable<{}> {
           p.id::text AS id,
           p.title,
           p.abstract,
+          p.document_text,
           COALESCE(p.year::text, '') AS year,
           COALESCE(p.publication, p.journal, p.booktitle, '') AS publication,
           array_remove(array_agg(DISTINCT a.name), NULL) AS authors,
@@ -479,6 +524,7 @@ export class SemanticSearchService extends Eventable<{}> {
         id text PRIMARY KEY,
         title text NOT NULL,
         abstract text,
+        document_text text,
         year text,
         publication text,
         journal text,
@@ -486,6 +532,10 @@ export class SemanticSearchService extends Eventable<{}> {
         embedding vector(${dimensions}),
         updated_at timestamptz NOT NULL DEFAULT now()
       )
+    `);
+    await client.query(`
+      ALTER TABLE papers
+      ADD COLUMN IF NOT EXISTS document_text text
     `);
     await client.query(`
       CREATE TABLE IF NOT EXISTS authors (
@@ -541,16 +591,17 @@ export class SemanticSearchService extends Eventable<{}> {
 
     if (await this._hasPostgresURL()) {
       const pool = await this._getPool();
-      return this._upsertEmbeddingsToClient(pool, entities, embeddings);
+      return this._upsertEmbeddingsToClient(pool, entities, documents, embeddings);
     }
 
     const db = await this._getPGlite();
-    return this._upsertEmbeddingsToClient(db, entities, embeddings);
+    return this._upsertEmbeddingsToClient(db, entities, documents, embeddings);
   }
 
   private async _upsertEmbeddingsToClient(
     client: IPgLikeClient,
     entities: Entity[],
+    documents: string[],
     embeddings: number[][]
   ) {
     let indexed = 0;
@@ -566,6 +617,7 @@ export class SemanticSearchService extends Eventable<{}> {
           id,
           title,
           abstract,
+          document_text,
           year,
           publication,
           journal,
@@ -573,10 +625,11 @@ export class SemanticSearchService extends Eventable<{}> {
           embedding,
           updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::vector, now())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::vector, now())
         ON CONFLICT (id) DO UPDATE SET
           title = EXCLUDED.title,
           abstract = EXCLUDED.abstract,
+          document_text = EXCLUDED.document_text,
           year = EXCLUDED.year,
           publication = EXCLUDED.publication,
           journal = EXCLUDED.journal,
@@ -588,6 +641,7 @@ export class SemanticSearchService extends Eventable<{}> {
           `${entity._id}`,
           entity.title,
           entity.abstract || null,
+          documents[i] || null,
           entity.year || null,
           publication || null,
           entity.journal || null,
