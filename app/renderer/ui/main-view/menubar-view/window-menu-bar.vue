@@ -18,7 +18,7 @@ import {
   BIconThreeDots,
   BIconX,
 } from "bootstrap-icons-vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import { Process } from "@/base/process-id";
 import { disposable } from "@/base/dispose";
@@ -44,6 +44,16 @@ const emits = defineEmits(["event:click"]);
 // ================================
 const uiState = PLUIAPILocal.uiStateService.useState();
 const prefState = PLMainAPI.preferenceService.useState();
+const flagBtnFilled = computed(() => {
+  if (uiState.contentType !== "library") {
+    return false;
+  }
+  const selected = uiState.selectedPaperEntities || [];
+  if (selected.length === 0) {
+    return false;
+  }
+  return selected.every((paper: any) => !!paper.flag);
+});
 
 const isMaximized = ref(false);
 
@@ -111,6 +121,7 @@ disposable(
       <MenuBarBtn
         id="flag-selected-btn"
         btnName="flag"
+        :flag-filled="flagBtnFilled"
         @event:click="emits('event:click', 'flag')"
         :disabled="disableMultiBtn"
       />

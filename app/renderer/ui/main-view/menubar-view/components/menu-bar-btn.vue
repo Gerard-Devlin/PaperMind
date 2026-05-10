@@ -3,6 +3,7 @@ import {
   BIconArrowCounterclockwise,
   BIconAspectRatio,
   BIconFlag,
+  BIconFlagFill,
   BIconGear,
   BIconGrid3x2,
   BIconListUl,
@@ -22,6 +23,10 @@ defineProps({
   withTooltip: {
     type: Boolean,
     default: true,
+  },
+  flagFilled: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -46,7 +51,7 @@ const btnIcons: Record<string, any> = {
     @click="emits('event:click')"
   >
     <component
-      :is="btnIcons[btnName as string]"
+      :is="btnName === 'flag' && flagFilled ? BIconFlagFill : btnIcons[btnName as string]"
       class="text-sm m-auto"
       :class="
         disabled

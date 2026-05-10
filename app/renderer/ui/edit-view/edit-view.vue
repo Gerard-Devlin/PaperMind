@@ -316,17 +316,17 @@ onMounted(() => {
             <div class="flex justify-between space-x-2">
               <div class="flex space-x-2">
                 <div
-                  class="flex w-20 h-6 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm my-auto"
+                  class="flex min-w-[72px] h-7 px-3 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm my-auto"
                   @click="wideMode = !wideMode"
                 >
-                  <span class="m-auto text-xs">{{ $t("menu.advanced") }}</span>
+                  <span class="m-auto text-[11px] leading-none whitespace-nowrap">{{ $t("menu.advanced") }}</span>
                 </div>
 
                 <div
-                  class="flex w-20 h-6 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm my-auto"
+                  class="flex min-w-[72px] h-7 px-3 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm my-auto"
                   @click="onSaveAndScrapeClicked"
                 >
-                  <span class="m-auto text-xs">{{ $t("menu.rescrape") }}</span>
+                  <span class="m-auto text-[11px] leading-none whitespace-nowrap">{{ $t("menu.rescrape") }}</span>
                 </div>
                 <div
                   title="Try to fillin one of the missing title, DOI, or arXiv ID to re-scrape the metadata of the paper if PaperMind cannot process it correctly."
@@ -339,17 +339,17 @@ onMounted(() => {
               </div>
               <div class="flex space-x-2">
                 <div
-                  class="flex w-20 h-6 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm"
+                  class="flex min-w-[72px] h-7 px-3 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm"
                   @click="onCloseClicked"
                 >
-                  <span class="m-auto text-xs">{{ $t("menu.close") }}</span>
+                  <span class="m-auto text-[11px] leading-none whitespace-nowrap">{{ $t("menu.close") }}</span>
                 </div>
                 <div
                   id="paper-edit-view-save-btn"
-                  class="flex w-20 h-6 rounded-md bg-accentlight dark:bg-accentdark hover:shadow-sm"
+                  class="flex min-w-[72px] h-7 px-3 rounded-md bg-accentlight dark:bg-accentdark hover:shadow-sm"
                   @click="onSaveClicked"
                 >
-                  <span class="m-auto text-xs text-white">{{
+                  <span class="m-auto text-[11px] leading-none whitespace-nowrap text-white">{{
                     $t("menu.save")
                   }}</span>
                 </div>
@@ -363,16 +363,16 @@ onMounted(() => {
         >
           <div class="flex space-x-2 py-1">
             <div
-              class="flex w-20 h-6 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm my-auto"
+              class="flex min-w-[72px] h-7 px-3 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm my-auto"
               @click="wideMode = !wideMode"
             >
-              <span class="m-auto text-xs">{{ $t("menu.advanced") }}</span>
+              <span class="m-auto text-[11px] leading-none whitespace-nowrap">{{ $t("menu.advanced") }}</span>
             </div>
             <div
-              class="flex w-20 h-6 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm my-auto"
+              class="flex min-w-[72px] h-7 px-3 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm my-auto"
               @click="onSaveAndScrapeClicked"
             >
-              <span class="m-auto text-xs">{{ $t("menu.rescrape") }}</span>
+              <span class="m-auto text-[11px] leading-none whitespace-nowrap">{{ $t("menu.rescrape") }}</span>
             </div>
             <div
               title="Try to fillin one of the missing title, DOI, or arXiv ID to re-scrape the metadata of the paper if PaperMind cannot process it correctly."
@@ -385,17 +385,17 @@ onMounted(() => {
           </div>
           <div class="flex space-x-2 py-1">
             <div
-              class="flex w-20 h-6 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm"
+              class="flex min-w-[72px] h-7 px-3 rounded-md bg-neutral-300 dark:bg-neutral-500 dark:text-neutral-300 hover:shadow-sm"
               @click="onCloseClicked"
             >
-              <span class="m-auto text-xs">{{ $t("menu.close") }}</span>
+              <span class="m-auto text-[11px] leading-none whitespace-nowrap">{{ $t("menu.close") }}</span>
             </div>
             <div
               id="paper-edit-view-save-btn"
-              class="flex w-20 h-6 rounded-md bg-accentlight dark:bg-accentdark hover:shadow-sm"
+              class="flex min-w-[72px] h-7 px-3 rounded-md bg-accentlight dark:bg-accentdark hover:shadow-sm"
               @click="onSaveClicked"
             >
-              <span class="m-auto text-xs text-white">{{
+              <span class="m-auto text-[11px] leading-none whitespace-nowrap text-white">{{
                 $t("menu.save")
               }}</span>
             </div>
