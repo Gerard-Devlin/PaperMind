@@ -103,6 +103,13 @@ export interface IPreferenceStore {
   qwenAskModel: string;
   qwenAITagBaseURL: string;
   qwenAITagModel: string;
+  chatModelListCache: Record<
+    string,
+    {
+      models: string[];
+      updatedAt: number;
+    }
+  >;
   qwenChatBaseURL: string;
   qwenChatModel: string;
   autoAITagging: boolean;

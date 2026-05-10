@@ -108,6 +108,13 @@ export interface IPreferenceStore {
   qwenAskModel: string;
   qwenAITagBaseURL: string;
   qwenAITagModel: string;
+  chatModelListCache: Record<
+    string,
+    {
+      models: string[];
+      updatedAt: number;
+    }
+  >;
   qwenChatBaseURL: string;
   qwenChatModel: string;
   autoAITagging: boolean;
@@ -247,6 +254,7 @@ const _defaultPreferences: IPreferenceStore = {
   qwenAskModel: "qwen-plus",
   qwenAITagBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenAITagModel: "qwen-plus",
+  chatModelListCache: {},
   qwenChatBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenChatModel: "qwen-plus",
   autoAITagging: true,
@@ -396,6 +404,9 @@ function _migrate(
       "qwenAITagModel",
       (store.get("qwenChatModel") as string) || _defaultPreferences.qwenAITagModel
     );
+  }
+  if (!store.has("chatModelListCache")) {
+    store.set("chatModelListCache", {});
   }
 
   store.set("preferenceVersion", preferenceVersion);

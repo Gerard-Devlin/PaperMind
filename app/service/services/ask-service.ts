@@ -35,6 +35,132 @@ export class AskService extends Eventable<{}> {
   }
 
   @processing(ProcessingKey.General)
+  @errorcatching("Failed to list chat models.", true, "AskService", [])
+  async listChatModels(baseURL: string, forceRefresh = false): Promise<string[]> {
+    const models = await this._listModels(baseURL, forceRefresh);
+    return models.filter((modelID) => !this._isEmbeddingModel(modelID));
+  }
+
+  @processing(ProcessingKey.General)
+  @errorcatching("Failed to list embedding models.", true, "AskService", [])
+  async listEmbeddingModels(
+    baseURL: string,
+    forceRefresh = false
+  ): Promise<string[]> {
+    const models = await this._listModels(baseURL, forceRefresh);
+    const embeddingModels = models.filter((modelID) =>
+      this._isEmbeddingModel(modelID)
+    );
+    if (embeddingModels.length > 0) {
+      return embeddingModels;
+    }
+    return this._fallbackEmbeddingModels(baseURL);
+  }
+
+  private async _listModels(
+    baseURL: string,
+    forceRefresh = false
+  ): Promise<string[]> {
+    const apiKey =
+      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
+      process.env.DASHSCOPE_API_KEY ||
+      process.env.QWEN_API_KEY ||
+      "";
+    if (!apiKey) {
+      return [];
+    }
+
+    const normalizedBaseURL = `${baseURL || ""}`.trim().replace(/\/+$/, "");
+    if (!normalizedBaseURL) {
+      return [];
+    }
+
+    const cacheKey = normalizedBaseURL.toLowerCase();
+    const cache = (await PLMainAPI.preferenceService.get(
+      "chatModelListCache"
+    )) as Record<string, { models: string[]; updatedAt: number }>;
+    const cachedEntry = cache?.[cacheKey];
+    const cacheTTL = 24 * 60 * 60 * 1000;
+    if (
+      !forceRefresh &&
+      cachedEntry &&
+      Array.isArray(cachedEntry.models) &&
+      cachedEntry.models.length > 0 &&
+      Date.now() - cachedEntry.updatedAt < cacheTTL
+    ) {
+      return cachedEntry.models;
+    }
+
+    const response = await fetch(`${normalizedBaseURL}/models`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Model list API failed: ${response.status} ${await response.text()}`
+      );
+    }
+
+    const body = await response.json();
+    const models: string[] = Array.isArray(body?.data)
+      ? body.data
+          .map((item: any) => `${item?.id || ""}`.trim())
+          .filter((id: string) => id.length > 0)
+      : [];
+
+    const uniqueModels = Array.from(new Set<string>(models)).sort((a, b) =>
+      a.localeCompare(b)
+    );
+    await PLMainAPI.preferenceService.set({
+      chatModelListCache: {
+        ...(cache || {}),
+        [cacheKey]: {
+          models: uniqueModels,
+          updatedAt: Date.now(),
+        },
+      },
+    });
+
+    return uniqueModels;
+  }
+
+  private _isEmbeddingModel(modelID: string): boolean {
+    const normalized = `${modelID || ""}`.toLowerCase();
+    return (
+      normalized.includes("embedding") ||
+      normalized.includes("text-embed") ||
+      normalized.includes("bge-") ||
+      normalized.includes("m3e-")
+    );
+  }
+
+  private _fallbackEmbeddingModels(baseURL: string): string[] {
+    const normalized = `${baseURL || ""}`.toLowerCase();
+
+    if (normalized.includes("dashscope.aliyuncs.com")) {
+      return ["text-embedding-v4", "text-embedding-v3"];
+    }
+
+    if (normalized.includes("api.openai.com")) {
+      return [
+        "text-embedding-3-large",
+        "text-embedding-3-small",
+        "text-embedding-ada-002",
+      ];
+    }
+
+    if (normalized.includes("deepseek.com")) {
+      return [];
+    }
+
+    return [];
+  }
+
+  @processing(ProcessingKey.General)
   @errorcatching("Failed to ask PaperMind.", true, "AskService", {
     answer: "",
     sources: [],
