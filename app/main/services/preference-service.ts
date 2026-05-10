@@ -105,6 +105,8 @@ export interface IPreferenceStore {
   qwenChatBaseURL: string;
   qwenChatModel: string;
   autoAITagging: boolean;
+  startAtLogin?: boolean;
+  closeToTray?: boolean;
 }
 
 const _defaultPreferences: IPreferenceStore = {
@@ -236,6 +238,8 @@ const _defaultPreferences: IPreferenceStore = {
   qwenChatBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenChatModel: "qwen-plus",
   autoAITagging: true,
+  startAtLogin: false,
+  closeToTray: true,
 };
 
 function _migrate(

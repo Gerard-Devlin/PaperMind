@@ -267,6 +267,22 @@ const onChangeLanguage = (language: string) => {
       @event:change="(value) => updatePrefs('invertColor', value)"
     />
 
+    <Toggle
+      class="mb-5"
+      :title="$t('preference.startAtLogin')"
+      :info="$t('preference.startAtLoginintro')"
+      :enable="prefState.startAtLogin"
+      @event:change="(value) => updatePrefs('startAtLogin', value)"
+    />
+
+    <Toggle
+      class="mb-5"
+      :title="$t('preference.closeToTray')"
+      :info="$t('preference.closeToTrayintro')"
+      :enable="prefState.closeToTray"
+      @event:change="(value) => updatePrefs('closeToTray', value)"
+    />
+
     <div class="flex justify-between mb-5">
       <div class="flex flex-col max-w-[90%]">
         <div class="text-xs font-semibold">

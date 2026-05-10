@@ -229,7 +229,11 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       },
       {
         close: (win: BrowserWindow, event?: any) => {
-          if (!this._isQuitting) {
+          const closeToTray = this._preferenceService.get(
+            "closeToTray" as any
+          ) as boolean;
+
+          if (closeToTray && !this._isQuitting) {
             event?.preventDefault?.();
             win.hide();
             this._ensureTray(win);

@@ -123,6 +123,24 @@ async function initialize() {
     globalThis["PLMainAPILocal"][key] = instance;
   }
 
+  // Configure start-at-login according to preferences and listen for changes.
+  try {
+    const prefService = PLMainAPILocal.preferenceService;
+    const startAtLogin = prefService.get("startAtLogin" as any) as boolean;
+    if (process.platform === "win32" || process.platform === "darwin") {
+      try {
+        app.setLoginItemSettings({ openAtLogin: !!startAtLogin });
+      } catch (e) {}
+    }
+
+    // Update on preference change
+    prefService.on("startAtLogin", ({ value }) => {
+      try {
+        app.setLoginItemSettings({ openAtLogin: !!value });
+      } catch (e) {}
+    });
+  } catch (e) {}
+
   // ============================================================
   // 4. Set actionors for RPC service with all initialized services.
   //    Expose the APIs of the current process to other processes
