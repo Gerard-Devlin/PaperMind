@@ -29,6 +29,16 @@ const paperEntities: Ref<PaperEntity[]> = ref([]);
 const folders: Ref<PaperFolder[]> = ref([]);
 const askAnswer = ref("");
 const renderedAskAnswer = ref("");
+const askSources = ref<
+  Array<{
+    id: string;
+    title: string;
+    authors: string;
+    year: string;
+    publication: string;
+    quote?: string;
+  }>
+>([]);
 const askStatus = ref("");
 const asking = ref(false);
 const quickpasteRoot = ref<HTMLElement | null>(null);
@@ -50,14 +60,44 @@ const mainviewSortBy = ref("addTime");
 const mainviewSortOrder: Ref<"desc" | "asce"> = ref("desc");
 let searchRequestSeq = 0;
 const isAskMode = computed(() => exportMode.value === "Ask");
+const citationPopover = ref<{
+  visible: boolean;
+  x: number;
+  y: number;
+  source: (typeof askSources.value)[number] | null;
+}>({
+  visible: false,
+  x: 0,
+  y: 0,
+  source: null,
+});
+
+const escapeHtml = (value: string) =>
+  `${value || ""}`
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+const withCitationAnchors = (html: string) => {
+  return `${html || ""}`.replace(
+    /\[(\d+)\]/g,
+    (_match, num) =>
+      `<button class="ask-cite-ref px-1 min-w-[1.25rem] text-xxxs bg-neutral-400 opacity-70 bg-opacity-50 rounded-lg text-center text-neutral-900 dark:text-neutral-100" data-cite-index="${num}" type="button">${num}</button>`
+  );
+};
+
+const renderAskAnswerWithCitations = async () => {
+  const rendered = await PLAPI.renderService.renderMarkdown(askAnswer.value, true);
+  renderedAskAnswer.value = withCitationAnchors(rendered.renderedStr);
+};
 
 const restoreLastAskAnswer = async () => {
   const lastAnswer = `${(await PLMainAPI.preferenceService.get("quickpasteLastAskAnswer")) || ""}`;
   askAnswer.value = lastAnswer;
   if (lastAnswer) {
-    renderedAskAnswer.value = (
-      await PLAPI.renderService.renderMarkdown(lastAnswer, true)
-    ).renderedStr;
+    await renderAskAnswerWithCitations();
   } else {
     renderedAskAnswer.value = "";
   }
@@ -201,12 +241,11 @@ const askLibrary = async () => {
   try {
     const result = await PLAPI.askService.ask(query);
     askAnswer.value = result.answer || t("plugin.askNoAnswer");
+    askSources.value = result.sources || [];
     await PLMainAPI.preferenceService.set({
       quickpasteLastAskAnswer: askAnswer.value,
     });
-    renderedAskAnswer.value = (
-      await PLAPI.renderService.renderMarkdown(askAnswer.value, true)
-    ).renderedStr;
+    await renderAskAnswerWithCitations();
     askStatus.value =
       result.sources.length === 0 ? t("plugin.askNoSemanticResultFound") : "";
   } catch (error) {
@@ -218,6 +257,79 @@ const askLibrary = async () => {
     await resizeQuickpaste();
     // @ts-ignore
     searchInput.value?.focus();
+  }
+};
+
+const onCitationHover = (event: MouseEvent) => {
+  const target = event.target as HTMLElement | null;
+  if (!target) {
+    return;
+  }
+  const refEl = target.closest(".ask-cite-ref") as HTMLElement | null;
+  if (!refEl) {
+    citationPopover.value.visible = false;
+    return;
+  }
+  const idx = Number(refEl.dataset.citeIndex || "0");
+  if (!idx || idx > askSources.value.length) {
+    citationPopover.value.visible = false;
+    return;
+  }
+  const source = askSources.value[idx - 1];
+  const rect = refEl.getBoundingClientRect();
+  const popoverWidth = 320;
+  const popoverHeight = 170;
+  const margin = 10;
+  let left = rect.right + 8;
+  let top = rect.top + rect.height / 2 - popoverHeight / 2;
+  if (left + popoverWidth > window.innerWidth - margin) {
+    left = rect.left - popoverWidth - 8;
+  }
+  if (left < margin) {
+    left = rect.left;
+  }
+  if (left + popoverWidth > window.innerWidth - margin) {
+    left = window.innerWidth - popoverWidth - margin;
+  }
+  if (left < margin) {
+    left = margin;
+  }
+  if (top + popoverHeight > window.innerHeight - margin) {
+    top = window.innerHeight - popoverHeight - margin;
+  }
+  if (top < margin) {
+    top = margin;
+  }
+  citationPopover.value = {
+    visible: true,
+    x: left,
+    y: top,
+    source,
+  };
+};
+
+const onCitationLeave = () => {
+  citationPopover.value.visible = false;
+};
+
+const onCitationClick = async (event: MouseEvent) => {
+  const target = event.target as HTMLElement | null;
+  if (!target) {
+    return;
+  }
+  const refEl = target.closest(".ask-cite-ref") as HTMLElement | null;
+  if (!refEl) {
+    return;
+  }
+  const idx = Number(refEl.dataset.citeIndex || "0");
+  if (!idx || idx > askSources.value.length) {
+    return;
+  }
+  const source = askSources.value[idx - 1];
+  const papers = (await PLAPI.paperService.loadByIds([source.id as any])) as any[];
+  const paper = papers?.[0];
+  if (paper?.mainURL) {
+    await PLAPI.fileService.open(paper.mainURL);
   }
 };
 
@@ -569,6 +681,9 @@ onMounted(() => {
         <div
           class="quickpaste-markdown"
           v-html="sanitizeHTML(renderedAskAnswer)"
+          @mousemove="onCitationHover"
+          @mouseleave="onCitationLeave"
+          @click="onCitationClick"
         />
       </div>
     </div>
@@ -646,6 +761,19 @@ onMounted(() => {
       </div>
     </div>
   </div>
+  <div
+    v-if="citationPopover.visible && citationPopover.source"
+    class="pointer-events-none fixed z-[9999] w-[320px] rounded-md border border-neutral-300 bg-white p-2 text-xxs text-neutral-700 shadow-lg dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
+    :style="{ left: `${citationPopover.x}px`, top: `${citationPopover.y}px` }"
+  >
+    <div class="font-semibold mb-1 truncate">{{ citationPopover.source.title }}</div>
+    <div class="mb-1 text-neutral-500 dark:text-neutral-400 truncate">
+      {{ citationPopover.source.authors }} · {{ citationPopover.source.year }}
+    </div>
+    <div class="line-clamp-4">
+      {{ citationPopover.source.quote || citationPopover.source.publication }}
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -683,6 +811,30 @@ onMounted(() => {
 
 .quickpaste-markdown :deep(.katex) {
   font-size: 1em;
+}
+
+.quickpaste-markdown :deep(.ask-cite-ref) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1rem;
+  margin: 0 0.1rem;
+  border: none;
+  font-weight: 400;
+  line-height: 1rem;
+  cursor: pointer;
+  pointer-events: auto;
+  vertical-align: baseline;
+  transform: translateY(0.5px);
+  transition: background-color 120ms ease;
+}
+
+.quickpaste-markdown :deep(.ask-cite-ref:hover) {
+  background: rgb(163 163 163 / 0.68);
+}
+
+:global(.dark) .quickpaste-markdown :deep(.ask-cite-ref:hover) {
+  background: rgb(115 115 115 / 0.65);
 }
 
 .quickpaste-markdown :deep(table) {
