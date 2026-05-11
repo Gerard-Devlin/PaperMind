@@ -38,6 +38,13 @@ export interface ISemanticAskResult {
   distance: number;
 }
 
+export interface IPaperIndexedContext {
+  id: string;
+  title: string | null;
+  abstract: string | null;
+  documentText: string;
+}
+
 interface IPgLikeResult<T> {
   rows: T[];
 }
@@ -117,6 +124,29 @@ export class SemanticSearchService extends Eventable<{}> {
         };
       })
       .filter((item): item is ISemanticAskResult => item !== null);
+  }
+
+  @processing(ProcessingKey.General)
+  @errorcatching("Failed to retrieve paper indexed contexts.", true, "SemanticSearch", [])
+  async getPaperIndexedContexts(ids: string[]): Promise<IPaperIndexedContext[]> {
+    const normalizedIds = Array.from(
+      new Set(
+        (ids || [])
+          .map((id) => `${id || ""}`.trim())
+          .filter(Boolean)
+      )
+    );
+    if (normalizedIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this._queryPaperRowsByIds(normalizedIds);
+    return rows.map((row) => ({
+      id: `${row.id}`,
+      title: row.title || null,
+      abstract: row.abstract || null,
+      documentText: row.document_text || "",
+    }));
   }
 
   @processing(ProcessingKey.General)
@@ -464,6 +494,44 @@ export class SemanticSearchService extends Eventable<{}> {
       [vectorText, topK, query, model, dimensions]
     );
 
+    return result.rows;
+  }
+
+  private async _queryPaperRowsByIds(ids: string[]): Promise<ISemanticSearchRow[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const placeholders = ids.map((_, index) => `$${index + 1}`).join(", ");
+    const sql = `
+      SELECT
+        p.id::text AS id,
+        p.title,
+        p.abstract,
+        p.document_text,
+        COALESCE(p.year::text, '') AS year,
+        COALESCE(p.publication, p.journal, p.booktitle, '') AS publication,
+        array_remove(array_agg(DISTINCT a.name), NULL) AS authors,
+        array_remove(array_agg(DISTINCT c.name), NULL) AS categories,
+        0::float AS distance
+      FROM papers p
+      LEFT JOIN paper_authors pa ON pa.paper_id = p.id
+      LEFT JOIN authors a ON a.id = pa.author_id
+      LEFT JOIN paper_categories pc ON pc.paper_id = p.id
+      LEFT JOIN categories c ON c.id = pc.category_id
+      WHERE p.id IN (${placeholders})
+      GROUP BY p.id
+    `;
+
+    if (await this._hasPostgresURL()) {
+      const pool = await this._getPool();
+      const result = await pool.query<ISemanticSearchRow>(sql, ids);
+      return result.rows;
+    }
+
+    const db = await this._getPGlite();
+    await this._ensurePGliteSchema();
+    const result = await db.query<ISemanticSearchRow>(sql, ids);
     return result.rows;
   }
 

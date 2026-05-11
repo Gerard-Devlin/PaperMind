@@ -60,27 +60,12 @@ const exportMode = ref<"BibTex" | "PlainText" | "Ask">("BibTex");
 const searchText = ref("");
 const searchDebounce = ref(300);
 const selectedIndex: Ref<number> = ref(0);
-const askCompareSelectedIndexes: Ref<number[]> = ref([]);
 const linkedFolder = ref("");
 const mainviewSortBy = ref("addTime");
 const mainviewSortOrder: Ref<"desc" | "asce"> = ref("desc");
 let searchRequestSeq = 0;
 const isAskMode = computed(() => exportMode.value === "Ask");
 const getPaperId = (paper: any) => `${paper?.id || paper?._id || ""}`.trim();
-const canCompareInAskMode = computed(() => {
-  if (!isAskMode.value || asking.value) return false;
-  const validCount = askCompareSelectedIndexes.value.filter((idx) => {
-    const item: any = paperEntities.value[idx];
-    const paperId = getPaperId(item);
-    return (
-      item &&
-      paperId &&
-      paperId !== "semantic-empty" &&
-      paperId !== "search-in-google-scholar"
-    );
-  }).length;
-  return validCount >= 2;
-});
 const citationPopover = ref<{
   visible: boolean;
   x: number;
@@ -171,7 +156,6 @@ const cycleMode = () => {
         : "BibTex";
   askAnswer.value = "";
   renderedAskAnswer.value = "";
-  askCompareSelectedIndexes.value = [];
   askStatus.value = "";
   // @ts-ignore
   searchInput.value?.focus();
@@ -201,7 +185,6 @@ const onSearchTextChanged = debounce(async () => {
   if (query) {
     paperEntities.value = [];
     selectedIndex.value = 0;
-    askCompareSelectedIndexes.value = [];
     askStatus.value = isAskMode.value ? t("plugin.askFindingRelated") : askStatus.value;
 
     let semanticResults: PaperEntity[] = [];
@@ -217,7 +200,6 @@ const onSearchTextChanged = debounce(async () => {
       return;
     }
     paperEntities.value = semanticResults.slice(0, 8);
-    askCompareSelectedIndexes.value = [];
     askStatus.value = "";
     if (paperEntities.value.length === 0) {
       // @ts-ignore
@@ -249,7 +231,6 @@ const onSearchTextChanged = debounce(async () => {
     paperEntities.value = [];
     askAnswer.value = "";
     renderedAskAnswer.value = "";
-    askCompareSelectedIndexes.value = [];
     await PLMainAPI.preferenceService.set({ quickpasteLastAskAnswer: "" });
     askStatus.value = "";
   }
@@ -290,106 +271,6 @@ const askLibrary = async () => {
   }
 };
 
-const toggleAskCompareSelection = (index: number) => {
-  if (!isAskMode.value) {
-    selectedIndex.value = index;
-    return;
-  }
-  const item: any = paperEntities.value[index];
-  const paperId = getPaperId(item);
-  if (
-    !item ||
-    !paperId ||
-    paperId === "semantic-empty" ||
-    paperId === "search-in-google-scholar"
-  ) {
-    return;
-  }
-
-  const set = new Set(askCompareSelectedIndexes.value);
-  if (set.has(index)) {
-    set.delete(index);
-  } else if (set.size < 5) {
-    set.add(index);
-  } else {
-    askStatus.value = t("plugin.askCompareMaxFive");
-  }
-  askCompareSelectedIndexes.value = Array.from(set).sort((a, b) => a - b);
-  selectedIndex.value = index;
-};
-
-const compareSelectedPapers = async () => {
-  if (!isAskMode.value || asking.value) {
-    return;
-  }
-  const selectedPapers = askCompareSelectedIndexes.value
-    .map((idx) => paperEntities.value[idx] as any)
-    .filter(
-      (paper) =>
-        !!getPaperId(paper) &&
-        getPaperId(paper) !== "semantic-empty" &&
-        getPaperId(paper) !== "search-in-google-scholar"
-    )
-    .slice(0, 5);
-
-  if (selectedPapers.length < 2) {
-    askStatus.value = t("plugin.askCompareNeedAtLeastTwo");
-    return;
-  }
-
-  asking.value = true;
-  askAnswer.value = "";
-  renderedAskAnswer.value = "";
-  askStatus.value = t("plugin.askComparing");
-  await nextTick();
-  await resizeQuickpaste();
-
-  try {
-    const selectedById = new Map(
-      selectedPapers.map((paper: any) => [getPaperId(paper), paper])
-    );
-    const paperDetails = (await PLAPI.paperService.loadByIds(
-      selectedPapers.map((paper: any) => getPaperId(paper))
-    )) as any[];
-
-    const payload = paperDetails.map((paper: any) => ({
-      id: `${paper._id || paper.id || ""}`,
-      mainURL: `${paper.mainURL || ""}`,
-      title: `${paper.title || ""}`,
-      authors: `${paper.authors || ""}`,
-      year: `${paper.year || ""}`,
-      publication: `${
-        paper.publication ||
-        paper.pub ||
-        selectedById.get(`${paper._id || paper.id || ""}`)?.publication ||
-        ""
-      }`,
-      abstract: `${paper.abstract || ""}`,
-      note: `${paper.note || ""}`,
-    }));
-
-    const result = await (PLAPI.askService as any).comparePapers(
-      payload,
-      `${searchText.value || ""}`.trim()
-    );
-    askAnswer.value = result.answer || t("plugin.askNoAnswer");
-    askSources.value = result.sources || [];
-    await PLMainAPI.preferenceService.set({
-      quickpasteLastAskAnswer: askAnswer.value,
-    });
-    await renderAskAnswerWithCitations();
-    askStatus.value = "";
-  } catch (error) {
-    askAnswer.value = "";
-    renderedAskAnswer.value = "";
-    askStatus.value = `${t("plugin.askFailedPrefix")}: ${(error as Error).message || error}`;
-  } finally {
-    asking.value = false;
-    await resizeQuickpaste();
-    // @ts-ignore
-    searchInput.value?.focus();
-  }
-};
 
 const onCitationHover = (event: MouseEvent) => {
   const target = event.target as HTMLElement | null;
@@ -827,9 +708,9 @@ onMounted(() => {
             :authors="item.authors"
             :year="item.pubTime"
             :publication="item.publication"
-            :active="isAskMode ? askCompareSelectedIndexes.includes(index) : selectedIndex == index"
+            :active="selectedIndex == index"
             class="h-[28px]"
-            @click="() => toggleAskCompareSelection(index)"
+            @click="() => (selectedIndex = index)"
           />
         </div>
       </div>
@@ -876,13 +757,6 @@ onMounted(() => {
           <span class="my-auto mr-1 select-none">{{ linkedFolder }}</span>
         </div>
         <div v-if="isAskMode" class="flex space-x-1 text-neutral-500 dark:text-neutral-300">
-          <button
-            class="rounded px-1 py-0.5 hover:bg-neutral-200 disabled:opacity-50 dark:hover:bg-neutral-700"
-            :disabled="!canCompareInAskMode"
-            @click="compareSelectedPapers"
-          >
-            {{ $t("plugin.askCompare") }}
-          </button>
           <span class="my-auto mr-1 select-none">{{ $t("plugin.askLibrary") }}</span>
         </div>
       </div>

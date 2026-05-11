@@ -1,4 +1,4 @@
-import { errorcatching } from "@/base/error";
+﻿import { errorcatching } from "@/base/error";
 import { Eventable } from "@/base/event";
 import { createDecorator } from "@/base/injection/injection";
 import { ProcessingKey, processing } from "@/common/utils/processing";
@@ -24,17 +24,6 @@ export interface AskAnswer {
     quote?: string;
     quoteCandidates?: string[];
   }>;
-}
-
-export interface ComparePaperInput {
-  id: string;
-  mainURL?: string;
-  title: string;
-  authors: string;
-  year: string;
-  publication: string;
-  abstract?: string;
-  note?: string;
 }
 
 interface IAskSourceContext {
@@ -338,114 +327,6 @@ export class AskService extends Eventable<{}> {
     return {
       answer,
       sources: refinedSources,
-    };
-  }
-
-  @processing(ProcessingKey.General)
-  @errorcatching("Failed to compare papers.", true, "AskService", {
-    answer: "",
-    sources: [],
-  })
-  async comparePapers(
-    papers: ComparePaperInput[],
-    focusQuestion = ""
-  ): Promise<AskAnswer> {
-    const normalizedPapers = (papers || []).filter((p) => !!p?.id).slice(0, 5);
-    if (normalizedPapers.length < 2) {
-      return { answer: "", sources: [] };
-    }
-
-    const apiKey =
-      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
-      process.env.DASHSCOPE_API_KEY ||
-      process.env.QWEN_API_KEY ||
-      "";
-    if (!apiKey) {
-      throw new Error("Qwen API key is missing.");
-    }
-
-    const askBaseURL = `${await PLMainAPI.preferenceService.get(
-      "qwenAskBaseURL"
-    )}`.trim();
-    const askModel = `${await PLMainAPI.preferenceService.get(
-      "qwenAskModel"
-    )}`.trim();
-    const legacyChatBaseURL = `${await PLMainAPI.preferenceService.get(
-      "qwenChatBaseURL"
-    )}`.trim();
-    const legacyChatModel = `${await PLMainAPI.preferenceService.get(
-      "qwenChatModel"
-    )}`.trim();
-    const baseURL = (askBaseURL || legacyChatBaseURL).replace(/\/+$/, "");
-    const model = askModel || legacyChatModel;
-
-    const context = normalizedPapers
-      .map((paper, index) =>
-        [
-          `[${index + 1}] ${paper.title}`,
-          `Authors: ${paper.authors || ""}`,
-          `Year: ${paper.year || ""}`,
-          `Publication: ${paper.publication || ""}`,
-          paper.abstract ? `Abstract: ${paper.abstract}` : "",
-          paper.note ? `Note: ${paper.note}` : "",
-        ]
-          .filter(Boolean)
-          .join("\n")
-      )
-      .join("\n\n");
-
-    const focus = `${focusQuestion || ""}`.trim();
-
-    const response = await fetch(`${baseURL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "system",
-            content:
-              [
-                "You are PaperMind, a research assistant.",
-                "Generate a concise Markdown comparison table only.",
-                "The table columns must be: 论文, 方法, 数据集, 指标, 优点, 缺点.",
-                "Use one row per paper and keep each cell short and concrete.",
-                "If information is missing, write 未提及.",
-                "Do not fabricate facts outside provided context.",
-                "Answer in the same language as the user focus question when possible, otherwise Chinese.",
-              ].join(" "),
-          },
-          {
-            role: "user",
-            content: `对以下论文生成对照表。${
-              focus ? `重点问题：${focus}` : ""
-            }\n\n论文上下文：\n${context}`,
-          },
-        ],
-        temperature: 0.2,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Qwen chat API failed: ${response.status} ${await response.text()}`);
-    }
-
-    const body = await response.json();
-    const answer = body?.choices?.[0]?.message?.content || "";
-
-    return {
-      answer,
-      sources: normalizedPapers.map((paper) => ({
-        id: `${paper.id}`,
-        mainURL: paper.mainURL || "",
-        title: paper.title,
-        authors: paper.authors,
-        year: paper.year,
-        publication: paper.publication,
-      })),
     };
   }
 

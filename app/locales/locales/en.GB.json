@@ -256,11 +256,7 @@
     "askNoSemanticResultFound": "No semantic result found.",
     "askNoSemanticResultTryRebuild": "No semantic result (try Rebuild Index)",
     "searchInGoogleScholar": "Search in Google Scholar...",
-    "askFailedPrefix": "Ask failed",
-    "askCompare": "Compare",
-    "askComparing": "Comparing selected papers...",
-    "askCompareNeedAtLeastTwo": "Select at least 2 papers to compare.",
-    "askCompareMaxFive": "You can compare up to 5 papers."
+    "askFailedPrefix": "Ask failed"
   },
   "presetting": {
     "presetting": "Presetting",
