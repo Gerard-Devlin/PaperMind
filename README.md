@@ -37,13 +37,19 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 - One-click answer copy with success-check interaction.
 - Quickpaste Ask layout, height, and footer interaction refinements.
 
-## Screenshot
+## Screenshots
 
-<img src="./assets/Ask_mode.png" alt="Ask_mode" width="400">
+<p align="center">
+  <img src="./assets/Ask_mode.png" alt="Ask_mode" width="300">
+</p>
 
-![Bookshelf](./assets/Bookshelf.png)
+<p align="center">
+  <img src="./assets/Bookshelf.png" alt="Bookshelf" width="400">
+</p>
 
-![Papermind_ai](./assets/Papermind_ai.png)
+<p align="center">
+  <img src="./assets/Papermind_ai.png" alt="Papermind_ai" width="400">
+</p>
 
 ## 3.7.0 Update
 
