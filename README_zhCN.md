@@ -1,10 +1,8 @@
 <div align="center">
 <img src="./build/icon_v2.ico" height="95" />
-<br />
 <h2>PaperMind</h2>
 一个面向 Ask + RAG 科研工作流优化的学术文献管理工具。
 <br />
-
 <img src="https://img.shields.io/badge/version-3.6.1-4c1" />
 <img src="https://img.shields.io/badge/license-GPL--3.0-blue" />
 <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-666" />
@@ -12,8 +10,9 @@
 
 ## 项目定位
 
-## 新增的重点功能
+## 我新增的重点功能
 
+- 基于 Embedding 的本地向量数据库与语义检索链路（PGlite + pgvector）。
 - Ask 回答中的引用源数字标记。
 - 悬浮引用标记可查看“该引用对应”的证据原文片段。
 - 引用证据映射链路优化，减少重复/不准的同句复用。

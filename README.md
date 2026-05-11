@@ -17,7 +17,7 @@ I am an undergraduate student who found Paperlib very useful for daily research 
 
 ## What I Added
 
-- Embedding-based local vector database and semantic retrieval workflow.
+- Embedding-based local vector database and semantic retrieval workflow (PGlite + pgvector).
 - Ask-mode citation source markers in answers.
 - Hover citation markers to view citation-specific evidence excerpts.
 - Improved evidence mapping chain to reduce repeated/irrelevant quote reuse.
