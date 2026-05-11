@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 const props = defineProps({
   title: {
@@ -33,6 +33,12 @@ const props = defineProps({
 const emits = defineEmits(["event:change", "event:submit"]);
 
 const value = ref(props.value);
+watch(
+  () => props.value,
+  (next) => {
+    value.value = next;
+  }
+);
 
 const savingStatus = ref(0);
 </script>
