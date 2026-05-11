@@ -56,14 +56,14 @@ onMounted(async () => {
       class="typing-style text-xl font-bold font-mono mx-auto my-40"
       v-if="isShowSlogan"
     >
-      WELCOME TO PAPERMIND 3.6.0
+      WELCOME TO PAPERMIND 3.6.1
     </div>
     <div class="w-[45rem] px-3 mx-auto my-20 flex flex-col" v-else>
       <div class="mx-auto font-semibold mb-8 space-x-2 flex">
         <span class="text-3xl my-auto">PAPERMIND</span>
         <span
           class="text-xl bg-neutral-700 text-white dark:bg-neutral-300 dark:text-neutral-800 rounded-md px-2 py-1 my-auto"
-          >3.6.0</span
+          >3.6.1</span
         >
       </div>
       <div class="flex space-x-2 mx-auto mb-4">
@@ -77,15 +77,18 @@ onMounted(async () => {
       </div>
       <div class="flex flex-col" v-if="language === 'en-GB'">
         <div class="mx-auto mb-8 font-semibold">
-          Welcome to PaperMind 3.6.0.
+          Welcome to PaperMind 3.6.1.
         </div>
         <div>
-          In PaperMind 3.6.0, your library workflow is upgraded with:
+          In PaperMind 3.6.1, your library workflow is upgraded with:
         </div>
         <ul class="list-disc px-4 mx-1">
           <li class="font-semibold">Built-in scrape pipeline (no extra install needed)</li>
           <li class="font-semibold">Semantic search with local vector index</li>
           <li class="font-semibold">Ask your library (RAG, one-turn answer with sources)</li>
+          <li class="font-semibold">Citation-source hover cards with per-citation evidence excerpts</li>
+          <li class="font-semibold">Double-click citation source marker to open source PDF</li>
+          <li class="font-semibold">Quick Ask answer copy button with success-check interaction</li>
           <li class="font-semibold">Auto AI tags on import/update + manual regenerate</li>
           <li class="font-semibold">Quick Cite and multi-style citation export</li>
           <li class="font-semibold">Preview and citation-count integrations</li>
@@ -133,18 +136,21 @@ onMounted(async () => {
         <hr class="my-8" />
         <div>Community</div>
         <div>
-          Thanks for using PaperMind 3.6.0.
+          Thanks for using PaperMind 3.6.1.
         </div>
       </div>
       <div class="flex flex-col" v-else>
         <div class="mx-auto mb-8 font-semibold">
-          欢迎来到 PaperMind 3.6.0。
+          欢迎来到 PaperMind 3.6.1。
         </div>
-        <div>在 PaperMind 3.6.0 中，我们把现有核心能力都整合进来了：</div>
+        <div>在 PaperMind 3.6.1 中，我们把现有核心能力都整合进来了：</div>
         <ul class="list-disc px-4 mx-1">
           <li class="font-semibold">内置抓取链路（无需额外安装官方抓取扩展）</li>
           <li class="font-semibold">语义搜索（本地向量索引）</li>
           <li class="font-semibold">Ask 问答（RAG 检索后回答并附来源）</li>
+          <li class="font-semibold">引用源悬浮卡片（按引用显示原文证据片段）</li>
+          <li class="font-semibold">双击引用标记可直接打开来源 PDF</li>
+          <li class="font-semibold">Ask 回答一键复制（成功后显示勾选反馈）</li>
           <li class="font-semibold">AI 标签（导入/更新自动打标 + 右键手动生成）</li>
           <li class="font-semibold">快速引用与多格式导出</li>
           <li class="font-semibold">封面预览与引用次数集成</li>
@@ -182,7 +188,7 @@ onMounted(async () => {
 
         <hr class="my-8" />
         <div>社区</div>
-        <div>感谢使用 PaperMind 3.6.0。</div>
+        <div>感谢使用 PaperMind 3.6.1。</div>
       </div>
 
       <div
