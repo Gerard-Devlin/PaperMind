@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const emits = defineEmits(["click"]);
 const props = defineProps({
   title: String,
   authors: String,
@@ -12,6 +13,7 @@ const props = defineProps({
   <div
     class="flex w-full h-7 py-1 px-2 space-x-4 text-xs rounded-md select-none cursor-pointer"
     :class="active ? 'bg-accentlight dark:bg-accentdark' : ''"
+    @click="emits('click')"
   >
     <div
       class="truncate overflow-hidden w-[47%] m-auto font-medium"

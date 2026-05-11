@@ -256,7 +256,11 @@
     "askNoSemanticResultFound": "未找到语义检索结果。",
     "askNoSemanticResultTryRebuild": "无语义检索结果（可尝试重建索引）",
     "searchInGoogleScholar": "在 Google Scholar 中搜索...",
-    "askFailedPrefix": "Ask 失败"
+    "askFailedPrefix": "Ask 失败",
+    "askCompare": "对比",
+    "askComparing": "正在对比已选论文...",
+    "askCompareNeedAtLeastTwo": "至少选择 2 篇论文再对比。",
+    "askCompareMaxFive": "最多对比 5 篇论文。"
   },
   "presetting": {
     "presetting": "预设",
