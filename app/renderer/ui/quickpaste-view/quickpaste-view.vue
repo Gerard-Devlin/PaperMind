@@ -825,7 +825,7 @@ onMounted(() => {
   cursor: pointer;
   pointer-events: auto;
   vertical-align: baseline;
-  transform: translateY(0.5px);
+  transform: translateY(-0.5px);
   transition: background-color 120ms ease;
 }
 
