@@ -9,7 +9,7 @@
 <br />
 <br />
 
-<img src="https://img.shields.io/badge/PaperMind-v3.6.1-0f766e?style=for-the-badge&labelColor=111827" />
+<img src="https://img.shields.io/badge/PaperMind-v3.7.0-0f766e?style=for-the-badge&labelColor=111827" />
 <img src="https://img.shields.io/badge/Ask%20%2B%20RAG-Research%20Workflow-7c3aed?style=for-the-badge&labelColor=111827" />
 <img src="https://img.shields.io/badge/PGlite%20%2B%20pgvector-Semantic%20Indexing-16a34a?style=for-the-badge&labelColor=111827" />
 <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-374151?style=for-the-badge&labelColor=111827" />
