@@ -39,11 +39,11 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 
 ## Screenshot
 
-![Ask_mode](.\assets\Ask_mode.png)
+<img src="./assets/Ask_mode.png" alt="Ask_mode" width="400">
 
-![Bookshelf](.\assets\Bookshelf.png)
+![Bookshelf](./assets/Bookshelf.png)
 
-![Papermind_ai](.\assets\Papermind_ai.png)
+![Papermind_ai](./assets/Papermind_ai.png)
 
 ## 3.7.0 Update
 
