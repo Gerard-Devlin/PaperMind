@@ -79,6 +79,37 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
     return this._isQuitting;
   }
 
+  private _isWindowAlive(win?: BrowserWindow | null): win is BrowserWindow {
+    return !!win && !win.isDestroyed();
+  }
+
+  private _safeClose(win?: BrowserWindow | null) {
+    if (!this._isWindowAlive(win)) return;
+    try {
+      win.close();
+    } catch {
+      // Ignore close races during shutdown.
+    }
+  }
+
+  private _safeDestroy(win?: BrowserWindow | null) {
+    if (!this._isWindowAlive(win)) return;
+    try {
+      win.destroy();
+    } catch {
+      // Ignore destroy races during shutdown.
+    }
+  }
+
+  private _safeHide(win?: BrowserWindow | null) {
+    if (!this._isWindowAlive(win)) return;
+    try {
+      win.hide();
+    } catch {
+      // Ignore hide races during shutdown.
+    }
+  }
+
   /**
    * Create Process with a BrowserWindow
    * @param id - window id
@@ -252,11 +283,10 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
             this.browserWindows.all()
           )) {
             if (windowId !== Process.renderer) {
-              window.close();
-              window.destroy();
+              this._safeClose(window);
             }
           }
-          this.browserWindows.get(Process.renderer).destroy();
+          this._safeDestroy(this.browserWindows.get(Process.renderer));
 
           if (process.platform !== "darwin") app.quit();
         },
@@ -338,7 +368,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
    */
   show(windowId: string) {
     const win = this.browserWindows.get(windowId);
-    if (win) {
+    if (this._isWindowAlive(win)) {
       win.show();
     }
   }
@@ -349,17 +379,17 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
    */
   hide(windowId: string, restoreFocus = false) {
     const win = this.browserWindows.get(windowId);
-    if (win) {
+    if (this._isWindowAlive(win)) {
       if (restoreFocus) {
         if (os.platform() === "darwin") {
-          win.hide();
+          this._safeHide(win);
           app.hide();
         } else {
           win.minimize();
-          win.hide();
+          this._safeHide(win);
         }
       } else {
-        win.hide();
+        this._safeHide(win);
       }
     }
   }
@@ -371,20 +401,26 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
   minimize(windowId: string) {
     if (windowId === Process.renderer) {
       const win = this.browserWindows.get(windowId);
-      win.minimize();
+      if (this._isWindowAlive(win)) {
+        win.minimize();
+      }
 
       for (const [windowId, win] of Object.entries(this.browserWindows.all())) {
         if (windowId !== Process.renderer) {
           if (os.platform() === "darwin" || windowId === Process.quickpaste) {
-            win.hide();
+            this._safeHide(win);
           } else {
-            win.minimize();
+            if (this._isWindowAlive(win)) {
+              win.minimize();
+            }
           }
         }
       }
     } else {
       const win = this.browserWindows.get(windowId);
-      win.minimize();
+      if (this._isWindowAlive(win)) {
+        win.minimize();
+      }
     }
   }
 
@@ -417,21 +453,17 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
   close(windowId: string) {
     if (os.platform() === "darwin") {
       if (windowId === Process.renderer) {
-        for (const [windowId, win] of Object.entries(
-          this.browserWindows.all()
-        )) {
-          win.hide();
+        for (const [, win] of Object.entries(this.browserWindows.all())) {
+          this._safeHide(win);
         }
       } else {
         const win = this.browserWindows.get(windowId);
-        win.hide();
+        this._safeHide(win);
       }
     } else {
       if (windowId === Process.renderer) {
-        for (const [windowId, win] of Object.entries(
-          this.browserWindows.all()
-        )) {
-          win.close();
+        for (const [, win] of Object.entries(this.browserWindows.all())) {
+          this._safeClose(win);
         }
         // Only quit the app when a real quit was requested (e.g. via tray Exit or before-quit).
         if (this._isQuitting && process.platform !== "darwin") {
@@ -439,7 +471,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
         }
       } else {
         const win = this.browserWindows.get(windowId);
-        win.close();
+        this._safeClose(win);
       }
     }
   }
@@ -450,12 +482,12 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
    */
   forceClose(windowId: string) {
     if (windowId === Process.renderer) {
-      for (const [windowId, win] of Object.entries(this.browserWindows.all())) {
-        win.close();
+      for (const [, win] of Object.entries(this.browserWindows.all())) {
+        this._safeClose(win);
       }
     } else {
       const win = this.browserWindows.get(windowId);
-      win.close();
+      this._safeClose(win);
     }
   }
 
@@ -485,7 +517,7 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
   @errorcatching("Failed to resize window.", true, "WinProcessManagement")
   resize(windowId: string, width: number, height: number) {
     const win = this.browserWindows.get(windowId);
-    if (win) {
+    if (this._isWindowAlive(win)) {
       win.setSize(width, height);
     }
   }
