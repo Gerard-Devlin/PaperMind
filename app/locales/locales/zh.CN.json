@@ -318,7 +318,10 @@
     "embeddingProviderTitle": "Embedding 供应商",
     "changeProvider": "更换",
     "providerModalTitle": "选择模型供应商",
-    "providerModalInfo": "为当前能力选择模型供应商。"
+    "providerModalInfo": "为当前能力选择模型供应商。",
+    "providerApiSectionTitle": "供应商 API",
+    "providerApiConfigured": "已配置 API Key",
+    "providerApiNotConfigured": "未配置 API Key"
   },
   "guide": {
     "import1title": "1. 导入到文献库",

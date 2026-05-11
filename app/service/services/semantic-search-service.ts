@@ -581,8 +581,8 @@ export class SemanticSearchService extends Eventable<{}> {
       `modelProviderApiKey:${providerID}`
     );
     return (
-      scopedKey ||
       providerKey ||
+      scopedKey ||
       (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
       process.env.OPENAI_API_KEY ||
       process.env.DASHSCOPE_API_KEY ||

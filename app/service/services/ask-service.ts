@@ -46,8 +46,12 @@ export class AskService extends Eventable<{}> {
 
   @processing(ProcessingKey.General)
   @errorcatching("Failed to list chat models.", true, "AskService", [])
-  async listChatModels(baseURL: string, forceRefresh = false): Promise<string[]> {
-    const models = await this._listModels(baseURL, forceRefresh, "ask");
+  async listChatModels(
+    baseURL: string,
+    forceRefresh = false,
+    scope: "ask" | "tag" = "ask"
+  ): Promise<string[]> {
+    const models = await this._listModels(baseURL, forceRefresh, scope);
     return models.filter((modelID) => !this._isEmbeddingModel(modelID));
   }
 
@@ -70,18 +74,15 @@ export class AskService extends Eventable<{}> {
   private async _listModels(
     baseURL: string,
     forceRefresh = false,
-    scope: "ask" | "embedding" = "ask"
+    scope: "ask" | "tag" | "embedding" = "ask"
   ): Promise<string[]> {
     const provider =
       scope === "embedding"
         ? getModelProviderPreset(
             `${await PLMainAPI.preferenceService.get("embeddingModelProvider")}`.trim()
           )
-        : await this._getProviderPreset("ask");
-    const apiKey = await this._resolveProviderAPIKey(
-      provider.id,
-      scope === "embedding" ? "embedding" : "ask"
-    );
+        : await this._getProviderPreset(scope);
+    const apiKey = await this._resolveProviderAPIKey(provider.id, scope);
     if (!apiKey) {
       return [];
     }
@@ -544,8 +545,8 @@ export class AskService extends Eventable<{}> {
       `modelProviderApiKey:${providerID}`
     );
     return (
-      scopedKey ||
       providerKey ||
+      scopedKey ||
       (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
       process.env.OPENAI_API_KEY ||
       process.env.DASHSCOPE_API_KEY ||

@@ -2,7 +2,9 @@
 import {
   BIconArrowRepeat,
   BIconCheck2Circle,
+  BIconCheckCircleFill,
   BIconSearch,
+  BIconXCircleFill,
 } from "bootstrap-icons-vue";
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -16,14 +18,13 @@ import deepseekIcon from "@/renderer/assets/providers/deepseek.svg";
 import moonshotIcon from "@/renderer/assets/providers/moonshot.png";
 import openaiIcon from "@/renderer/assets/providers/openai.svg";
 
-import Input from "./components/Input.vue";
 import Toggle from "./components/toggle.vue";
 
 const prefState = PLMainAPI.preferenceService.useState();
 const { t } = useI18n();
-const askKey = ref("");
-const tagKey = ref("");
-const embeddingKey = ref("");
+const providerKeyStatus = ref<Record<string, boolean>>({});
+const providerKeyDraft = ref<Record<string, string>>({});
+const providerConnectivity = ref<Record<string, "checking" | "ok" | "fail">>({});
 const testing = ref(false);
 const indexing = ref(false);
 const embeddingModelLoading = ref(false);
@@ -39,6 +40,14 @@ const updatePref = (key: string, value: unknown) => {
 };
 
 const providerPresets = MODEL_PROVIDER_PRESETS;
+const providerIconPathMap: Partial<Record<ModelProviderId, string>> = {
+  qwen: qwenIcon,
+  openai: openaiIcon,
+  deepseek: deepseekIcon,
+  moonshot: moonshotIcon,
+};
+const providerIconPath = (providerID: string) =>
+  providerIconPathMap[providerID as ModelProviderId];
 
 const providerFor = (scope: "ask" | "tag" | "embedding") => {
   if (scope === "ask") {
@@ -59,74 +68,105 @@ const applyProviderDefaults = async (
     updatePref("askModelProvider", providerID);
     updatePref("qwenAskBaseURL", preset.baseURL);
     updatePref("qwenAskModel", preset.defaultAskModel);
-    askKey.value =
-      (await PLMainAPI.preferenceService.getPassword(
-        `modelProviderApiKey:ask:${providerID}`
-      )) || "";
   } else if (scope === "tag") {
     updatePref("tagModelProvider", providerID);
     updatePref("qwenAITagBaseURL", preset.baseURL);
     updatePref("qwenAITagModel", preset.defaultAskModel);
-    tagKey.value =
-      (await PLMainAPI.preferenceService.getPassword(
-        `modelProviderApiKey:tag:${providerID}`
-      )) || "";
   } else {
     updatePref("embeddingModelProvider", providerID);
     updatePref("qwenEmbeddingBaseURL", preset.baseURL);
     updatePref("qwenEmbeddingModel", preset.defaultEmbeddingModel);
-    embeddingKey.value =
-      (await PLMainAPI.preferenceService.getPassword(
-        `modelProviderApiKey:embedding:${providerID}`
-      )) || "";
   }
 };
 
-const saveProviderKey = async (
-  scope: "ask" | "tag" | "embedding",
-  value: string
-) => {
-  const trimmed = value.trim();
-  if (scope === "ask") askKey.value = value;
-  if (scope === "tag") tagKey.value = value;
-  if (scope === "embedding") embeddingKey.value = value;
-  if (!trimmed) return;
-  const providerID = providerFor(scope);
-  await PLMainAPI.preferenceService.setPassword(
-    `modelProviderApiKey:${scope}:${providerID}`,
-    trimmed
+const loadProviderKeyState = async () => {
+  const entries = await Promise.all(
+    providerPresets.map(async (provider) => {
+      const key = await PLMainAPI.preferenceService.getPassword(
+        `modelProviderApiKey:${provider.id}`
+      );
+      return [provider.id, Boolean((key || "").trim())] as const;
+    })
   );
-  // Backward compatibility fallback key.
-  await PLMainAPI.preferenceService.setPassword("qwenEmbedding", trimmed);
+  providerKeyStatus.value = Object.fromEntries(entries);
+  const drafts = await Promise.all(
+    providerPresets.map(async (provider) => {
+      const key =
+        (await PLMainAPI.preferenceService.getPassword(
+          `modelProviderApiKey:${provider.id}`
+        )) || "";
+      return [provider.id, key] as const;
+    })
+  );
+  providerKeyDraft.value = Object.fromEntries(drafts);
+  await Promise.all(providerPresets.map(async (provider) => checkProviderConnectivity(provider.id)));
 };
 
-const saveAskKey = async (value: string) => saveProviderKey("ask", value);
-const saveTagKey = async (value: string) => saveProviderKey("tag", value);
-const saveEmbeddingKey = async (value: string) =>
-  saveProviderKey("embedding", value);
+const saveProviderApiKey = async (providerID: string) => {
+  const trimmed = (providerKeyDraft.value[providerID] || "").trim();
+  if (!trimmed) return;
+  await PLMainAPI.preferenceService.setPassword(
+    `modelProviderApiKey:${providerID}`,
+    trimmed
+  );
+  providerKeyStatus.value = {
+    ...providerKeyStatus.value,
+    [providerID]: true,
+  };
+  await checkProviderConnectivity(providerID);
+};
+
+const onProviderKeyChange = (providerID: string, value: string) => {
+  providerKeyDraft.value = {
+    ...providerKeyDraft.value,
+    [providerID]: value,
+  };
+};
+
+const onProviderKeySubmit = async (providerID: string, value: string) => {
+  onProviderKeyChange(providerID, value);
+  await saveProviderApiKey(providerID);
+};
+
+const checkProviderConnectivity = async (providerID: string) => {
+  providerConnectivity.value = {
+    ...providerConnectivity.value,
+    [providerID]: "checking",
+  };
+  try {
+    const key =
+      (await PLMainAPI.preferenceService.getPassword(
+        `modelProviderApiKey:${providerID}`
+      )) || "";
+    if (!key.trim()) {
+      providerConnectivity.value = {
+        ...providerConnectivity.value,
+        [providerID]: "fail",
+      };
+      return;
+    }
+    const baseURL = getModelProviderPreset(providerID).baseURL.replace(/\/+$/, "");
+    const response = await fetch(`${baseURL}/models`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${key.trim()}`,
+        "Content-Type": "application/json",
+      },
+    });
+    providerConnectivity.value = {
+      ...providerConnectivity.value,
+      [providerID]: response.ok ? "ok" : "fail",
+    };
+  } catch {
+    providerConnectivity.value = {
+      ...providerConnectivity.value,
+      [providerID]: "fail",
+    };
+  }
+};
 
 const providerLabel = (scope: "ask" | "tag" | "embedding") =>
   getModelProviderPreset(providerFor(scope)).label;
-const providerIconPathMap: Partial<Record<ModelProviderId, string>> = {
-  qwen: qwenIcon,
-  openai: openaiIcon,
-  deepseek: deepseekIcon,
-  moonshot: moonshotIcon,
-};
-const providerIconPath = (providerID: string) =>
-  providerIconPathMap[providerID as ModelProviderId];
-
-const refreshScopedKey = async (scope: "ask" | "tag" | "embedding") => {
-  const providerID = providerFor(scope);
-  const scoped =
-    (await PLMainAPI.preferenceService.getPassword(
-      `modelProviderApiKey:${scope}:${providerID}`
-    )) ||
-    "";
-  if (scope === "ask") askKey.value = scoped;
-  if (scope === "tag") tagKey.value = scoped;
-  if (scope === "embedding") embeddingKey.value = scoped;
-};
 
 const testSettings = async () => {
   testing.value = true;
@@ -162,7 +202,11 @@ const refreshModels = async (target: "ask" | "tag") => {
     target === "ask"
       ? getModelProviderPreset(providerFor("ask")).baseURL
       : getModelProviderPreset(providerFor("tag")).baseURL;
-  const models = await PLAPI.askService.listChatModels(`${baseURL || ""}`, true);
+  const models = await PLAPI.askService.listChatModels(
+    `${baseURL || ""}`,
+    true,
+    target === "ask" ? "ask" : "tag"
+  );
 
   if (target === "ask") {
     askModelOptions.value = models;
@@ -180,6 +224,18 @@ const refreshModels = async (target: "ask" | "tag") => {
   } else {
     aiTagModelLoading.value = false;
   }
+};
+
+const onChangeProvider = async (
+  scope: "ask" | "tag" | "embedding",
+  providerID: string
+) => {
+  await applyProviderDefaults(scope, providerID);
+  if (scope === "embedding") {
+    await refreshEmbeddingModels();
+    return;
+  }
+  await refreshModels(scope === "ask" ? "ask" : "tag");
 };
 
 const refreshEmbeddingModels = async () => {
@@ -213,20 +269,18 @@ const loadModelCache = async () => {
       : [];
   askModelOptions.value = await PLAPI.askService.listChatModels(
     `${getModelProviderPreset(providerFor("ask")).baseURL || ""}`,
-    false
+    false,
+    "ask"
   );
   aiTagModelOptions.value = await PLAPI.askService.listChatModels(
     `${getModelProviderPreset(providerFor("tag")).baseURL || ""}`,
-    false
+    false,
+    "tag"
   );
 };
 
 onMounted(() => {
-  void (async () => {
-    await refreshScopedKey("ask");
-    await refreshScopedKey("tag");
-    await refreshScopedKey("embedding");
-  })();
+  void loadProviderKeyState();
   void loadModelCache();
 });
 </script>
@@ -236,45 +290,98 @@ onMounted(() => {
     class="flex flex-col text-neutral-800 dark:text-neutral-300 w-[400px] md:w-[500px] lg:w-[700px]"
   >
     <div class="text-base font-semibold mb-4">{{ $t("semanticsearch.title") }}</div>
-
-    <div class="text-xs font-semibold mb-2 flex items-center">
-      <img
-        v-if="providerIconPath(providerFor('embedding'))"
-        :src="providerIconPath(providerFor('embedding'))"
-        class="w-4 h-4 mr-1 rounded-sm"
-      />
-      {{ $t("semanticsearch.embeddingProviderTitle") }}
+    <div class="mb-5">
+      <div class="text-xs font-semibold mb-2">{{ $t("semanticsearch.providerApiSectionTitle") }}</div>
+      <div class="grid grid-cols-1 gap-2">
+        <div
+          v-for="provider in providerPresets"
+          :key="`provider-inline-${provider.id}`"
+          class="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-2 bg-neutral-50 dark:bg-neutral-700"
+        >
+          <div class="grid grid-cols-[200px_minmax(0,1fr)_20px] items-center gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-6 h-6 rounded-md bg-neutral-200 dark:bg-neutral-600 flex items-center justify-center shrink-0">
+                <img
+                  v-if="providerIconPath(provider.id)"
+                  :src="providerIconPath(provider.id)"
+                  class="w-4 h-4 rounded-sm"
+                />
+              </div>
+              <div class="text-xs font-medium truncate">{{ provider.label }}</div>
+            </div>
+            <input
+              class="h-8 px-2 rounded-md text-xs bg-neutral-200 dark:bg-neutral-600 focus:outline-none w-full min-w-0"
+              type="password"
+              placeholder="sk-..."
+              :value="providerKeyDraft[provider.id] || ''"
+              @input="
+                (event) =>
+                  onProviderKeyChange(
+                    provider.id,
+                    (event.target as HTMLInputElement).value
+                  )
+              "
+              @keydown.enter="
+                () =>
+                  onProviderKeySubmit(
+                    provider.id,
+                    providerKeyDraft[provider.id] || ''
+                  )
+              "
+              @change="
+                (event) =>
+                  onProviderKeySubmit(
+                    provider.id,
+                    (event.target as HTMLInputElement).value
+                  )
+              "
+            />
+            <div class="flex justify-end">
+              <BIconArrowRepeat
+                v-if="providerConnectivity[provider.id] === 'checking'"
+                class="text-neutral-500 animate-spin"
+              />
+              <BIconCheckCircleFill
+                v-else-if="providerConnectivity[provider.id] === 'ok'"
+                class="text-emerald-500"
+              />
+              <BIconXCircleFill v-else class="text-red-500" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <select
-      class="mb-3 w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
-      :value="providerFor('embedding')"
-      @change="
-        async (event) =>
-          applyProviderDefaults(
-            'embedding',
-            (event.target as HTMLSelectElement).value
-          )
-      "
-    >
-      <option
-        v-for="provider in providerPresets"
-        :key="`embedding-provider-${provider.id}`"
-        :value="provider.id"
-      >
-        {{ provider.label }}
-      </option>
-    </select>
 
-    <Input
-      class="mb-3"
-      :title="$t('semanticsearch.providerApiKeyTitle')"
-      :info="$t('semanticsearch.providerApiKeyInfo')"
-      :value="embeddingKey"
-      type="password"
-      placeholder="sk-..."
-      show-saving-status
-      @event:submit="saveEmbeddingKey"
-    />
+    <hr class="mb-5 border-neutral-300 dark:border-neutral-700" />
+
+    <div class="mb-3 flex flex-col space-y-1">
+      <div class="flex flex-col">
+        <div class="text-xs font-semibold">{{ $t("semanticsearch.embeddingProviderTitle") }}</div>
+      </div>
+      <div class="relative">
+        <img
+          v-if="providerIconPath(providerFor('embedding'))"
+          :src="providerIconPath(providerFor('embedding'))"
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-sm pointer-events-none"
+        />
+        <select
+          class="w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow pl-8 pr-2"
+          :value="providerFor('embedding')"
+          @change="
+            async (event) =>
+              onChangeProvider('embedding', (event.target as HTMLSelectElement).value)
+          "
+        >
+          <option
+            v-for="provider in providerPresets"
+            :key="`embedding-provider-${provider.id}`"
+            :value="provider.id"
+          >
+            {{ provider.label }}
+          </option>
+        </select>
+      </div>
+    </div>
 
     <div class="mb-5 flex flex-col space-y-1">
       <div class="flex flex-col">
@@ -369,41 +476,35 @@ onMounted(() => {
 
     <hr class="mb-5 border-neutral-300 dark:border-neutral-700" />
 
-    <div class="text-xs font-semibold mb-2 flex items-center">
-      <img
-        v-if="providerIconPath(providerFor('ask'))"
-        :src="providerIconPath(providerFor('ask'))"
-        class="w-4 h-4 mr-1 rounded-sm"
-      />
-      {{ $t("semanticsearch.askProviderTitle") }}
-    </div>
-    <select
-      class="mb-3 w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
-      :value="providerFor('ask')"
-      @change="
-        async (event) =>
-          applyProviderDefaults('ask', (event.target as HTMLSelectElement).value)
-      "
-    >
-      <option
-        v-for="provider in providerPresets"
-        :key="`ask-provider-${provider.id}`"
-        :value="provider.id"
-      >
-        {{ provider.label }}
-      </option>
-    </select>
 
-    <Input
-      class="mb-3"
-      :title="$t('semanticsearch.providerApiKeyTitle')"
-      :info="$t('semanticsearch.providerApiKeyInfo')"
-      :value="askKey"
-      type="password"
-      placeholder="sk-..."
-      show-saving-status
-      @event:submit="saveAskKey"
-    />
+    <div class="mb-3 flex flex-col space-y-1">
+      <div class="flex flex-col">
+        <div class="text-xs font-semibold">{{ $t("semanticsearch.askProviderTitle") }}</div>
+      </div>
+      <div class="relative">
+        <img
+          v-if="providerIconPath(providerFor('ask'))"
+          :src="providerIconPath(providerFor('ask'))"
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-sm pointer-events-none"
+        />
+        <select
+          class="w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow pl-8 pr-2"
+          :value="providerFor('ask')"
+          @change="
+            async (event) =>
+              onChangeProvider('ask', (event.target as HTMLSelectElement).value)
+          "
+        >
+          <option
+            v-for="provider in providerPresets"
+            :key="`ask-provider-${provider.id}`"
+            :value="provider.id"
+          >
+            {{ provider.label }}
+          </option>
+        </select>
+      </div>
+    </div>
 
     <div class="mb-5 flex flex-col space-y-1">
       <div class="flex flex-col">
@@ -509,41 +610,35 @@ onMounted(() => {
       @event:change="(value) => updatePref('autoAITagging', value)"
     />
 
-    <div class="text-xs font-semibold mb-2 flex items-center">
-      <img
-        v-if="providerIconPath(providerFor('tag'))"
-        :src="providerIconPath(providerFor('tag'))"
-        class="w-4 h-4 mr-1 rounded-sm"
-      />
-      {{ $t("semanticsearch.tagProviderTitle") }}
-    </div>
-    <select
-      class="mb-3 w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
-      :value="providerFor('tag')"
-      @change="
-        async (event) =>
-          applyProviderDefaults('tag', (event.target as HTMLSelectElement).value)
-      "
-    >
-      <option
-        v-for="provider in providerPresets"
-        :key="`tag-provider-${provider.id}`"
-        :value="provider.id"
-      >
-        {{ provider.label }}
-      </option>
-    </select>
 
-    <Input
-      class="mb-3"
-      :title="$t('semanticsearch.providerApiKeyTitle')"
-      :info="$t('semanticsearch.providerApiKeyInfo')"
-      :value="tagKey"
-      type="password"
-      placeholder="sk-..."
-      show-saving-status
-      @event:submit="saveTagKey"
-    />
+    <div class="mb-3 flex flex-col space-y-1">
+      <div class="flex flex-col">
+        <div class="text-xs font-semibold">{{ $t("semanticsearch.tagProviderTitle") }}</div>
+      </div>
+      <div class="relative">
+        <img
+          v-if="providerIconPath(providerFor('tag'))"
+          :src="providerIconPath(providerFor('tag'))"
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-sm pointer-events-none"
+        />
+        <select
+          class="w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow pl-8 pr-2"
+          :value="providerFor('tag')"
+          @change="
+            async (event) =>
+              onChangeProvider('tag', (event.target as HTMLSelectElement).value)
+          "
+        >
+          <option
+            v-for="provider in providerPresets"
+            :key="`tag-provider-${provider.id}`"
+            :value="provider.id"
+          >
+            {{ provider.label }}
+          </option>
+        </select>
+      </div>
+    </div>
 
     <div class="mb-5 flex flex-col space-y-1">
       <div class="flex flex-col">
