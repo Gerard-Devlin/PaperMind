@@ -10,9 +10,7 @@ const hide = async () => {
 };
 
 const darkMode = ref(false);
-
 const language = ref("en-GB");
-
 const isShowSlogan = ref(true);
 
 onMounted(async () => {
@@ -21,7 +19,7 @@ onMounted(async () => {
 
   setTimeout(() => {
     isShowSlogan.value = false;
-  }, 2500);
+  }, 2200);
 });
 </script>
 
@@ -43,7 +41,7 @@ onMounted(async () => {
   white-space: nowrap;
   overflow: hidden;
   border-right: 0.05em solid;
-  animation: typing 2s steps(15), caret 0.5s steps(1) infinite;
+  animation: typing 1.8s steps(15), caret 0.5s steps(1) infinite;
 }
 </style>
 
@@ -56,16 +54,18 @@ onMounted(async () => {
       class="typing-style text-xl font-bold font-mono mx-auto my-40"
       v-if="isShowSlogan"
     >
-      WELCOME TO PAPERMIND 3.6.1
+      WELCOME TO PAPERMIND 3.7.0
     </div>
+
     <div class="w-[45rem] px-3 mx-auto my-20 flex flex-col" v-else>
       <div class="mx-auto font-semibold mb-8 space-x-2 flex">
         <span class="text-3xl my-auto">PAPERMIND</span>
         <span
           class="text-xl bg-neutral-700 text-white dark:bg-neutral-300 dark:text-neutral-800 rounded-md px-2 py-1 my-auto"
-          >3.6.1</span
+          >3.7.0</span
         >
       </div>
+
       <div class="flex space-x-2 mx-auto mb-4">
         <div class="underline cursor-pointer" @click="language = 'en-GB'">
           English
@@ -75,120 +75,69 @@ onMounted(async () => {
           简体中文
         </div>
       </div>
+
       <div class="flex flex-col" v-if="language === 'en-GB'">
-        <div class="mx-auto mb-8 font-semibold">
-          Welcome to PaperMind 3.6.1.
-        </div>
-        <div>
-          In PaperMind 3.6.1, your library workflow is upgraded with:
-        </div>
+        <div class="mx-auto mb-8 font-semibold">Welcome to PaperMind 3.7.0.</div>
+        <div class="mb-2">This release focuses on a cleaner and more reliable model workflow:</div>
         <ul class="list-disc px-4 mx-1">
-          <li class="font-semibold">Built-in scrape pipeline (no extra install needed)</li>
-          <li class="font-semibold">Semantic search with local vector index</li>
-          <li class="font-semibold">Ask your library (RAG, one-turn answer with sources)</li>
-          <li class="font-semibold">Citation-source hover cards with per-citation evidence excerpts</li>
-          <li class="font-semibold">Double-click citation source marker to open source PDF</li>
-          <li class="font-semibold">Quick Ask answer copy button with success-check interaction</li>
-          <li class="font-semibold">Auto AI tags on import/update + manual regenerate</li>
-          <li class="font-semibold">Quick Cite and multi-style citation export</li>
-          <li class="font-semibold">Preview and citation-count integrations</li>
-          <li class="font-semibold">English / Simplified Chinese UI</li>
+          <li class="font-semibold">Multi-provider support for Ask / Tag / Embedding</li>
+          <li class="font-semibold">Provider-level API key management on one settings page</li>
+          <li class="font-semibold">Per-capability provider and model selection (Ask / Embedding / Tag)</li>
+          <li class="font-semibold">Connectivity-aware provider status indicators</li>
+          <li class="font-semibold">Improved full-document embedding and query-aware evidence retrieval</li>
+          <li class="font-semibold">Compare workflow removed for a simpler Ask experience</li>
         </ul>
+
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">Scrape + Metadata</div>
+        <div class="font-bold text-xl mb-4">Model Providers</div>
         <div class="mb-2">
-          Entry scrape, metadata scrape, community metadata, preview, and
-          citation count are bundled in the app build. Importing papers now
-          works out of the box without installing official scrape extensions
-          manually.
+          You can now configure multiple OpenAI-compatible providers in one place and reuse them across different capabilities.
         </div>
         <div class="mb-2">
-          <span>Metadata fields include title, authors, year, venue, DOI, arXiv, and online resources. Re-scrape from context menu supports overwrite flow for missing fields.</span>
+          Supported providers in this release include Qwen, OpenAI, DeepSeek, Moonshot, and Zhipu.
         </div>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">Semantic + Ask</div>
+        <div class="font-bold text-xl mb-4">Semantic + Ask Improvements</div>
         <div class="mb-2">
-          Semantic search uses embeddings + local vector retrieval and joins paper
-          metadata for ranking and display. Ask mode retrieves related papers first,
-          then generates a concise answer with cited sources.
+          Embedding now uses full-document chunking and pooled vectors, improving long-paper coverage.
         </div>
         <div class="mb-2">
-          The settings page supports model management for Ask, AI Tag, and
-          Embedding, with provider-compatible configuration and model refresh.
+          Ask evidence extraction is query-aware and supports lightweight / balanced / detailed context profiles.
         </div>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">Productivity</div>
-        <div class="mb-2">
-          Quick Cite supports fast search and citation copy/export in multiple
-          styles (for example IEEE, APA, MLA, BibTeX). AI tags can be generated
-          automatically or manually from paper context actions.
-        </div>
-
-        <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">UI and Stability</div>
-        <div class="mb-2">
-          This release includes responsive layout updates, cover rendering
-          optimization, startup flow fixes, and better first-run guidance.
-        </div>
-
-        <hr class="my-8" />
-        <div>Community</div>
-        <div>
-          Thanks for using PaperMind 3.6.1.
-        </div>
+        <div>Thanks for using PaperMind 3.7.0.</div>
       </div>
+
       <div class="flex flex-col" v-else>
-        <div class="mx-auto mb-8 font-semibold">
-          欢迎来到 PaperMind 3.6.1。
-        </div>
-        <div>在 PaperMind 3.6.1 中，我们把现有核心能力都整合进来了：</div>
+        <div class="mx-auto mb-8 font-semibold">欢迎来到 PaperMind 3.7.0。</div>
+        <div class="mb-2">本次版本重点升级了模型配置与问答检索链路：</div>
         <ul class="list-disc px-4 mx-1">
-          <li class="font-semibold">内置抓取链路（无需额外安装官方抓取扩展）</li>
-          <li class="font-semibold">语义搜索（本地向量索引）</li>
-          <li class="font-semibold">Ask 问答（RAG 检索后回答并附来源）</li>
-          <li class="font-semibold">引用源悬浮卡片（按引用显示原文证据片段）</li>
-          <li class="font-semibold">双击引用标记可直接打开来源 PDF</li>
-          <li class="font-semibold">Ask 回答一键复制（成功后显示勾选反馈）</li>
-          <li class="font-semibold">AI 标签（导入/更新自动打标 + 右键手动生成）</li>
-          <li class="font-semibold">快速引用与多格式导出</li>
-          <li class="font-semibold">封面预览与引用次数集成</li>
-          <li class="font-semibold">中英文双语界面</li>
+          <li class="font-semibold">支持多模型供应商接入（Ask / Tag / Embedding）</li>
+          <li class="font-semibold">同一页面统一管理供应商 API Key</li>
+          <li class="font-semibold">Ask / Embedding / Tag 分别可选供应商与模型</li>
+          <li class="font-semibold">供应商状态支持连通性指示</li>
+          <li class="font-semibold">全文分块 embedding + 查询感知证据提取</li>
+          <li class="font-semibold">移除 compare 流程，Ask 体验更聚焦</li>
         </ul>
+
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">抓取与元数据</div>
+        <div class="font-bold text-xl mb-4">模型供应商</div>
         <div class="mb-2">
-          入口抓取、元数据抓取、社区元数据、预览、引用次数等能力已直接打包进应用。导入论文后可直接使用，不需要再安装官方抓取扩展。
+          现在可以在同一处配置多个 OpenAI 兼容供应商，并在不同能力之间复用。
         </div>
         <div class="mb-2">
-          支持标题、作者、年份、期刊/会议、DOI、arXiv、在线资源等信息抓取；右键重抓支持覆盖补全缺失字段。
+          本版本已支持 Qwen、OpenAI、DeepSeek、Moonshot、Zhipu。
         </div>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">语义搜索与 Ask</div>
-        <div class="mb-2">
-          语义搜索基于 embedding + 本地向量检索，并结合论文元数据返回结果。Ask 模式会先检索相关论文，再给出带来源标注的简洁回答。
-        </div>
-        <div class="mb-2">
-          设置页已支持 Ask / AI 标签 / Embedding 三类模型配置与刷新，便于切换兼容供应商。
-        </div>
+        <div class="font-bold text-xl mb-4">语义检索与 Ask 优化</div>
+        <div class="mb-2">Embedding 改为全文分块与向量池化，长文召回更稳定。</div>
+        <div class="mb-2">Ask 证据提取改为查询感知，并支持快速/平衡/详细上下文档位。</div>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">效率功能</div>
-        <div class="mb-2">
-          快速引用支持检索、复制和多格式导出（例如 IEEE、APA、MLA、BibTeX）。AI 标签既可自动生成，也可在论文右键中手动触发。
-        </div>
-
-        <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">界面与稳定性</div>
-        <div class="mb-2">
-          本版本包含响应式布局优化、封面渲染优化、启动流程修复和首次引导体验改进。
-        </div>
-
-        <hr class="my-8" />
-        <div>社区</div>
-        <div>感谢使用 PaperMind 3.6.1。</div>
+        <div>感谢使用 PaperMind 3.7.0。</div>
       </div>
 
       <div
@@ -205,4 +154,3 @@ onMounted(async () => {
     ></div>
   </div>
 </template>
-

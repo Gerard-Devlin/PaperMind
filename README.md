@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
   <img src="./build/icon_v2.ico" height="95" alt="PaperMind Logo" />
   <br />
   <h2>PaperMind</h2>
@@ -36,6 +36,15 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 - Double-click citation markers to open the corresponding source PDF directly.
 - One-click answer copy with success-check interaction.
 - Quickpaste Ask layout, height, and footer interaction refinements.
+
+## 3.7.0 Update
+
+- Multi-provider model integration for Ask / AI Tag / Embedding.
+- Provider-level API key management in Semantic Search settings.
+- Per-capability provider + model selection flow (Ask / Embedding / Tag).
+- Added Zhipu provider integration with icon and endpoint preset.
+- Provider connectivity indicators (configured + reachable shows success; otherwise failure).
+- Further Ask retrieval improvements with full-document chunking and query-aware context profiles.
 
 ## 3.6.1 Update
 
