@@ -102,6 +102,10 @@ export interface IPreferenceStore {
   qwenEmbeddingDimensions: number;
   qwenAskBaseURL: string;
   qwenAskModel: string;
+  modelProvider: string;
+  askModelProvider: string;
+  tagModelProvider: string;
+  embeddingModelProvider: string;
   askContextProfile: "fast" | "balanced" | "detailed";
   qwenAITagBaseURL: string;
   qwenAITagModel: string;

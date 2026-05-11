@@ -6,13 +6,19 @@ import {
 } from "bootstrap-icons-vue";
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import {
+  MODEL_PROVIDER_PRESETS,
+  getModelProviderPreset,
+} from "@/common/model-provider-registry";
 
 import Input from "./components/Input.vue";
 import Toggle from "./components/toggle.vue";
 
 const prefState = PLMainAPI.preferenceService.useState();
 const { t } = useI18n();
-const qwenKey = ref("");
+const askKey = ref("");
+const tagKey = ref("");
+const embeddingKey = ref("");
 const testing = ref(false);
 const indexing = ref(false);
 const embeddingModelLoading = ref(false);
@@ -22,17 +28,91 @@ const embeddingModelOptions = ref<string[]>([]);
 const askModelOptions = ref<string[]>([]);
 const aiTagModelOptions = ref<string[]>([]);
 const statusText = ref("");
-const defaultCompatibleBaseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
 
 const updatePref = (key: string, value: unknown) => {
   PLMainAPI.preferenceService.set({ [key]: value });
 };
 
-const saveQwenKey = async (value: string) => {
-  qwenKey.value = value;
-  if (value.trim()) {
-    await PLMainAPI.preferenceService.setPassword("qwenEmbedding", value.trim());
+const providerPresets = MODEL_PROVIDER_PRESETS;
+
+const providerFor = (scope: "ask" | "tag" | "embedding") => {
+  if (scope === "ask") {
+    return `${prefState.askModelProvider || "qwen"}`;
   }
+  if (scope === "tag") {
+    return `${prefState.tagModelProvider || "qwen"}`;
+  }
+  return `${prefState.embeddingModelProvider || "qwen"}`;
+};
+
+const applyProviderDefaults = async (
+  scope: "ask" | "tag" | "embedding",
+  providerID: string
+) => {
+  const preset = getModelProviderPreset(providerID);
+  if (scope === "ask") {
+    updatePref("askModelProvider", providerID);
+    updatePref("qwenAskBaseURL", preset.baseURL);
+    updatePref("qwenAskModel", preset.defaultAskModel);
+    askKey.value =
+      (await PLMainAPI.preferenceService.getPassword(
+        `modelProviderApiKey:ask:${providerID}`
+      )) || "";
+  } else if (scope === "tag") {
+    updatePref("tagModelProvider", providerID);
+    updatePref("qwenAITagBaseURL", preset.baseURL);
+    updatePref("qwenAITagModel", preset.defaultAskModel);
+    tagKey.value =
+      (await PLMainAPI.preferenceService.getPassword(
+        `modelProviderApiKey:tag:${providerID}`
+      )) || "";
+  } else {
+    updatePref("embeddingModelProvider", providerID);
+    updatePref("qwenEmbeddingBaseURL", preset.baseURL);
+    updatePref("qwenEmbeddingModel", preset.defaultEmbeddingModel);
+    embeddingKey.value =
+      (await PLMainAPI.preferenceService.getPassword(
+        `modelProviderApiKey:embedding:${providerID}`
+      )) || "";
+  }
+};
+
+const saveProviderKey = async (
+  scope: "ask" | "tag" | "embedding",
+  value: string
+) => {
+  const trimmed = value.trim();
+  if (scope === "ask") askKey.value = value;
+  if (scope === "tag") tagKey.value = value;
+  if (scope === "embedding") embeddingKey.value = value;
+  if (!trimmed) return;
+  const providerID = providerFor(scope);
+  await PLMainAPI.preferenceService.setPassword(
+    `modelProviderApiKey:${scope}:${providerID}`,
+    trimmed
+  );
+  // Backward compatibility fallback key.
+  await PLMainAPI.preferenceService.setPassword("qwenEmbedding", trimmed);
+};
+
+const saveAskKey = async (value: string) => saveProviderKey("ask", value);
+const saveTagKey = async (value: string) => saveProviderKey("tag", value);
+const saveEmbeddingKey = async (value: string) =>
+  saveProviderKey("embedding", value);
+
+const providerLabel = (scope: "ask" | "tag" | "embedding") =>
+  getModelProviderPreset(providerFor(scope)).label;
+
+const refreshScopedKey = async (scope: "ask" | "tag" | "embedding") => {
+  const providerID = providerFor(scope);
+  const scoped =
+    (await PLMainAPI.preferenceService.getPassword(
+      `modelProviderApiKey:${scope}:${providerID}`
+    )) ||
+    "";
+  if (scope === "ask") askKey.value = scoped;
+  if (scope === "tag") tagKey.value = scoped;
+  if (scope === "embedding") embeddingKey.value = scoped;
 };
 
 const testSettings = async () => {
@@ -66,7 +146,9 @@ const refreshModels = async (target: "ask" | "tag") => {
   }
 
   const baseURL =
-    target === "ask" ? prefState.qwenAskBaseURL : prefState.qwenAITagBaseURL;
+    target === "ask"
+      ? getModelProviderPreset(providerFor("ask")).baseURL
+      : getModelProviderPreset(providerFor("tag")).baseURL;
   const models = await PLAPI.askService.listChatModels(`${baseURL || ""}`, true);
 
   if (target === "ask") {
@@ -89,7 +171,7 @@ const refreshModels = async (target: "ask" | "tag") => {
 
 const refreshEmbeddingModels = async () => {
   embeddingModelLoading.value = true;
-  const baseURL = `${prefState.qwenEmbeddingBaseURL || defaultCompatibleBaseURL}`;
+  const baseURL = `${getModelProviderPreset(providerFor("embedding")).baseURL}`;
   const models = await PLAPI.askService.listEmbeddingModels(baseURL, true);
   embeddingModelOptions.value =
     models.length > 0
@@ -105,7 +187,7 @@ const refreshEmbeddingModels = async () => {
 };
 
 const loadModelCache = async () => {
-  const embeddingBaseURL = `${prefState.qwenEmbeddingBaseURL || defaultCompatibleBaseURL}`;
+  const embeddingBaseURL = `${getModelProviderPreset(providerFor("embedding")).baseURL}`;
   const cachedEmbeddingModels = await PLAPI.askService.listEmbeddingModels(
     embeddingBaseURL,
     false
@@ -117,16 +199,21 @@ const loadModelCache = async () => {
       ? [prefState.qwenEmbeddingModel]
       : [];
   askModelOptions.value = await PLAPI.askService.listChatModels(
-    `${prefState.qwenAskBaseURL || ""}`,
+    `${getModelProviderPreset(providerFor("ask")).baseURL || ""}`,
     false
   );
   aiTagModelOptions.value = await PLAPI.askService.listChatModels(
-    `${prefState.qwenAITagBaseURL || ""}`,
+    `${getModelProviderPreset(providerFor("tag")).baseURL || ""}`,
     false
   );
 };
 
 onMounted(() => {
+  void (async () => {
+    await refreshScopedKey("ask");
+    await refreshScopedKey("tag");
+    await refreshScopedKey("embedding");
+  })();
   void loadModelCache();
 });
 </script>
@@ -137,15 +224,36 @@ onMounted(() => {
   >
     <div class="text-base font-semibold mb-4">{{ $t("semanticsearch.title") }}</div>
 
+    <div class="text-xs font-semibold mb-2">{{ $t("semanticsearch.embeddingProviderTitle") }}</div>
+    <select
+      class="mb-3 w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
+      :value="providerFor('embedding')"
+      @change="
+        async (event) =>
+          applyProviderDefaults(
+            'embedding',
+            (event.target as HTMLSelectElement).value
+          )
+      "
+    >
+      <option
+        v-for="provider in providerPresets"
+        :key="`embedding-provider-${provider.id}`"
+        :value="provider.id"
+      >
+        {{ provider.label }}
+      </option>
+    </select>
+
     <Input
       class="mb-5"
-      :title="$t('semanticsearch.qwenApiKeyTitle')"
-      :info="$t('semanticsearch.qwenApiKeyInfo')"
-      :value="qwenKey"
+      :title="$t('semanticsearch.providerApiKeyTitle')"
+      :info="$t('semanticsearch.providerApiKeyInfo')"
+      :value="embeddingKey"
       type="password"
       placeholder="sk-..."
       show-saving-status
-      @event:submit="saveQwenKey"
+      @event:submit="saveEmbeddingKey"
     />
 
     <div class="mb-5 flex flex-col space-y-1">
@@ -218,15 +326,33 @@ onMounted(() => {
 
     <hr class="mb-5 border-neutral-300 dark:border-neutral-700" />
 
+    <div class="text-xs font-semibold mb-2">{{ $t("semanticsearch.askProviderTitle") }}</div>
+    <select
+      class="mb-3 w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
+      :value="providerFor('ask')"
+      @change="
+        async (event) =>
+          applyProviderDefaults('ask', (event.target as HTMLSelectElement).value)
+      "
+    >
+      <option
+        v-for="provider in providerPresets"
+        :key="`ask-provider-${provider.id}`"
+        :value="provider.id"
+      >
+        {{ provider.label }}
+      </option>
+    </select>
+
     <Input
       class="mb-5"
-      :title="$t('semanticsearch.askBaseURLTitle')"
-      :info="$t('semanticsearch.askBaseURLInfo')"
-      :value="prefState.qwenAskBaseURL"
-      type="text"
-      placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1"
-      @event:change="(value) => updatePref('qwenAskBaseURL', value)"
-      @event:submit="(value) => updatePref('qwenAskBaseURL', value)"
+      :title="$t('semanticsearch.providerApiKeyTitle')"
+      :info="$t('semanticsearch.providerApiKeyInfo')"
+      :value="askKey"
+      type="password"
+      placeholder="sk-..."
+      show-saving-status
+      @event:submit="saveAskKey"
     />
 
     <div class="mb-5 flex flex-col space-y-1">
@@ -333,15 +459,33 @@ onMounted(() => {
       @event:change="(value) => updatePref('autoAITagging', value)"
     />
 
+    <div class="text-xs font-semibold mb-2">{{ $t("semanticsearch.tagProviderTitle") }}</div>
+    <select
+      class="mb-3 w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
+      :value="providerFor('tag')"
+      @change="
+        async (event) =>
+          applyProviderDefaults('tag', (event.target as HTMLSelectElement).value)
+      "
+    >
+      <option
+        v-for="provider in providerPresets"
+        :key="`tag-provider-${provider.id}`"
+        :value="provider.id"
+      >
+        {{ provider.label }}
+      </option>
+    </select>
+
     <Input
       class="mb-5"
-      :title="$t('semanticsearch.aiTaggingBaseURLTitle')"
-      :info="$t('semanticsearch.aiTaggingBaseURLInfo')"
-      :value="prefState.qwenAITagBaseURL"
-      type="text"
-      placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1"
-      @event:change="(value) => updatePref('qwenAITagBaseURL', value)"
-      @event:submit="(value) => updatePref('qwenAITagBaseURL', value)"
+      :title="$t('semanticsearch.providerApiKeyTitle')"
+      :info="$t('semanticsearch.providerApiKeyInfo')"
+      :value="tagKey"
+      type="password"
+      placeholder="sk-..."
+      show-saving-status
+      @event:submit="saveTagKey"
     />
 
     <div class="mb-5 flex flex-col space-y-1">
@@ -441,12 +585,10 @@ onMounted(() => {
         {{ $t("semanticsearch.commandHint") }}
       </span>
     </div>
-    <div class="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-      {{ $t("semanticsearch.providerHint") }}
-    </div>
     <div class="text-xs text-neutral-600 dark:text-neutral-400 mt-3" v-if="statusText">
       {{ statusText }}
     </div>
+
   </div>
 </template>
 

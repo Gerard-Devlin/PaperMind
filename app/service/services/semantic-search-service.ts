@@ -10,6 +10,7 @@ import { getPublicationString } from "@/base/string";
 import { ProcessingKey, processing } from "@/common/utils/processing";
 import { Entity } from "@/models/entity";
 import { OID } from "@/models/id";
+import { getModelProviderPreset } from "@/common/model-provider-registry";
 import { DatabaseCore, IDatabaseCore } from "@/service/services/database/core";
 import { ILogService, LogService } from "@/common/services/log-service";
 import {
@@ -266,10 +267,8 @@ export class SemanticSearchService extends Eventable<{}> {
 
     inputs = inputs.map((input) => this._normalizeEmbeddingInput(input));
 
-    const apiKey =
-      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
-      process.env.DASHSCOPE_API_KEY ||
-      process.env.QWEN_API_KEY;
+    const provider = await this._getProviderPreset("embedding");
+    const apiKey = await this._resolveProviderAPIKey(provider.id, "embedding");
 
     if (!apiKey) {
       throw new Error(
@@ -287,14 +286,16 @@ export class SemanticSearchService extends Eventable<{}> {
       await PLMainAPI.preferenceService.get("qwenEmbeddingDimensions")
     );
 
-    const response = await fetch(`${baseURL}/embeddings`, {
+    const resolvedBaseURL = (baseURL || provider.baseURL).replace(/\/+$/, "");
+    const resolvedModel = model || provider.defaultEmbeddingModel;
+    const response = await fetch(`${resolvedBaseURL}/embeddings`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
+        model: resolvedModel,
         input: inputs.length === 1 ? inputs[0] : inputs,
         dimensions,
         encoding_format: "float",
@@ -323,11 +324,8 @@ export class SemanticSearchService extends Eventable<{}> {
       return true;
     }
 
-    const apiKey =
-      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
-      process.env.DASHSCOPE_API_KEY ||
-      process.env.QWEN_API_KEY ||
-      "";
+    const provider = await this._getProviderPreset("embedding");
+    const apiKey = await this._resolveProviderAPIKey(provider.id, "embedding");
 
     return Boolean(apiKey);
   }
@@ -557,15 +555,41 @@ export class SemanticSearchService extends Eventable<{}> {
   }
 
   private async _ensureConfigured() {
-    const apiKey =
-      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
-      process.env.DASHSCOPE_API_KEY ||
-      process.env.QWEN_API_KEY ||
-      "";
+    const provider = await this._getProviderPreset("embedding");
+    const apiKey = await this._resolveProviderAPIKey(provider.id, "embedding");
 
     if (!apiKey) {
-      throw new Error("Qwen embedding API key is missing.");
+      throw new Error("Model provider API key is missing.");
     }
+  }
+
+  private async _getProviderPreset(scope: "embedding") {
+    const providerID = `${await PLMainAPI.preferenceService.get(
+      "embeddingModelProvider"
+    )}`.trim();
+    return getModelProviderPreset(providerID);
+  }
+
+  private async _resolveProviderAPIKey(
+    providerID: string,
+    scope: "embedding"
+  ) {
+    const scopedKey = await PLMainAPI.preferenceService.getPassword(
+      `modelProviderApiKey:${scope}:${providerID}`
+    );
+    const providerKey = await PLMainAPI.preferenceService.getPassword(
+      `modelProviderApiKey:${providerID}`
+    );
+    return (
+      scopedKey ||
+      providerKey ||
+      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
+      process.env.OPENAI_API_KEY ||
+      process.env.DASHSCOPE_API_KEY ||
+      process.env.QWEN_API_KEY ||
+      process.env.DEEPSEEK_API_KEY ||
+      ""
+    );
   }
 
   private async _ensureSchema() {

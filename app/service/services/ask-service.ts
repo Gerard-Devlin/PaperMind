@@ -4,6 +4,7 @@ import { createDecorator } from "@/base/injection/injection";
 import { ProcessingKey, processing } from "@/common/utils/processing";
 import { getPublicationString } from "@/base/string";
 import { ILogService, LogService } from "@/common/services/log-service";
+import { getModelProviderPreset } from "@/common/model-provider-registry";
 import {
   ISemanticSearchService,
   SemanticSearchService,
@@ -46,7 +47,7 @@ export class AskService extends Eventable<{}> {
   @processing(ProcessingKey.General)
   @errorcatching("Failed to list chat models.", true, "AskService", [])
   async listChatModels(baseURL: string, forceRefresh = false): Promise<string[]> {
-    const models = await this._listModels(baseURL, forceRefresh);
+    const models = await this._listModels(baseURL, forceRefresh, "ask");
     return models.filter((modelID) => !this._isEmbeddingModel(modelID));
   }
 
@@ -56,7 +57,7 @@ export class AskService extends Eventable<{}> {
     baseURL: string,
     forceRefresh = false
   ): Promise<string[]> {
-    const models = await this._listModels(baseURL, forceRefresh);
+    const models = await this._listModels(baseURL, forceRefresh, "embedding");
     const embeddingModels = models.filter((modelID) =>
       this._isEmbeddingModel(modelID)
     );
@@ -68,13 +69,19 @@ export class AskService extends Eventable<{}> {
 
   private async _listModels(
     baseURL: string,
-    forceRefresh = false
+    forceRefresh = false,
+    scope: "ask" | "embedding" = "ask"
   ): Promise<string[]> {
-    const apiKey =
-      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
-      process.env.DASHSCOPE_API_KEY ||
-      process.env.QWEN_API_KEY ||
-      "";
+    const provider =
+      scope === "embedding"
+        ? getModelProviderPreset(
+            `${await PLMainAPI.preferenceService.get("embeddingModelProvider")}`.trim()
+          )
+        : await this._getProviderPreset("ask");
+    const apiKey = await this._resolveProviderAPIKey(
+      provider.id,
+      scope === "embedding" ? "embedding" : "ask"
+    );
     if (!apiKey) {
       return [];
     }
@@ -180,13 +187,10 @@ export class AskService extends Eventable<{}> {
       return { answer: "", sources: [] };
     }
 
-    const apiKey =
-      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
-      process.env.DASHSCOPE_API_KEY ||
-      process.env.QWEN_API_KEY ||
-      "";
+    const provider = await this._getProviderPreset("ask");
+    const apiKey = await this._resolveProviderAPIKey(provider.id, "ask");
     if (!apiKey) {
-      throw new Error("Qwen API key is missing.");
+      throw new Error("Model provider API key is missing.");
     }
 
     const askBaseURL = `${await PLMainAPI.preferenceService.get(
@@ -201,8 +205,11 @@ export class AskService extends Eventable<{}> {
     const legacyChatModel = `${await PLMainAPI.preferenceService.get(
       "qwenChatModel"
     )}`.trim();
-    const baseURL = (askBaseURL || legacyChatBaseURL).replace(/\/+$/, "");
-    const model = askModel || legacyChatModel;
+    const baseURL = (askBaseURL || legacyChatBaseURL || provider.baseURL).replace(
+      /\/+$/,
+      ""
+    );
+    const model = askModel || legacyChatModel || provider.defaultAskModel;
     const contextProfile = `${await PLMainAPI.preferenceService.get(
       "askContextProfile"
     )}` as AskContextProfile;
@@ -520,6 +527,34 @@ export class AskService extends Eventable<{}> {
     }
   }
 
+  private async _getProviderPreset(scope: "ask" | "tag") {
+    const key = scope === "tag" ? "tagModelProvider" : "askModelProvider";
+    const providerID = `${await PLMainAPI.preferenceService.get(key)}`.trim();
+    return getModelProviderPreset(providerID);
+  }
+
+  private async _resolveProviderAPIKey(
+    providerID: string,
+    scope: "ask" | "tag" | "embedding"
+  ) {
+    const scopedKey = await PLMainAPI.preferenceService.getPassword(
+      `modelProviderApiKey:${scope}:${providerID}`
+    );
+    const providerKey = await PLMainAPI.preferenceService.getPassword(
+      `modelProviderApiKey:${providerID}`
+    );
+    return (
+      scopedKey ||
+      providerKey ||
+      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
+      process.env.OPENAI_API_KEY ||
+      process.env.DASHSCOPE_API_KEY ||
+      process.env.QWEN_API_KEY ||
+      process.env.DEEPSEEK_API_KEY ||
+      ""
+    );
+  }
+
   async suggestTags(paper: {
     title: string;
     authors?: string;
@@ -528,11 +563,8 @@ export class AskService extends Eventable<{}> {
     abstract?: string;
     existingTags?: string[];
   }): Promise<string[]> {
-    const apiKey =
-      (await PLMainAPI.preferenceService.getPassword("qwenEmbedding")) ||
-      process.env.DASHSCOPE_API_KEY ||
-      process.env.QWEN_API_KEY ||
-      "";
+    const provider = await this._getProviderPreset("tag");
+    const apiKey = await this._resolveProviderAPIKey(provider.id, "tag");
     if (!apiKey) {
       return [];
     }
@@ -549,8 +581,11 @@ export class AskService extends Eventable<{}> {
     const legacyChatModel = `${await PLMainAPI.preferenceService.get(
       "qwenChatModel"
     )}`.trim();
-    const baseURL = (tagBaseURL || legacyChatBaseURL).replace(/\/+$/, "");
-    const model = tagModel || legacyChatModel;
+    const baseURL = (tagBaseURL || legacyChatBaseURL || provider.baseURL).replace(
+      /\/+$/,
+      ""
+    );
+    const model = tagModel || legacyChatModel || provider.defaultAskModel;
 
     const response = await fetch(`${baseURL}/chat/completions`, {
       method: "POST",

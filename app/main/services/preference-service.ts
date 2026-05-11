@@ -107,6 +107,10 @@ export interface IPreferenceStore {
   qwenEmbeddingDimensions: number;
   qwenAskBaseURL: string;
   qwenAskModel: string;
+  modelProvider: string;
+  askModelProvider: string;
+  tagModelProvider: string;
+  embeddingModelProvider: string;
   askContextProfile: "fast" | "balanced" | "detailed";
   qwenAITagBaseURL: string;
   qwenAITagModel: string;
@@ -255,6 +259,10 @@ const _defaultPreferences: IPreferenceStore = {
   qwenEmbeddingDimensions: 1024,
   qwenAskBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenAskModel: "qwen-plus",
+  modelProvider: "qwen",
+  askModelProvider: "qwen",
+  tagModelProvider: "qwen",
+  embeddingModelProvider: "qwen",
   askContextProfile: "fast",
   qwenAITagBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenAITagModel: "qwen-plus",
@@ -399,6 +407,21 @@ function _migrate(
   }
   if (!store.has("askContextProfile")) {
     store.set("askContextProfile", _defaultPreferences.askContextProfile);
+  }
+  if (!store.has("modelProvider")) {
+    store.set("modelProvider", _defaultPreferences.modelProvider);
+  }
+  if (!store.has("askModelProvider")) {
+    store.set("askModelProvider", _defaultPreferences.askModelProvider);
+  }
+  if (!store.has("tagModelProvider")) {
+    store.set("tagModelProvider", _defaultPreferences.tagModelProvider);
+  }
+  if (!store.has("embeddingModelProvider")) {
+    store.set(
+      "embeddingModelProvider",
+      _defaultPreferences.embeddingModelProvider
+    );
   }
   if (!store.has("qwenAITagBaseURL")) {
     store.set(

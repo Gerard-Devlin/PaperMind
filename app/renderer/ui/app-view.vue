@@ -35,10 +35,6 @@ import { uid } from "@/base/misc";
 const uiState = PLUIAPILocal.uiStateService.useState();
 const uiSlotState = PLUIAPILocal.uiSlotService.useState();
 const prefState = PLMainAPI.preferenceService.useState();
-const showAPISetup = ref(false);
-const setupAPIKey = ref("");
-const setupSaving = ref(false);
-const setupIsCN = computed(() => prefState.language === "zh-CN");
 const hasRenderableOverlayNotifications = computed(() => {
   const notifications = Object.values(uiSlotState.overlayNotifications || {});
   return notifications.some((item: any) => {
@@ -229,36 +225,6 @@ const changeFontsize = (fontsize: string) => {
     html.style.fontSize =
       { normal: 100, large: 115, larger: 120 }[fontsize] + "%";
   }
-};
-
-const checkFirstAPISetup = async () => {
-  const existingKey = await PLMainAPI.preferenceService.getPassword("qwenEmbedding");
-  showAPISetup.value = !existingKey;
-  if (process.env.NODE_ENV === "development") {
-    showAPISetup.value = true;
-  }
-};
-
-const saveFirstAPISetup = async () => {
-  const key = setupAPIKey.value.trim();
-  if (!key) {
-    return;
-  }
-
-  setupSaving.value = true;
-  await PLMainAPI.preferenceService.setPassword("qwenEmbedding", key);
-  PLMainAPI.preferenceService.set({
-    semanticSearchEnabled: true,
-    autoAITagging: true,
-    apiSetupDismissed: true,
-  });
-  setupSaving.value = false;
-  showAPISetup.value = false;
-};
-
-const dismissFirstAPISetup = () => {
-  PLMainAPI.preferenceService.set({ apiSetupDismissed: true });
-  showAPISetup.value = false;
 };
 
 // ================================
@@ -548,8 +514,6 @@ onMounted(async () => {
     changeFontsize(
       (await PLMainAPI.preferenceService.get("fontsize")) as string
     );
-    await checkFirstAPISetup();
-
     armLoadingWatchdog();
     try {
       await PLAPI.databaseService.initialize(true);
@@ -660,7 +624,7 @@ onMounted(async () => {
       leave-from-class="transform opacity-100"
       leave-to-class="transform opacity-0"
     >
-      <GuideView v-if="prefState.showGuide && !showAPISetup" />
+      <GuideView v-if="prefState.showGuide" />
     </Transition>
 
     <!-- <Transition
@@ -682,58 +646,7 @@ onMounted(async () => {
       leave-from-class="transform opacity-100"
       leave-to-class="transform opacity-0"
     >
-      <WelcomeView v-if="prefState.showWelcome && !showAPISetup" />
-    </Transition>
-
-    <Transition
-      enter-active-class="transition ease-out duration-75"
-      enter-from-class="transform opacity-0"
-      enter-to-class="transform opacity-100"
-      leave-active-class="transition ease-in duration-75"
-      leave-from-class="transform opacity-100"
-      leave-to-class="transform opacity-0"
-    >
-      <div
-        v-if="showAPISetup"
-        class="fixed inset-0 z-[70] flex bg-black/30 backdrop-blur-sm"
-      >
-        <div
-          class="m-auto w-[420px] max-w-[calc(100vw-32px)] rounded-lg bg-white dark:bg-neutral-800 shadow-xl border border-neutral-200 dark:border-neutral-700 p-6"
-        >
-          <div class="text-lg font-semibold mb-2">
-            {{ setupIsCN ? "配置 Qwen API" : "Set Up Qwen API" }}
-          </div>
-          <div class="text-xs text-neutral-600 dark:text-neutral-400 mb-4 leading-5">
-            {{
-              setupIsCN
-                ? "PaperMind 会用这个 API 做语义搜索、导入时自动 embedding 和 AI 标签。你也可以以后在设置里的语义搜索页面修改。"
-                : "PaperMind uses this API for semantic search, import-time embeddings, and AI tags. You can change it later in Semantic Search settings."
-            }}
-          </div>
-          <input
-            v-model="setupAPIKey"
-            type="password"
-            placeholder="sk-..."
-            class="w-full h-9 rounded-md bg-neutral-100 dark:bg-neutral-700 px-3 text-sm outline-none border border-neutral-200 dark:border-neutral-600"
-            @keydown.enter="saveFirstAPISetup"
-          />
-          <div class="flex justify-end space-x-2 mt-5">
-            <button
-              class="h-8 px-3 rounded-md text-xs bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 hover:dark:bg-neutral-600"
-              @click="dismissFirstAPISetup"
-            >
-              {{ setupIsCN ? "稍后" : "Later" }}
-            </button>
-            <button
-              class="h-8 px-3 rounded-md text-xs text-white bg-accentlight dark:bg-accentdark disabled:opacity-50"
-              :disabled="setupSaving || !setupAPIKey.trim()"
-              @click="saveFirstAPISetup"
-            >
-              {{ setupSaving ? (setupIsCN ? "保存中" : "Saving") : setupIsCN ? "保存并启用" : "Save and Enable" }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <WelcomeView v-if="prefState.showWelcome" />
     </Transition>
   </div>
 </template>
