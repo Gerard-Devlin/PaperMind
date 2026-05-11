@@ -21,7 +21,13 @@ export interface AskAnswer {
     year: string;
     publication: string;
     quote?: string;
+    quoteCandidates?: string[];
   }>;
+}
+
+interface IAskSourceContext {
+  fulltext: string;
+  fallbackText: string;
 }
 
 export class AskService extends Eventable<{}> {
@@ -199,14 +205,21 @@ export class AskService extends Eventable<{}> {
       trimmedQuestion,
       8
     );
+    const sourceContexts = new Map<string, IAskSourceContext>();
     const paperContexts = await Promise.all(
       results.map(async ({ paper, contextText }, index) => {
         const fulltext =
           contextText || (await this._cacheService.loadFullText(paper));
-        const quote = this._bestQuote(
-          fulltext || paper.abstract || paper.note || "",
-          trimmedQuestion
-        );
+        const searchableText = fulltext || paper.abstract || paper.note || "";
+        const fallbackText =
+          [paper.abstract || "", paper.note || "", searchableText]
+            .filter(Boolean)
+            .join(" ");
+        const quote = this._bestQuote(searchableText, trimmedQuestion);
+        sourceContexts.set(`${paper._id}`, {
+          fulltext: searchableText,
+          fallbackText,
+        });
 
         return {
           source: {
@@ -273,10 +286,78 @@ export class AskService extends Eventable<{}> {
     }
 
     const body = await response.json();
+    const answer = body?.choices?.[0]?.message?.content || "";
+    const citationQueryList = this._extractCitationQueryList(answer);
+    const refinedSources = sources.map((source, idx) => {
+      const context = sourceContexts.get(source.id);
+      const citationIdx = idx + 1;
+      const queriesForSource = citationQueryList
+        .filter((item) => item.idx === citationIdx)
+        .map((item) => item.query)
+        .filter(Boolean);
+
+      const usedQuotesForSource = new Set<string>();
+      const quoteCandidates = (queriesForSource.length
+        ? queriesForSource
+        : [trimmedQuestion]
+      )
+        .map((query) =>
+          this._selectDistinctQuote(
+            context?.fulltext || "",
+            context?.fallbackText || "",
+            query,
+            usedQuotesForSource
+          )
+        )
+        .filter(Boolean);
+
+      const refinedQuote = quoteCandidates[0] || source.quote || "";
+      if (refinedQuote) {
+        usedQuotesForSource.add(refinedQuote);
+      }
+      return {
+        ...source,
+        quote: refinedQuote || source.quote || "",
+        quoteCandidates,
+      };
+    });
+
     return {
-      answer: body?.choices?.[0]?.message?.content || "",
-      sources,
+      answer,
+      sources: refinedSources,
     };
+  }
+
+  private _extractCitationQueryList(
+    answer: string
+  ): Array<{ idx: number; query: string }> {
+    const citationQueries: Array<{ idx: number; query: string }> = [];
+    const normalized = `${answer || ""}`.replace(/\s+/g, " ").trim();
+    if (!normalized) {
+      return citationQueries;
+    }
+
+    const segments = normalized
+      .split(/(?<=[.!?。！？])\s+/)
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+
+    for (const segment of segments) {
+      const matches = [...segment.matchAll(/\[(\d+)\]/g)];
+      if (!matches.length) {
+        continue;
+      }
+      const query = segment.replace(/\[(\d+)\]/g, "").trim();
+      for (const match of matches) {
+        const idx = Number(match[1]);
+        if (!idx) {
+          continue;
+        }
+        citationQueries.push({ idx, query });
+      }
+    }
+
+    return citationQueries;
   }
 
   private _bestQuote(text: string, question: string) {
@@ -295,7 +376,7 @@ export class AskService extends Eventable<{}> {
       .map((sentence) => sentence.trim())
       .filter((sentence) => sentence.length >= 30);
 
-    let bestSentence = sentences[0] || normalized;
+    let bestSentence = sentences[0] || normalized.slice(0, 360);
     let bestScore = -1;
     for (const sentence of sentences.slice(0, 220)) {
       const lower = sentence.toLowerCase();
@@ -310,6 +391,67 @@ export class AskService extends Eventable<{}> {
     }
 
     return bestSentence.slice(0, 360);
+  }
+
+  private _selectDistinctQuote(
+    fulltext: string,
+    fallbackText: string,
+    query: string,
+    usedQuotes: Set<string>
+  ): string {
+    const candidates = this._rankQuoteCandidates(fulltext || fallbackText, query);
+    for (const candidate of candidates) {
+      if (!usedQuotes.has(candidate)) {
+        return candidate;
+      }
+    }
+
+    if (fallbackText) {
+      const fallbackCandidates = this._rankQuoteCandidates(fallbackText, query);
+      for (const candidate of fallbackCandidates) {
+        if (!usedQuotes.has(candidate)) {
+          return candidate;
+        }
+      }
+    }
+
+    return candidates[0] || "";
+  }
+
+  private _rankQuoteCandidates(text: string, query: string): string[] {
+    const normalized = `${text || ""}`.replace(/\s+/g, " ").trim();
+    if (!normalized) {
+      return [];
+    }
+
+    const terms = `${query || ""}`
+      .toLowerCase()
+      .split(/[^a-z0-9\u4e00-\u9fa5]+/i)
+      .map((term) => term.trim())
+      .filter((term) => term.length >= 2);
+
+    const sentences = normalized
+      .split(/(?<=[.!?。！？])\s+/)
+      .map((sentence) => sentence.trim())
+      .filter((sentence) => sentence.length >= 24)
+      .slice(0, 260);
+
+    const ranked = sentences
+      .map((sentence, idx) => {
+        const lower = sentence.toLowerCase();
+        const hitCount = terms.reduce(
+          (sum, term) => sum + (lower.includes(term) ? 1 : 0),
+          0
+        );
+        const density =
+          terms.length > 0 ? hitCount / terms.length : 0;
+        const lengthPenalty = Math.abs(sentence.length - 140) / 220;
+        const score = hitCount * 2 + density - lengthPenalty - idx * 0.0008;
+        return { sentence: sentence.slice(0, 360), score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    return ranked.map((item) => item.sentence);
   }
 
   async suggestTags(paper: {

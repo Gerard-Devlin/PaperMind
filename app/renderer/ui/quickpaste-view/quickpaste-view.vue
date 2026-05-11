@@ -2,6 +2,7 @@
 import {
   BIconArrowReturnLeft,
   BIconCommand,
+  BIconCopy,
   BIconLink,
   BIconShift,
 } from "bootstrap-icons-vue";
@@ -37,6 +38,7 @@ const askSources = ref<
     year: string;
     publication: string;
     quote?: string;
+    quoteCandidates?: string[];
   }>
 >([]);
 const askStatus = ref("");
@@ -81,10 +83,15 @@ const escapeHtml = (value: string) =>
     .replaceAll("'", "&#39;");
 
 const withCitationAnchors = (html: string) => {
+  const occurMap = new Map<string, number>();
   return `${html || ""}`.replace(
     /\[(\d+)\]/g,
-    (_match, num) =>
-      `<button class="ask-cite-ref px-1 min-w-[1.25rem] text-xxxs bg-neutral-400 opacity-70 bg-opacity-50 rounded-lg text-center text-neutral-900 dark:text-neutral-100" data-cite-index="${num}" type="button">${num}</button>`
+    (_match, num) => {
+      const key = `${num}`;
+      const currentOcc = (occurMap.get(key) || 0) + 1;
+      occurMap.set(key, currentOcc);
+      return `<button class="ask-cite-ref px-1 min-w-[1.25rem] text-xxxs bg-neutral-400 opacity-70 bg-opacity-50 rounded-lg text-center text-neutral-900 dark:text-neutral-100" data-cite-index="${num}" data-cite-occ="${currentOcc}" type="button">${num}</button>`;
+    }
   );
 };
 
@@ -271,11 +278,20 @@ const onCitationHover = (event: MouseEvent) => {
     return;
   }
   const idx = Number(refEl.dataset.citeIndex || "0");
+  const occ = Number(refEl.dataset.citeOcc || "1");
   if (!idx || idx > askSources.value.length) {
     citationPopover.value.visible = false;
     return;
   }
   const source = askSources.value[idx - 1];
+  const preciseQuote =
+    source?.quoteCandidates && source.quoteCandidates.length >= occ
+      ? source.quoteCandidates[occ - 1]
+      : source?.quote || "";
+  const sourceForPopover = {
+    ...source,
+    quote: preciseQuote || source?.quote || "",
+  };
   const rect = refEl.getBoundingClientRect();
   const popoverWidth = 320;
   const popoverHeight = 170;
@@ -304,7 +320,7 @@ const onCitationHover = (event: MouseEvent) => {
     visible: true,
     x: left,
     y: top,
-    source,
+    source: sourceForPopover,
   };
 };
 
@@ -331,6 +347,14 @@ const onCitationClick = async (event: MouseEvent) => {
   if (paper?.mainURL) {
     await PLAPI.fileService.open(paper.mainURL);
   }
+};
+
+const copyAskAnswer = async () => {
+  const text = `${askAnswer.value || ""}`.trim();
+  if (!text) {
+    return;
+  }
+  await navigator.clipboard.writeText(text);
 };
 
 const exportSelectedCiteKeys = async () => {
@@ -750,6 +774,13 @@ onMounted(() => {
         </div>
       </div>
       <div v-if="isAskMode" class="flex my-auto space-x-1">
+        <button
+          class="inline-flex h-4 w-4 items-center justify-center rounded text-neutral-400 hover:text-neutral-600 dark:text-neutral-300 hover:dark:text-neutral-100"
+          :disabled="!askAnswer"
+          @click="copyAskAnswer"
+        >
+          <BIconCopy class="text-xs" />
+        </button>
         <span
           v-if="asking"
           class="my-auto inline-block h-3 w-3 animate-spin rounded-full border-2 border-neutral-300 border-t-accentlight dark:border-neutral-600 dark:border-t-accentdark"
@@ -766,12 +797,11 @@ onMounted(() => {
     class="pointer-events-none fixed z-[9999] w-[320px] rounded-md border border-neutral-300 bg-white p-2 text-xxs text-neutral-700 shadow-lg dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
     :style="{ left: `${citationPopover.x}px`, top: `${citationPopover.y}px` }"
   >
-    <div class="font-semibold mb-1 truncate">{{ citationPopover.source.title }}</div>
-    <div class="mb-1 text-neutral-500 dark:text-neutral-400 truncate">
-      {{ citationPopover.source.authors }} · {{ citationPopover.source.year }}
+    <div class="text-xs leading-5">
+      {{ citationPopover.source.quote || citationPopover.source.publication || citationPopover.source.title }}
     </div>
-    <div class="line-clamp-4">
-      {{ citationPopover.source.quote || citationPopover.source.publication }}
+    <div class="mt-1 truncate text-[10px] text-neutral-500 dark:text-neutral-400">
+      [{{ citationPopover.source.year }}] {{ citationPopover.source.title }}
     </div>
   </div>
 </template>
