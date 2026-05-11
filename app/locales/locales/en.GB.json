@@ -276,7 +276,7 @@
     "qwenApiKeyTitle": "Qwen API Key",
     "qwenApiKeyInfo": "Stored in the system keychain. DashScope compatible-mode embeddings are used.",
     "askBaseURLTitle": "Ask Base URL",
-    "askBaseURLInfo": "OpenAI-compatible chat completions endpoint root used by Ask mode (RAG answers).",
+    "askBaseURLInfo": "OpenAI-compatible chat completions endpoint root used by Ask mode.",
     "askModelTitle": "Ask Model",
     "askModelInfo": "Qwen chat model used for Ask mode answers.",
     "refreshModels": "Refresh Model List",

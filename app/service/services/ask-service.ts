@@ -16,6 +16,7 @@ export interface AskAnswer {
   answer: string;
   sources: Array<{
     id: string;
+    mainURL?: string;
     title: string;
     authors: string;
     year: string;
@@ -224,6 +225,7 @@ export class AskService extends Eventable<{}> {
         return {
           source: {
             id: `${paper._id}`,
+            mainURL: paper.mainURL || "",
             title: paper.title,
             authors: paper.authors,
             year: paper.year,

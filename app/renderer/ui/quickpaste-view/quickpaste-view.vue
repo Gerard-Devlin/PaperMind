@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   BIconArrowReturnLeft,
+  BIconCheck,
   BIconCommand,
   BIconCopy,
   BIconLink,
@@ -33,6 +34,7 @@ const renderedAskAnswer = ref("");
 const askSources = ref<
   Array<{
     id: string;
+    mainURL?: string;
     title: string;
     authors: string;
     year: string;
@@ -43,6 +45,7 @@ const askSources = ref<
 >([]);
 const askStatus = ref("");
 const asking = ref(false);
+const copySuccess = ref(false);
 const quickpasteRoot = ref<HTMLElement | null>(null);
 const headerRef = ref<HTMLElement | null>(null);
 const dividerRef = ref<HTMLElement | null>(null);
@@ -328,7 +331,7 @@ const onCitationLeave = () => {
   citationPopover.value.visible = false;
 };
 
-const onCitationClick = async (event: MouseEvent) => {
+const onCitationDoubleClick = async (event: MouseEvent) => {
   const target = event.target as HTMLElement | null;
   if (!target) {
     return;
@@ -342,6 +345,10 @@ const onCitationClick = async (event: MouseEvent) => {
     return;
   }
   const source = askSources.value[idx - 1];
+  if (source?.mainURL) {
+    await PLAPI.fileService.open(source.mainURL);
+    return;
+  }
   const papers = (await PLAPI.paperService.loadByIds([source.id as any])) as any[];
   const paper = papers?.[0];
   if (paper?.mainURL) {
@@ -354,7 +361,15 @@ const copyAskAnswer = async () => {
   if (!text) {
     return;
   }
-  await navigator.clipboard.writeText(text);
+  try {
+    await navigator.clipboard.writeText(text);
+    copySuccess.value = true;
+    setTimeout(() => {
+      copySuccess.value = false;
+    }, 1200);
+  } catch {
+    copySuccess.value = false;
+  }
 };
 
 const exportSelectedCiteKeys = async () => {
@@ -707,7 +722,7 @@ onMounted(() => {
           v-html="sanitizeHTML(renderedAskAnswer)"
           @mousemove="onCitationHover"
           @mouseleave="onCitationLeave"
-          @click="onCitationClick"
+          @dblclick="onCitationDoubleClick"
         />
       </div>
     </div>
@@ -779,7 +794,8 @@ onMounted(() => {
           :disabled="!askAnswer"
           @click="copyAskAnswer"
         >
-          <BIconCopy class="text-xs" />
+          <BIconCheck v-if="copySuccess" class="text-sm" />
+          <BIconCopy v-else class="text-xs" />
         </button>
         <span
           v-if="asking"

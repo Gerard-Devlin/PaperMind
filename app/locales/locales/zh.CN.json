@@ -296,7 +296,7 @@
     "statusIndexFailed": "索引失败",
     "statusIndexed": "已索引 {indexed} / {total} 篇论文。",
     "askBaseURLTitle": "Ask Base URL",
-    "askBaseURLInfo": "用于 Ask 模式（RAG 回答）的 OpenAI 兼容 chat completions 接口根地址。",
+    "askBaseURLInfo": "用于 Ask 模式的 OpenAI 兼容 chat completions 接口根地址。",
     "askModelTitle": "Ask 模型",
     "askModelInfo": "用于 Ask 模式回答的 Qwen 聊天模型。",
     "refreshModels": "刷新模型列表",
