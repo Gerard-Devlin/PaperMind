@@ -1,11 +1,12 @@
 ﻿<script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import Options from "./components/options.vue";
 import PathPicker from "./components/path-picker.vue";
 import Toggle from "./components/toggle.vue";
 
 const prefState = PLMainAPI.preferenceService.useState();
+const isZhCN = computed(() => normalizeLanguage(prefState.language) === "zh-CN");
 
 const normalizeLanguage = (language: string) => {
   if (language === "zh-CN" || language === "en-GB") {
@@ -164,7 +165,7 @@ const onChangeLanguage = (language: string) => {
       <input
         class="p-2 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow text-neutral-700 dark:text-neutral-300"
         type="text"
-        placeholder="Custom Format"
+        :placeholder="isZhCN ? '自定义格式' : 'Custom Format'"
         v-model="customRenamingFormat"
         @input="onCustomRenamingFormatUpdate"
       />
@@ -172,24 +173,29 @@ const onChangeLanguage = (language: string) => {
         class="flex h-8 text-xs px-2 my-auto text-center rounded-md bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-600 hover:dark:bg-neutral-500"
         @click="onRenameAllClicked"
       >
-        <span class="m-auto">Rename All files</span>
+        <span class="m-auto">{{ isZhCN ? "重命名全部文件" : "Rename all files" }}</span>
       </button>
     </div>
     <div
       class="text-xxs text-neutral-600 dark:text-neutral-500"
       v-if="prefState.renamingFormat === 'custom'"
     >
-      鈸?<b>Avaliable components:</b> title, firstchartitle, author, firstname,
-      lastname, year, publication. <br />
-      &nbsp;&nbsp;&nbsp; Use '/' for hierarchical organisation. <br />
-      &nbsp;&nbsp;&nbsp; <b>Example:</b> {year}/{firstchartitle} >
-      2022/MAE_id.pdf
+      <template v-if="isZhCN">
+        • <b>可用组件：</b>title、firstchartitle、author、firstname、lastname、year、publication。<br />
+        &nbsp;&nbsp;&nbsp; 使用 `/` 可创建层级目录。<br />
+        &nbsp;&nbsp;&nbsp; <b>示例：</b> {year}/{firstchartitle} &gt; 2022/MAE_id.pdf
+      </template>
+      <template v-else>
+        • <b>Available components:</b> title, firstchartitle, author, firstname, lastname, year, publication.<br />
+        &nbsp;&nbsp;&nbsp; Use `/` for hierarchical organization.<br />
+        &nbsp;&nbsp;&nbsp; <b>Example:</b> {year}/{firstchartitle} &gt; 2022/MAE_id.pdf
+      </template>
     </div>
     <div
       class="text-xxs text-neutral-600 dark:text-neutral-500 w-[550px] flex pl-3"
       v-if="prefState.renamingFormat === 'custom'"
     >
-      <div><b>Preview:</b> &nbsp;</div>
+      <div><b>{{ isZhCN ? "预览：" : "Preview:" }}</b> &nbsp;</div>
       <div class="grow">{{ customRenamingFormatPreview }}id.pdf</div>
     </div>
 

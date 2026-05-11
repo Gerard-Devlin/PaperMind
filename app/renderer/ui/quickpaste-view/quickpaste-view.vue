@@ -6,6 +6,7 @@ import {
   BIconShift,
 } from "bootstrap-icons-vue";
 import { Ref, computed, nextTick, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 import { disposable } from "@/base/dispose";
 import { debounce } from "@/base/misc";
@@ -15,6 +16,8 @@ import { cmdOrCtrl } from "@/base/shortcut";
 import { sanitizeHTML } from "@/renderer/utils/sanitize";
 
 import TableItem from "./components/table-item.vue";
+
+const { t } = useI18n();
 
 // ====================
 // Data
@@ -72,9 +75,6 @@ const applyLaunchMode = async () => {
     "quickpasteLaunchMode"
   );
   exportMode.value = launchMode === "ask" ? "Ask" : "BibTex";
-  askAnswer.value = "";
-  renderedAskAnswer.value = "";
-  askStatus.value = "";
   await nextTick();
   // @ts-ignore
   searchInput.value?.focus();
@@ -95,7 +95,7 @@ const onSearchTextChanged = debounce(async () => {
     selectedIndex.value = 0;
     askAnswer.value = "";
     renderedAskAnswer.value = "";
-    askStatus.value = isAskMode.value ? "Finding related papers..." : "";
+    askStatus.value = isAskMode.value ? t("plugin.askFindingRelated") : "";
 
     let semanticResults: PaperEntity[] = [];
     try {
@@ -115,7 +115,7 @@ const onSearchTextChanged = debounce(async () => {
       // @ts-ignore
       paperEntities.value.push({
         id: "semantic-empty",
-        title: "No semantic result (try Rebuild Index)",
+        title: t("plugin.askNoSemanticResultTryRebuild"),
       });
     }
 
@@ -127,7 +127,7 @@ const onSearchTextChanged = debounce(async () => {
       // @ts-ignore
       paperEntities.value.push({
         id: "search-in-google-scholar",
-        title: "Search in Google Scholar...",
+        title: t("plugin.searchInGoogleScholar"),
       });
     }
 
@@ -154,22 +154,22 @@ const askLibrary = async () => {
   asking.value = true;
   askAnswer.value = "";
   renderedAskAnswer.value = "";
-  askStatus.value = "Thinking with your library...";
+  askStatus.value = t("plugin.askThinking");
   await nextTick();
   await resizeQuickpaste();
 
   try {
     const result = await PLAPI.askService.ask(query);
-    askAnswer.value = result.answer || "No answer.";
+    askAnswer.value = result.answer || t("plugin.askNoAnswer");
     renderedAskAnswer.value = (
       await PLAPI.renderService.renderMarkdown(askAnswer.value, true)
     ).renderedStr;
     askStatus.value =
-      result.sources.length === 0 ? "No semantic result found." : "";
+      result.sources.length === 0 ? t("plugin.askNoSemanticResultFound") : "";
   } catch (error) {
     askAnswer.value = "";
     renderedAskAnswer.value = "";
-    askStatus.value = `Ask failed: ${(error as Error).message || error}`;
+    askStatus.value = `${t("plugin.askFailedPrefix")}: ${(error as Error).message || error}`;
   } finally {
     asking.value = false;
     await resizeQuickpaste();
@@ -466,12 +466,6 @@ disposable(
   PLMainAPI.windowProcessManagementService.on(
     "quickpasteProcess",
     (payload: { value: string }) => {
-      if (payload.value === "show" || payload.value === "hide") {
-        paperEntities.value = [];
-        askAnswer.value = "";
-        renderedAskAnswer.value = "";
-        askStatus.value = "";
-      }
       if (payload.value === "show") {
         void applyLaunchMode();
       }
@@ -563,7 +557,7 @@ onMounted(() => {
           <span class="my-auto mr-1 select-none">{{ linkedFolder }}</span>
         </div>
         <div v-if="isAskMode" class="flex space-x-1 text-neutral-500 dark:text-neutral-300">
-          <span class="my-auto mr-1 select-none">Ask library</span>
+          <span class="my-auto mr-1 select-none">{{ $t("plugin.askLibrary") }}</span>
         </div>
       </div>
 
@@ -602,7 +596,7 @@ onMounted(() => {
           class="my-auto inline-block h-3 w-3 animate-spin rounded-full border-2 border-neutral-300 border-t-accentlight dark:border-neutral-600 dark:border-t-accentdark"
         />
         <span class="my-auto mr-1 select-none">{{
-          asking ? "Answering" : "Answer"
+          asking ? $t("plugin.answering") : $t("plugin.answer")
         }}</span>
         <BIconArrowReturnLeft class="my-auto" />
       </div>

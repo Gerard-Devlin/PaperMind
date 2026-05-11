@@ -30,9 +30,9 @@ const onViewContentSwitch = (view: number) => {
       class="h-16 draggable-title flex w-full min-w-0 px-4"
       v-if="uiState.os === 'win32'"
     >
-      <div class="flex-row flex items-center space-x-3 min-w-0">
+      <div class="flex-row flex items-center space-x-1.5 min-w-0">
         <img class="w-8 flex-none" :src="stickyNoteLogo" />
-        <span class="text-sm font-semibold truncate">PAPERMIND</span>
+        <span class="text-sm font-semibold truncate">PaperMind</span>
       </div>
     </div>
 

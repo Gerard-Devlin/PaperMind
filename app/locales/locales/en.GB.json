@@ -244,7 +244,19 @@
     "newfolder": "New Folder",
     "singleref": "Single Ref",
     "allref": "All Refs",
-    "citekey": "Cite Key"
+    "citekey": "Cite Key",
+    "askHint": "Ask your library. PaperMind will retrieve related papers first, then answer with citations.",
+    "askPlaceholder": "Ask...",
+    "askLibrary": "Ask library",
+    "answer": "Answer",
+    "answering": "Answering",
+    "askNoAnswer": "No answer.",
+    "askFindingRelated": "Finding related papers...",
+    "askThinking": "Thinking with your library...",
+    "askNoSemanticResultFound": "No semantic result found.",
+    "askNoSemanticResultTryRebuild": "No semantic result (try Rebuild Index)",
+    "searchInGoogleScholar": "Search in Google Scholar...",
+    "askFailedPrefix": "Ask failed"
   },
   "presetting": {
     "presetting": "Presetting",

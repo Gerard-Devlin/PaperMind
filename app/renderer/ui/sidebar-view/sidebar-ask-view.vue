@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { BIconSend } from "bootstrap-icons-vue";
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 const question = ref("");
 const asking = ref(false);
 const messages = ref<Array<{ role: "user" | "assistant"; content: string }>>([]);
+const { t } = useI18n();
 
 const ask = async () => {
   const text = question.value.trim();
@@ -18,7 +20,7 @@ const ask = async () => {
   const result = await PLAPI.askService.ask(text);
   messages.value.push({
     role: "assistant",
-    content: result.answer || "No answer.",
+    content: result.answer || t("plugin.askNoAnswer"),
   });
   asking.value = false;
 };
@@ -43,7 +45,7 @@ const ask = async () => {
         class="px-2 py-1 text-xs text-neutral-400"
         v-if="messages.length === 0"
       >
-        Ask your library. PaperMind will retrieve related papers first, then answer with citations.
+        {{ $t("plugin.askHint") }}
       </div>
     </div>
 
@@ -51,7 +53,7 @@ const ask = async () => {
       <textarea
         class="max-h-24 min-h-9 min-w-0 flex-1 resize-none rounded-md bg-neutral-200 p-2 text-xs outline-none dark:bg-neutral-700"
         v-model="question"
-        placeholder="Ask..."
+        :placeholder="$t('plugin.askPlaceholder')"
         @keydown.enter.exact.prevent="ask"
       />
       <button

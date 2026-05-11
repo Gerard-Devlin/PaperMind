@@ -244,7 +244,19 @@
     "newfolder": "新建文件夹",
     "singleref": "单条引用",
     "allref": "全部引用",
-    "citekey": "引用键"
+    "citekey": "引用键",
+    "askHint": "向你的文献库提问。PaperMind 会先检索相关论文，再给出带引用的回答。",
+    "askPlaceholder": "提问...",
+    "askLibrary": "Ask 文献库",
+    "answer": "回答",
+    "answering": "回答中",
+    "askNoAnswer": "无回答。",
+    "askFindingRelated": "正在查找相关论文...",
+    "askThinking": "正在结合文献库生成答案...",
+    "askNoSemanticResultFound": "未找到语义检索结果。",
+    "askNoSemanticResultTryRebuild": "无语义检索结果（可尝试重建索引）",
+    "searchInGoogleScholar": "在 Google Scholar 中搜索...",
+    "askFailedPrefix": "Ask 失败"
   },
   "presetting": {
     "presetting": "预设",
