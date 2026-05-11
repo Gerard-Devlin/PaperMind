@@ -9,7 +9,12 @@ import { useI18n } from "vue-i18n";
 import {
   MODEL_PROVIDER_PRESETS,
   getModelProviderPreset,
+  type ModelProviderId,
 } from "@/common/model-provider-registry";
+import qwenIcon from "@/renderer/assets/providers/qwen.png";
+import deepseekIcon from "@/renderer/assets/providers/deepseek.svg";
+import moonshotIcon from "@/renderer/assets/providers/moonshot.png";
+import openaiIcon from "@/renderer/assets/providers/openai.svg";
 
 import Input from "./components/Input.vue";
 import Toggle from "./components/toggle.vue";
@@ -102,6 +107,14 @@ const saveEmbeddingKey = async (value: string) =>
 
 const providerLabel = (scope: "ask" | "tag" | "embedding") =>
   getModelProviderPreset(providerFor(scope)).label;
+const providerIconPathMap: Partial<Record<ModelProviderId, string>> = {
+  qwen: qwenIcon,
+  openai: openaiIcon,
+  deepseek: deepseekIcon,
+  moonshot: moonshotIcon,
+};
+const providerIconPath = (providerID: string) =>
+  providerIconPathMap[providerID as ModelProviderId];
 
 const refreshScopedKey = async (scope: "ask" | "tag" | "embedding") => {
   const providerID = providerFor(scope);
@@ -224,7 +237,14 @@ onMounted(() => {
   >
     <div class="text-base font-semibold mb-4">{{ $t("semanticsearch.title") }}</div>
 
-    <div class="text-xs font-semibold mb-2">{{ $t("semanticsearch.embeddingProviderTitle") }}</div>
+    <div class="text-xs font-semibold mb-2 flex items-center">
+      <img
+        v-if="providerIconPath(providerFor('embedding'))"
+        :src="providerIconPath(providerFor('embedding'))"
+        class="w-4 h-4 mr-1 rounded-sm"
+      />
+      {{ $t("semanticsearch.embeddingProviderTitle") }}
+    </div>
     <select
       class="mb-3 w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
       :value="providerFor('embedding')"
@@ -246,7 +266,7 @@ onMounted(() => {
     </select>
 
     <Input
-      class="mb-5"
+      class="mb-3"
       :title="$t('semanticsearch.providerApiKeyTitle')"
       :info="$t('semanticsearch.providerApiKeyInfo')"
       :value="embeddingKey"
@@ -324,9 +344,39 @@ onMounted(() => {
       </div>
     </div>
 
+    <div class="flex space-x-2 mb-5">
+      <button
+        class="flex h-8 px-3 rounded-md bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 hover:dark:bg-neutral-600 disabled:opacity-50"
+        :disabled="testing"
+        @click="testSettings"
+      >
+        <BIconCheck2Circle class="my-auto mr-2 text-xs" />
+        <span class="my-auto text-xs">{{
+          testing ? $t("semanticsearch.testing") : $t("semanticsearch.test")
+        }}</span>
+      </button>
+      <button
+        class="flex h-8 px-3 rounded-md bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 hover:dark:bg-neutral-600 disabled:opacity-50"
+        :disabled="indexing"
+        @click="rebuildIndex"
+      >
+        <BIconArrowRepeat class="my-auto mr-2 text-xs" />
+        <span class="my-auto text-xs">{{
+          indexing ? $t("semanticsearch.indexing") : $t("semanticsearch.rebuildIndex")
+        }}</span>
+      </button>
+    </div>
+
     <hr class="mb-5 border-neutral-300 dark:border-neutral-700" />
 
-    <div class="text-xs font-semibold mb-2">{{ $t("semanticsearch.askProviderTitle") }}</div>
+    <div class="text-xs font-semibold mb-2 flex items-center">
+      <img
+        v-if="providerIconPath(providerFor('ask'))"
+        :src="providerIconPath(providerFor('ask'))"
+        class="w-4 h-4 mr-1 rounded-sm"
+      />
+      {{ $t("semanticsearch.askProviderTitle") }}
+    </div>
     <select
       class="mb-3 w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
       :value="providerFor('ask')"
@@ -345,7 +395,7 @@ onMounted(() => {
     </select>
 
     <Input
-      class="mb-5"
+      class="mb-3"
       :title="$t('semanticsearch.providerApiKeyTitle')"
       :info="$t('semanticsearch.providerApiKeyInfo')"
       :value="askKey"
@@ -459,7 +509,14 @@ onMounted(() => {
       @event:change="(value) => updatePref('autoAITagging', value)"
     />
 
-    <div class="text-xs font-semibold mb-2">{{ $t("semanticsearch.tagProviderTitle") }}</div>
+    <div class="text-xs font-semibold mb-2 flex items-center">
+      <img
+        v-if="providerIconPath(providerFor('tag'))"
+        :src="providerIconPath(providerFor('tag'))"
+        class="w-4 h-4 mr-1 rounded-sm"
+      />
+      {{ $t("semanticsearch.tagProviderTitle") }}
+    </div>
     <select
       class="mb-3 w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
       :value="providerFor('tag')"
@@ -478,7 +535,7 @@ onMounted(() => {
     </select>
 
     <Input
-      class="mb-5"
+      class="mb-3"
       :title="$t('semanticsearch.providerApiKeyTitle')"
       :info="$t('semanticsearch.providerApiKeyInfo')"
       :value="tagKey"
@@ -554,29 +611,6 @@ onMounted(() => {
           />
         </button>
       </div>
-    </div>
-
-    <div class="flex space-x-2 mb-3">
-      <button
-        class="flex h-8 px-3 rounded-md bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 hover:dark:bg-neutral-600 disabled:opacity-50"
-        :disabled="testing"
-        @click="testSettings"
-      >
-        <BIconCheck2Circle class="my-auto mr-2 text-xs" />
-        <span class="my-auto text-xs">{{
-          testing ? $t("semanticsearch.testing") : $t("semanticsearch.test")
-        }}</span>
-      </button>
-      <button
-        class="flex h-8 px-3 rounded-md bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 hover:dark:bg-neutral-600 disabled:opacity-50"
-        :disabled="indexing"
-        @click="rebuildIndex"
-      >
-        <BIconArrowRepeat class="my-auto mr-2 text-xs" />
-        <span class="my-auto text-xs">{{
-          indexing ? $t("semanticsearch.indexing") : $t("semanticsearch.rebuildIndex")
-        }}</span>
-      </button>
     </div>
 
     <div class="flex space-x-2 text-xs text-neutral-500 dark:text-neutral-400">

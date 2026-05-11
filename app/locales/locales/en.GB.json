@@ -293,7 +293,7 @@
     "postgresqlURLTitle": "PostgreSQL URL",
     "postgresqlURLInfo": "Optional advanced mode. Leave empty to use built-in local PGlite + pgvector storage.",
     "embeddingModelTitle": "Embedding Model",
-    "embeddingModelInfo": "Default is text-embedding-v4.",
+    "embeddingModelInfo": "Embedding model used for semantic retrieval.",
     "test": "Test",
     "testing": "Testing...",
     "rebuildIndex": "Rebuild Index",
@@ -310,7 +310,7 @@
     "askContextBalanced": "Balanced",
     "askContextDetailed": "Detailed",
     "providerTitle": "Model Provider",
-    "providerInfo": "Choose a provider and only fill API key. Base URL and default models are auto-filled.",
+    "providerInfo": "Choose a provider and fill API key only.",
     "providerApiKeyTitle": "Provider API Key",
     "providerApiKeyInfo": "Stored in system keychain per provider.",
     "askProviderTitle": "Ask Provider",
@@ -318,7 +318,7 @@
     "embeddingProviderTitle": "Embedding Provider",
     "changeProvider": "Change",
     "providerModalTitle": "Choose Model Provider",
-    "providerModalInfo": "Select a provider for this capability. Base URL and default models are applied automatically."
+    "providerModalInfo": "Select a model provider for this capability."
   },
   "guide": {
     "import1title": "1. Import to the Library",
