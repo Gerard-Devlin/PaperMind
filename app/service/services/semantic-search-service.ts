@@ -655,7 +655,9 @@ export class SemanticSearchService extends Eventable<{}> {
     const documents = await Promise.all(
       entities.map((entity) => this._documentText(entity))
     );
-    const embeddings = await this._embedBatch(documents);
+    const embeddings = await Promise.all(
+      documents.map((document) => this._embedFullDocument(document))
+    );
 
     if (await this._hasPostgresURL()) {
       const pool = await this._getPool();
@@ -785,10 +787,10 @@ export class SemanticSearchService extends Eventable<{}> {
       .filter(Boolean)
       .join("\n");
 
-    return this._normalizeEmbeddingInput(
-      [metadata, fulltext ? fulltext.slice(0, 12000) : ""]
-        .filter(Boolean)
-        .join("\n\n")
+    // Keep full text for indexing context. Embedding is computed via chunking
+    // in _embedFullDocument to avoid short-context truncation.
+    return this._normalizeDocumentText(
+      [metadata, fulltext || ""].filter(Boolean).join("\n\n")
     );
   }
 
@@ -802,6 +804,71 @@ export class SemanticSearchService extends Eventable<{}> {
     }
 
     return normalized.slice(0, 8000);
+  }
+
+  private _normalizeDocumentText(input: string) {
+    const normalized = `${input || ""}`
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!normalized) {
+      return "Untitled paper";
+    }
+
+    // Keep a high but bounded limit for DB/storage stability.
+    return normalized.slice(0, 200000);
+  }
+
+  private async _embedFullDocument(document: string): Promise<number[]> {
+    const chunks = this._splitForEmbedding(document);
+    const vectors = await this._embedBatch(chunks);
+    return this._meanPoolEmbeddings(vectors);
+  }
+
+  private _splitForEmbedding(document: string): string[] {
+    const normalized = `${document || ""}`.replace(/\s+/g, " ").trim();
+    if (!normalized) {
+      return ["Untitled paper"];
+    }
+
+    const maxChunkChars = 6000;
+    const overlapChars = 600;
+    const chunks: string[] = [];
+
+    let start = 0;
+    while (start < normalized.length) {
+      let end = Math.min(start + maxChunkChars, normalized.length);
+      if (end < normalized.length) {
+        const boundary = normalized.lastIndexOf(" ", end);
+        if (boundary > start + 1000) {
+          end = boundary;
+        }
+      }
+      chunks.push(normalized.slice(start, end));
+      if (end >= normalized.length) {
+        break;
+      }
+      start = Math.max(0, end - overlapChars);
+    }
+
+    return chunks.slice(0, 64);
+  }
+
+  private _meanPoolEmbeddings(vectors: number[][]): number[] {
+    if (vectors.length === 0) {
+      return [];
+    }
+    const dim = vectors[0].length;
+    const pooled = new Array<number>(dim).fill(0);
+    for (const vector of vectors) {
+      for (let i = 0; i < dim; i += 1) {
+        pooled[i] += Number(vector[i] || 0);
+      }
+    }
+    for (let i = 0; i < dim; i += 1) {
+      pooled[i] /= vectors.length;
+    }
+    return pooled;
   }
 
   private async _getPGlite() {

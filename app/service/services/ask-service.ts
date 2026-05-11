@@ -217,6 +217,11 @@ export class AskService extends Eventable<{}> {
             .filter(Boolean)
             .join(" ");
         const quote = this._bestQuote(searchableText, trimmedQuestion);
+        const relevantExcerpt = this._buildRelevantExcerpt(
+          searchableText,
+          trimmedQuestion,
+          12000
+        );
         sourceContexts.set(`${paper._id}`, {
           fulltext: searchableText,
           fallbackText,
@@ -238,7 +243,7 @@ export class AskService extends Eventable<{}> {
             `Year: ${paper.year}`,
             `Publication: ${getPublicationString(paper)}`,
             paper.abstract ? `Abstract: ${paper.abstract}` : "",
-            fulltext ? `Indexed text: ${fulltext.slice(0, 6000)}` : "",
+            relevantExcerpt ? `Indexed text: ${relevantExcerpt}` : "",
             quote ? `Exact excerpt: "${quote}"` : "",
             paper.note ? `Note: ${paper.note}` : "",
           ]
@@ -454,6 +459,42 @@ export class AskService extends Eventable<{}> {
       .sort((a, b) => b.score - a.score);
 
     return ranked.map((item) => item.sentence);
+  }
+
+  private _buildRelevantExcerpt(
+    text: string,
+    query: string,
+    maxChars = 12000
+  ): string {
+    const normalized = `${text || ""}`.replace(/\s+/g, " ").trim();
+    if (!normalized) {
+      return "";
+    }
+
+    const candidates = this._rankQuoteCandidates(normalized, query).slice(0, 80);
+    const picked: string[] = [];
+    const seen = new Set<string>();
+    let used = 0;
+
+    for (const sentence of candidates) {
+      const clean = `${sentence || ""}`.trim();
+      if (!clean || seen.has(clean)) {
+        continue;
+      }
+      const extra = clean.length + (picked.length ? 1 : 0);
+      if (used + extra > maxChars) {
+        break;
+      }
+      picked.push(clean);
+      seen.add(clean);
+      used += extra;
+    }
+
+    if (picked.length > 0) {
+      return picked.join(" ");
+    }
+
+    return normalized.slice(0, maxChars);
   }
 
   async suggestTags(paper: {
