@@ -31,6 +31,8 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 - Ask-mode citation source markers in generated answers.
 - Hoverable citation markers for viewing citation-specific evidence excerpts.
 - Improved evidence mapping chain to reduce repeated, weak, or irrelevant quote reuse.
+- Full-text chunked embedding with pooled document vectors for better long-paper semantic coverage.
+- Query-aware evidence excerpt assembly for Ask answers, improving metric/value retrieval (for example PSNR/SSIM) from full paper context.
 - Double-click citation markers to open the corresponding source PDF directly.
 - One-click answer copy with success-check interaction.
 - Quickpaste Ask layout, height, and footer interaction refinements.
@@ -41,6 +43,7 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 - Quickpaste Ask interaction polish, including footer visibility and dynamic sizing behavior.
 - Citation hover UX improvements and smoother source-opening flow.
 - Ask evidence-chain quality improvements for more precise per-citation mapping.
+- Full-text indexing and query-aware context extraction upgrades for more precise evidence-grounded numeric answers.
 
 ## Why This Fork
 
