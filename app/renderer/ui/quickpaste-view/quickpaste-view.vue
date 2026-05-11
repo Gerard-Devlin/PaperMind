@@ -18,6 +18,9 @@ import { sanitizeHTML } from "@/renderer/utils/sanitize";
 import TableItem from "./components/table-item.vue";
 
 const { t } = useI18n();
+const QUICKPASTE_MIN_HEIGHT = 76;
+const QUICKPASTE_ASK_SINGLE_MIN_HEIGHT = 220;
+const QUICKPASTE_ASK_DUAL_MIN_HEIGHT = 340;
 
 // ====================
 // Data
@@ -28,6 +31,11 @@ const askAnswer = ref("");
 const renderedAskAnswer = ref("");
 const askStatus = ref("");
 const asking = ref(false);
+const quickpasteRoot = ref<HTMLElement | null>(null);
+const headerRef = ref<HTMLElement | null>(null);
+const dividerRef = ref<HTMLElement | null>(null);
+const contentRef = ref<HTMLElement | null>(null);
+const footerRef = ref<HTMLElement | null>(null);
 
 // ====================
 // State
@@ -43,15 +51,48 @@ const mainviewSortOrder: Ref<"desc" | "asce"> = ref("desc");
 let searchRequestSeq = 0;
 const isAskMode = computed(() => exportMode.value === "Ask");
 
+const restoreLastAskAnswer = async () => {
+  const lastAnswer = `${(await PLMainAPI.preferenceService.get("quickpasteLastAskAnswer")) || ""}`;
+  askAnswer.value = lastAnswer;
+  if (lastAnswer) {
+    renderedAskAnswer.value = (
+      await PLAPI.renderService.renderMarkdown(lastAnswer, true)
+    ).renderedStr;
+  } else {
+    renderedAskAnswer.value = "";
+  }
+  await resizeQuickpaste();
+};
+
 const resizeQuickpaste = async () => {
-  const paperHeight = paperEntities.value.length * 28;
-  const answerHeight = isAskMode.value && renderedAskAnswer.value ? 170 : 0;
-  const newHeight = Math.min(paperHeight + answerHeight + 78, 620);
+  await nextTick();
+  const headerHeight = headerRef.value?.offsetHeight || 0;
+  const dividerHeight = dividerRef.value?.offsetHeight || 0;
+  const contentHeight = contentRef.value?.scrollHeight || 0;
+  const footerHeight = footerRef.value?.offsetHeight || 0;
+  const rootExtra =
+    (quickpasteRoot.value?.offsetHeight || 0) -
+    (headerHeight + dividerHeight + (contentRef.value?.offsetHeight || 0) + footerHeight);
+
+  const measuredHeight =
+    headerHeight + dividerHeight + contentHeight + footerHeight + Math.max(rootExtra, 0);
+  const newHeight = Math.min(Math.max(measuredHeight, QUICKPASTE_MIN_HEIGHT), 620);
+  const hasList = paperEntities.value.length > 0;
+  const hasAnswer = !!`${renderedAskAnswer.value || ""}`.trim();
+
+  let minHeight = QUICKPASTE_MIN_HEIGHT;
+  if (isAskMode.value && hasList && hasAnswer) {
+    // Ask mode dual-pane minimum: list + answer + footer all visible.
+    minHeight = QUICKPASTE_ASK_DUAL_MIN_HEIGHT;
+  } else if (isAskMode.value && (hasList || hasAnswer)) {
+    // Ask mode single-pane minimum: one content area + footer visible.
+    minHeight = QUICKPASTE_ASK_SINGLE_MIN_HEIGHT;
+  }
 
   await PLMainAPI.windowProcessManagementService.resize(
     "quickpasteProcess",
     600,
-    Math.max(newHeight, 76)
+    Math.max(newHeight, minHeight)
   );
 };
 
@@ -67,6 +108,7 @@ const cycleMode = () => {
   askStatus.value = "";
   // @ts-ignore
   searchInput.value?.focus();
+  void resizeQuickpaste();
   void onSearchTextChanged();
 };
 
@@ -75,12 +117,11 @@ const applyLaunchMode = async () => {
     "quickpasteLaunchMode"
   );
   exportMode.value = launchMode === "ask" ? "Ask" : "BibTex";
+  await restoreLastAskAnswer();
+  await resizeQuickpaste();
   await nextTick();
   // @ts-ignore
   searchInput.value?.focus();
-  if (`${searchText.value || ""}`.trim()) {
-    void onSearchTextChanged();
-  }
 };
 
 // ====================
@@ -93,9 +134,7 @@ const onSearchTextChanged = debounce(async () => {
   if (query) {
     paperEntities.value = [];
     selectedIndex.value = 0;
-    askAnswer.value = "";
-    renderedAskAnswer.value = "";
-    askStatus.value = isAskMode.value ? t("plugin.askFindingRelated") : "";
+    askStatus.value = isAskMode.value ? t("plugin.askFindingRelated") : askStatus.value;
 
     let semanticResults: PaperEntity[] = [];
     try {
@@ -136,11 +175,12 @@ const onSearchTextChanged = debounce(async () => {
     await PLMainAPI.windowProcessManagementService.resize(
       "quickpasteProcess",
       600,
-      76
+      QUICKPASTE_MIN_HEIGHT
     );
     paperEntities.value = [];
     askAnswer.value = "";
     renderedAskAnswer.value = "";
+    await PLMainAPI.preferenceService.set({ quickpasteLastAskAnswer: "" });
     askStatus.value = "";
   }
 }, searchDebounce.value);
@@ -161,6 +201,9 @@ const askLibrary = async () => {
   try {
     const result = await PLAPI.askService.ask(query);
     askAnswer.value = result.answer || t("plugin.askNoAnswer");
+    await PLMainAPI.preferenceService.set({
+      quickpasteLastAskAnswer: askAnswer.value,
+    });
     renderedAskAnswer.value = (
       await PLAPI.renderService.renderMarkdown(askAnswer.value, true)
     ).renderedStr;
@@ -476,13 +519,14 @@ disposable(
 onMounted(() => {
   nextTick(async () => {
     await checkLinkedFolder();
+    await restoreLastAskAnswer();
   });
 });
 </script>
 
 <template>
-  <div class="w-full text-neutral-700 dark:text-neutral-200">
-    <div class="flex">
+  <div ref="quickpasteRoot" class="relative flex h-full w-full flex-col overflow-hidden text-neutral-700 dark:text-neutral-200">
+    <div ref="headerRef" class="flex">
       <input
         ref="searchInput"
         class="w-full h-12 text-sm px-3 bg-transparent focus:outline-none grow"
@@ -500,36 +544,36 @@ onMounted(() => {
       </div>
     </div>
 
-    <hr class="border-neutral-300 dark:border-neutral-700 mx-2" />
+    <hr ref="dividerRef" class="border-neutral-300 dark:border-neutral-700 mx-2" />
 
-    <div class="w-full px-2">
-      <div class="flex flex-col pt-1">
-        <TableItem
-          v-for="(item, index) in paperEntities"
-          :title="item.title"
-          :authors="item.authors"
-          :year="item.pubTime"
-          :publication="item.publication"
-          :active="selectedIndex == index"
-          class="h-[28px]"
-          @click="() => {}"
+    <div ref="contentRef" class="min-h-0 flex-1 overflow-hidden">
+      <div class="w-full px-2 pt-1">
+        <div class="max-h-full overflow-y-auto">
+          <TableItem
+            v-for="(item, index) in paperEntities"
+            :title="item.title"
+            :authors="item.authors"
+            :year="item.pubTime"
+            :publication="item.publication"
+            :active="selectedIndex == index"
+            class="h-[28px]"
+            @click="() => {}"
+          />
+        </div>
+      </div>
+
+      <div
+        v-if="isAskMode && renderedAskAnswer"
+        class="mx-2 mt-2 h-40 overflow-y-auto rounded-md bg-neutral-100 px-3 py-2 text-xs leading-5 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+      >
+        <div
+          class="quickpaste-markdown"
+          v-html="sanitizeHTML(renderedAskAnswer)"
         />
       </div>
     </div>
 
-    <div
-      v-if="isAskMode && renderedAskAnswer"
-      class="mx-2 mt-2 h-[150px] overflow-y-auto rounded-md bg-neutral-100 px-3 py-2 text-xs leading-5 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
-    >
-      <div
-        class="quickpaste-markdown"
-        v-html="sanitizeHTML(renderedAskAnswer)"
-      />
-    </div>
-
-    <div
-      class="h-[24px] p-2 text-xxs text-neutral-400 flex justify-between fixed bottom-[6px]"
-    >
+    <div ref="footerRef" class="mb-[6px] mt-1 h-[24px] flex-none px-2 text-xxs text-neutral-400 flex justify-between">
       <div
         class="flex my-auto space-x-4 ml-1 hover:text-neutral-600 hover:dark:text-neutral-300 transition-colors"
       >
@@ -561,7 +605,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div v-if="!isAskMode" class="flex my-auto space-x-4 right-2 fixed">
+      <div v-if="!isAskMode" class="flex my-auto space-x-4">
         <div class="flex">
           <span class="my-auto mr-1 select-none">{{
             $t("plugin.citekey")
@@ -590,7 +634,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div v-if="isAskMode" class="flex my-auto space-x-1 right-2 fixed">
+      <div v-if="isAskMode" class="flex my-auto space-x-1">
         <span
           v-if="asking"
           class="my-auto inline-block h-3 w-3 animate-spin rounded-full border-2 border-neutral-300 border-t-accentlight dark:border-neutral-600 dark:border-t-accentdark"
@@ -639,6 +683,34 @@ onMounted(() => {
 
 .quickpaste-markdown :deep(.katex) {
   font-size: 1em;
+}
+
+.quickpaste-markdown :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid rgb(163 163 163);
+  border-bottom: 1px solid rgb(163 163 163);
+  margin: 0.4rem 0;
+}
+
+.quickpaste-markdown :deep(thead tr) {
+  border-bottom: 1px solid rgb(163 163 163);
+}
+
+.quickpaste-markdown :deep(th),
+.quickpaste-markdown :deep(td) {
+  padding: 0.2rem 0.45rem;
+  text-align: left;
+  border: none;
+}
+
+:global(.dark) .quickpaste-markdown :deep(table) {
+  border-top-color: rgb(115 115 115);
+  border-bottom-color: rgb(115 115 115);
+}
+
+:global(.dark) .quickpaste-markdown :deep(thead tr) {
+  border-bottom-color: rgb(115 115 115);
 }
 
 :global(.dark) .quickpaste-markdown :deep(code) {

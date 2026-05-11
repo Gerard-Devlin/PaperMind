@@ -81,6 +81,7 @@ export interface IPreferenceStore {
 
   pluginLinkedFolder: string;
   quickpasteLaunchMode: "cite" | "ask";
+  quickpasteLastAskAnswer: string;
 
   selectedPDFViewer: string;
   selectedPDFViewerPath: string;
