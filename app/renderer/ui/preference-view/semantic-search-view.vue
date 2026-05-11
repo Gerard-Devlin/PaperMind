@@ -17,6 +17,7 @@ import qwenIcon from "@/renderer/assets/providers/qwen.png";
 import deepseekIcon from "@/renderer/assets/providers/deepseek.svg";
 import moonshotIcon from "@/renderer/assets/providers/moonshot.png";
 import openaiIcon from "@/renderer/assets/providers/openai.svg";
+import zhipuIcon from "@/renderer/assets/providers/Zhipu.svg";
 
 import Toggle from "./components/toggle.vue";
 
@@ -45,6 +46,7 @@ const providerIconPathMap: Partial<Record<ModelProviderId, string>> = {
   openai: openaiIcon,
   deepseek: deepseekIcon,
   moonshot: moonshotIcon,
+  zhipu: zhipuIcon,
 };
 const providerIconPath = (providerID: string) =>
   providerIconPathMap[providerID as ModelProviderId];

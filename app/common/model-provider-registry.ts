@@ -2,7 +2,8 @@
   | "qwen"
   | "openai"
   | "deepseek"
-  | "moonshot";
+  | "moonshot"
+  | "zhipu";
 
 export interface IModelProviderPreset {
   id: ModelProviderId;
@@ -40,6 +41,13 @@ export const MODEL_PROVIDER_PRESETS: IModelProviderPreset[] = [
     baseURL: "https://api.moonshot.cn/v1",
     defaultAskModel: "moonshot-v1-8k",
     defaultEmbeddingModel: "text-embedding-3-large",
+  },
+  {
+    id: "zhipu",
+    label: "Zhipu (GLM)",
+    baseURL: "https://open.bigmodel.cn/api/paas/v4",
+    defaultAskModel: "glm-4.7-flash",
+    defaultEmbeddingModel: "embedding-3",
   },
 ];
 

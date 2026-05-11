@@ -174,6 +174,10 @@ export class AskService extends Eventable<{}> {
       return [];
     }
 
+    if (normalized.includes("open.bigmodel.cn")) {
+      return ["embedding-3"];
+    }
+
     return [];
   }
 
