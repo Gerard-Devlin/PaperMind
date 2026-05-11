@@ -304,7 +304,12 @@
     "statusFailed": "Semantic search settings failed.",
     "statusRebuilding": "Rebuilding semantic index...",
     "statusIndexFailed": "Index failed",
-    "statusIndexed": "Indexed {indexed} / {total} paper(s)."
+    "statusIndexed": "Indexed {indexed} / {total} paper(s).",
+    "askContextProfileTitle": "Ask Context Profile",
+    "askContextProfileInfo": "Choose how much evidence context Ask mode sends: faster responses vs richer details.",
+    "askContextFast": "Fast (lightweight)",
+    "askContextBalanced": "Balanced",
+    "askContextDetailed": "Detailed"
   },
   "guide": {
     "import1title": "1. Import to the Library",

@@ -304,7 +304,12 @@
     "selectModelPlaceholder": "可手动输入，或刷新后从下拉选择",
     "statusModelLoaded": "已加载 {count} 个模型。",
     "statusModelEmpty": "未返回模型列表，仍可手动输入模型名。",
-    "providerHint": "支持 OpenAI 兼容供应商，包括 DashScope 和 DeepSeek。"
+    "providerHint": "支持 OpenAI 兼容供应商，包括 DashScope 和 DeepSeek。",
+    "askContextProfileTitle": "Ask 上下文档位",
+    "askContextProfileInfo": "选择 Ask 模式发送的证据上下文量：更快响应或更丰富细节。",
+    "askContextFast": "快速（轻量）",
+    "askContextBalanced": "平衡",
+    "askContextDetailed": "详细"
   },
   "guide": {
     "import1title": "1. 导入到文献库",

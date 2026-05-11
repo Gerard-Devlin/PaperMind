@@ -31,6 +31,8 @@ interface IAskSourceContext {
   fallbackText: string;
 }
 
+type AskContextProfile = "fast" | "balanced" | "detailed";
+
 export class AskService extends Eventable<{}> {
   constructor(
     @ISemanticSearchService
@@ -201,6 +203,10 @@ export class AskService extends Eventable<{}> {
     )}`.trim();
     const baseURL = (askBaseURL || legacyChatBaseURL).replace(/\/+$/, "");
     const model = askModel || legacyChatModel;
+    const contextProfile = `${await PLMainAPI.preferenceService.get(
+      "askContextProfile"
+    )}` as AskContextProfile;
+    const contextConfig = this._askContextConfig(contextProfile);
 
     const results = await this._semanticSearchService.searchForAsk(
       trimmedQuestion,
@@ -220,7 +226,8 @@ export class AskService extends Eventable<{}> {
         const relevantExcerpt = this._buildRelevantExcerpt(
           searchableText,
           trimmedQuestion,
-          12000
+          contextConfig.maxChars,
+          contextConfig.maxSentences
         );
         sourceContexts.set(`${paper._id}`, {
           fulltext: searchableText,
@@ -464,14 +471,18 @@ export class AskService extends Eventable<{}> {
   private _buildRelevantExcerpt(
     text: string,
     query: string,
-    maxChars = 12000
+    maxChars = 12000,
+    maxSentences = 80
   ): string {
     const normalized = `${text || ""}`.replace(/\s+/g, " ").trim();
     if (!normalized) {
       return "";
     }
 
-    const candidates = this._rankQuoteCandidates(normalized, query).slice(0, 80);
+    const candidates = this._rankQuoteCandidates(normalized, query).slice(
+      0,
+      Math.max(10, maxSentences)
+    );
     const picked: string[] = [];
     const seen = new Set<string>();
     let used = 0;
@@ -495,6 +506,18 @@ export class AskService extends Eventable<{}> {
     }
 
     return normalized.slice(0, maxChars);
+  }
+
+  private _askContextConfig(profile: AskContextProfile) {
+    switch (profile) {
+      case "fast":
+        return { maxChars: 4500, maxSentences: 30 };
+      case "detailed":
+        return { maxChars: 20000, maxSentences: 140 };
+      case "balanced":
+      default:
+        return { maxChars: 12000, maxSentences: 80 };
+    }
   }
 
   async suggestTags(paper: {

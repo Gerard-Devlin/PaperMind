@@ -102,6 +102,7 @@ export interface IPreferenceStore {
   qwenEmbeddingDimensions: number;
   qwenAskBaseURL: string;
   qwenAskModel: string;
+  askContextProfile: "fast" | "balanced" | "detailed";
   qwenAITagBaseURL: string;
   qwenAITagModel: string;
   chatModelListCache: Record<

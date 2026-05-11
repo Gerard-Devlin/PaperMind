@@ -107,6 +107,7 @@ export interface IPreferenceStore {
   qwenEmbeddingDimensions: number;
   qwenAskBaseURL: string;
   qwenAskModel: string;
+  askContextProfile: "fast" | "balanced" | "detailed";
   qwenAITagBaseURL: string;
   qwenAITagModel: string;
   chatModelListCache: Record<
@@ -254,6 +255,7 @@ const _defaultPreferences: IPreferenceStore = {
   qwenEmbeddingDimensions: 1024,
   qwenAskBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenAskModel: "qwen-plus",
+  askContextProfile: "fast",
   qwenAITagBaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
   qwenAITagModel: "qwen-plus",
   chatModelListCache: {},
@@ -394,6 +396,9 @@ function _migrate(
       "qwenAskModel",
       (store.get("qwenChatModel") as string) || _defaultPreferences.qwenAskModel
     );
+  }
+  if (!store.has("askContextProfile")) {
+    store.set("askContextProfile", _defaultPreferences.askContextProfile);
   }
   if (!store.has("qwenAITagBaseURL")) {
     store.set(

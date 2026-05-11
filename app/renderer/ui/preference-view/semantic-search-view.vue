@@ -297,6 +297,32 @@ onMounted(() => {
       </div>
     </div>
 
+    <div class="mb-5 flex flex-col space-y-1">
+      <div class="flex flex-col">
+        <div class="text-xs font-semibold">
+          {{ $t("semanticsearch.askContextProfileTitle") }}
+        </div>
+        <div class="text-xxs text-neutral-600 dark:text-neutral-500">
+          {{ $t("semanticsearch.askContextProfileInfo") }}
+        </div>
+      </div>
+      <select
+        class="w-full h-9 rounded-md text-xs bg-neutral-200 dark:bg-neutral-700 focus:outline-none grow px-2"
+        :value="prefState.askContextProfile || 'fast'"
+        @change="
+          (event) =>
+            updatePref(
+              'askContextProfile',
+              (event.target as HTMLSelectElement).value
+            )
+        "
+      >
+        <option value="fast">{{ $t("semanticsearch.askContextFast") }}</option>
+        <option value="balanced">{{ $t("semanticsearch.askContextBalanced") }}</option>
+        <option value="detailed">{{ $t("semanticsearch.askContextDetailed") }}</option>
+      </select>
+    </div>
+
     <hr class="mb-5 border-neutral-300 dark:border-neutral-700" />
 
     <Toggle
