@@ -272,7 +272,7 @@
     "extensionrecommend": "Recommened Extensions"
   },
   "semanticsearch": {
-    "title": "Semantic Search",
+    "title": "PaperMind AI",
     "qwenApiKeyTitle": "Model Provider API Key",
     "qwenApiKeyInfo": "Stored in the system keychain and used by the selected provider.",
     "askBaseURLTitle": "Ask Base URL",

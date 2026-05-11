@@ -37,6 +37,14 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 - One-click answer copy with success-check interaction.
 - Quickpaste Ask layout, height, and footer interaction refinements.
 
+## Screenshot
+
+![Ask_mode](.\assets\Ask_mode.png)
+
+![Bookshelf](.\assets\Bookshelf.png)
+
+![Papermind_ai](.\assets\Papermind_ai.png)
+
 ## 3.7.0 Update
 
 - Multi-provider model integration for Ask / AI Tag / Embedding.

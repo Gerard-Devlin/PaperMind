@@ -9,7 +9,7 @@ import {
   BIconKeyboard,
   BIconLayoutSidebar,
   // BIconPuzzle,
-  BIconSearch,
+  BIconMagic,
   BIconFunnel,
   BIconViewList,
 } from "bootstrap-icons-vue";
@@ -123,11 +123,11 @@ onMounted(async () => {
             <BIconKeyboard class="my-auto text-xs" />
           </SectionItem>
           <SectionItem
-            :name="$i18n.locale.startsWith('zh') ? '语义搜索' : 'Semantic'"
+            :name="'PaperMind AI'"
             :active="preferenceTab === 'semantic-search'"
             @click="preferenceTab = 'semantic-search'"
           >
-            <BIconSearch class="my-auto text-xs" />
+            <BIconMagic class="my-auto text-xs" />
           </SectionItem>
           <SectionItem
             :name="$i18n.locale.startsWith('zh') ? '抓取设置' : 'Scrape'"

@@ -2,9 +2,8 @@
 import {
   BIconArrowRepeat,
   BIconCheck2Circle,
-  BIconCheckCircleFill,
   BIconSearch,
-  BIconXCircleFill,
+  BIconXCircle,
 } from "bootstrap-icons-vue";
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -26,7 +25,6 @@ const { t } = useI18n();
 const providerKeyStatus = ref<Record<string, boolean>>({});
 const providerKeyDraft = ref<Record<string, string>>({});
 const providerConnectivity = ref<Record<string, "checking" | "ok" | "fail">>({});
-const testing = ref(false);
 const indexing = ref(false);
 const embeddingModelLoading = ref(false);
 const askModelLoading = ref(false);
@@ -169,16 +167,6 @@ const checkProviderConnectivity = async (providerID: string) => {
 
 const providerLabel = (scope: "ask" | "tag" | "embedding") =>
   getModelProviderPreset(providerFor(scope)).label;
-
-const testSettings = async () => {
-  testing.value = true;
-  statusText.value = "";
-  const ok = await PLAPI.semanticSearchService.testSettings();
-  statusText.value = ok
-    ? t("semanticsearch.statusReady")
-    : t("semanticsearch.statusFailed");
-  testing.value = false;
-};
 
 const rebuildIndex = async () => {
   indexing.value = true;
@@ -343,11 +331,11 @@ onMounted(() => {
                 v-if="providerConnectivity[provider.id] === 'checking'"
                 class="text-neutral-500 animate-spin"
               />
-              <BIconCheckCircleFill
+              <BIconCheck2Circle
                 v-else-if="providerConnectivity[provider.id] === 'ok'"
                 class="text-emerald-500"
               />
-              <BIconXCircleFill v-else class="text-red-500" />
+              <BIconXCircle v-else class="text-red-500" />
             </div>
           </div>
         </div>
@@ -454,16 +442,6 @@ onMounted(() => {
     </div>
 
     <div class="flex space-x-2 mb-5">
-      <button
-        class="flex h-8 px-3 rounded-md bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 hover:dark:bg-neutral-600 disabled:opacity-50"
-        :disabled="testing"
-        @click="testSettings"
-      >
-        <BIconCheck2Circle class="my-auto mr-2 text-xs" />
-        <span class="my-auto text-xs">{{
-          testing ? $t("semanticsearch.testing") : $t("semanticsearch.test")
-        }}</span>
-      </button>
       <button
         class="flex h-8 px-3 rounded-md bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 hover:dark:bg-neutral-600 disabled:opacity-50"
         :disabled="indexing"

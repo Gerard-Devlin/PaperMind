@@ -272,7 +272,7 @@
     "extensionrecommend": "推荐扩展"
   },
   "semanticsearch": {
-    "title": "语义搜索",
+    "title": "PaperMind AI",
     "qwenApiKeyTitle": "模型供应商 API Key",
     "qwenApiKeyInfo": "密钥保存在系统钥匙串中，并用于当前选择的供应商。",
     "autoAITagsTitle": "自动 AI 标签",
