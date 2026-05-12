@@ -14,10 +14,6 @@ const onPickerClicked = async () => {
 <template>
   <div class="flex flex-col">
     <div class="font-bold text-lg mb-2">{{ $t("presetting.dbintro") }}</div>
-
-    <span class="underline text-xs mb-4">
-      {{ $t("presetting.cloudintro") }}
-    </span>
     <div class="flex flex-col space-y-1">
       <div class="text-sm font-semibold">
         {{ $t("preference.storagefolder") }}

@@ -6,6 +6,7 @@ const prefState = PLMainAPI.preferenceService.useState();
 const hide = async () => {
   PLMainAPI.preferenceService.set({
     showWelcome: false,
+    showPresetting: true,
   });
 };
 

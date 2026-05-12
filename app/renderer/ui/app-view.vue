@@ -627,7 +627,7 @@ onMounted(async () => {
       <GuideView v-if="prefState.showGuide" />
     </Transition>
 
-    <!-- <Transition
+    <Transition
       enter-active-class="transition ease-out duration-75"
       enter-from-class="transform opacity-0"
       enter-to-class="transform opacity-100"
@@ -636,7 +636,7 @@ onMounted(async () => {
       leave-to-class="transform opacity-0"
     >
       <PresettingView v-if="prefState.showPresetting" />
-    </Transition>  -->
+    </Transition>
 
     <Transition
       enter-active-class="transition ease-out duration-75"

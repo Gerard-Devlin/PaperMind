@@ -1,30 +1,9 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import DbView from "./db-view.vue";
-import ExtensionView from "./extension-view.vue";
 import LangView from "./lang-view.vue";
-
-const hidable = ref(true);
-const checkHidable = async () => {
-  const installedExtensions =
-    await PLExtAPI.extensionManagementService.installedExtensions();
-  const hidable_ =
-    installedExtensions["@future-scholars/paperlib-entry-scrape-extension"] !==
-      undefined &&
-    installedExtensions[
-      "@future-scholars/paperlib-metadata-scrape-extension"
-    ] !== undefined;
-
-  hidable.value = hidable_;
-  return hidable_;
-};
+import ModelProviderView from "./model-provider-view.vue";
 
 const hide = async () => {
-  const hidable = await checkHidable();
-  if (!hidable) {
-    return;
-  }
-
   PLMainAPI.preferenceService.set({ showPresetting: false });
 };
 </script>
@@ -47,11 +26,8 @@ const hide = async () => {
 
         <div class="bg-neutral-200 dark:bg-neutral-700 h-[1px]" />
 
-        <ExtensionView id="presetting-extension-view" />
+        <ModelProviderView id="presetting-provider-view" />
       </div>
-      <span class="m-auto text-red-500" v-if="!hidable"
-        >⚠️ {{ $t("presetting.extensionscraperrequired") }}</span
-      >
       <div
         id="whats-new-close-btn"
         class="mt-10 mx-auto flex w-60 h-10 bg-accentlight dark:bg-accentdark text-neutral-50 rounded-md shadow-md cursor-pointer"
