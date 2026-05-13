@@ -495,7 +495,28 @@ export class PaperService extends Eventable<IPaperServiceState> {
       return paperEntityDraft;
     });
 
-    await this.update(paperEntityDrafts, false, true);
+    await PLAPILocal.syncService.addSyncLog("paper", "update", {
+      paperEntityDrafts,
+      updateCache: false,
+      isUpdate: true,
+    });
+
+    const realm = await this._databaseCore.realm();
+    const updatedPaperEntityDrafts: Entity[] = [];
+    for (const paperEntityDraft of paperEntityDrafts) {
+      const success = this._paperEntityRepository.update(
+        realm,
+        paperEntityDraft,
+        this._databaseCore.getPartition(),
+        true
+      );
+
+      if (success) {
+        updatedPaperEntityDrafts.push(paperEntityDraft);
+      }
+    }
+
+    return updatedPaperEntityDrafts;
   }
 
   /**
@@ -690,7 +711,7 @@ export class PaperService extends Eventable<IPaperServiceState> {
         return paperEntityDraft;
       }
     );
-    return await this.update(toBeUpdatedPaperEntityDrafts, false, true);
+    return await this.update(toBeUpdatedPaperEntityDrafts, false, true, false, false);
   }
 
   /**

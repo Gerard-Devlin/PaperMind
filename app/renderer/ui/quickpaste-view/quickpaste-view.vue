@@ -672,7 +672,7 @@ disposable(
 onMounted(() => {
   nextTick(async () => {
     await checkLinkedFolder();
-    await restoreLastAskAnswer();
+    await applyLaunchMode();
   });
 });
 </script>

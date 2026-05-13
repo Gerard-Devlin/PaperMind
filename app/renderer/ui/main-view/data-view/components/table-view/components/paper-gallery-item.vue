@@ -17,7 +17,7 @@ const props = defineProps({
   },
 });
 
-const MAX_PARALLEL_RENDERS = 2;
+const MAX_PARALLEL_RENDERS = 1;
 let activeRenderCount = 0;
 const renderQueue: Array<() => Promise<void>> = [];
 const previewBlobURLCache = new Map<string, string>();
@@ -51,6 +51,7 @@ const isRendering = ref(false);
 const hasPreview = ref(false);
 const isVisible = ref(false);
 let observer: IntersectionObserver | null = null;
+let isRenderQueued = false;
 
 const renderCanvas = async (
   buffer: ArrayBuffer | Uint8Array,
@@ -142,72 +143,90 @@ const render = async () => {
     return;
   }
 
+  if (isRenderQueued) {
+    return;
+  }
+  isRenderQueued = true;
   await runQueuedRender(async () => {
-    if (isRendering.value || hasPreview.value) {
-      return;
-    }
-    isRendering.value = true;
     try {
-    const inMemoryCached = previewBlobURLCache.get(cacheKey);
-    if (inMemoryCached && renderFromCachedBlobURL(inMemoryCached)) {
-      return;
-    }
+      if (
+        !isVisible.value ||
+        !canvas.value ||
+        isRendering.value ||
+        hasPreview.value
+      ) {
+        return;
+      }
+      isRendering.value = true;
+      const inMemoryCached = previewBlobURLCache.get(cacheKey);
+      if (inMemoryCached && renderFromCachedBlobURL(inMemoryCached)) {
+        return;
+      }
 
-    const cachedThumbnail = await PLAPI.cacheService.loadThumbnail(props.item);
-    if (cachedThumbnail?.blob && cachedThumbnail.blob.byteLength > 0) {
-      thumbnailBinaryCache.set(cacheKey, {
-        blob: cachedThumbnail.blob.slice(0),
-        width: cachedThumbnail.width,
-        height: cachedThumbnail.height,
-      });
-      await renderCanvas(
-        cachedThumbnail.blob,
-        cachedThumbnail.width,
-        cachedThumbnail.height
+      const cachedThumbnail = await PLAPI.cacheService.loadThumbnail(props.item);
+      if (cachedThumbnail?.blob && cachedThumbnail.blob.byteLength > 0) {
+        thumbnailBinaryCache.set(cacheKey, {
+          blob: cachedThumbnail.blob.slice(0),
+          width: cachedThumbnail.width,
+          height: cachedThumbnail.height,
+        });
+        await renderCanvas(
+          cachedThumbnail.blob,
+          cachedThumbnail.width,
+          cachedThumbnail.height
+        );
+        previewBlobURLCache.set(cacheKey, imageURL.value);
+        hasPreview.value = true;
+        return;
+      }
+
+      const binaryCached = thumbnailBinaryCache.get(cacheKey);
+      if (binaryCached?.blob && binaryCached.blob.byteLength > 0) {
+        await renderCanvas(
+          binaryCached.blob,
+          binaryCached.width,
+          binaryCached.height
+        );
+        previewBlobURLCache.set(cacheKey, imageURL.value);
+        hasPreview.value = true;
+        return;
+      }
+
+      const fileURL = await PLAPI.fileService.access(
+        props.item.supplementaries[defaultSup].url,
+        false
       );
-      previewBlobURLCache.set(cacheKey, imageURL.value);
-      hasPreview.value = true;
-      return;
-    }
+      if (!fileURL || fileURL.startsWith("downloadRequired://")) {
+        return;
+      }
 
-    const binaryCached = thumbnailBinaryCache.get(cacheKey);
-    if (binaryCached?.blob && binaryCached.blob.byteLength > 0) {
-      await renderCanvas(binaryCached.blob, binaryCached.width, binaryCached.height);
-      previewBlobURLCache.set(cacheKey, imageURL.value);
-      hasPreview.value = true;
-      return;
-    }
-
-    const fileURL = await PLAPI.fileService.access(
-      props.item.supplementaries[defaultSup].url,
-      false
-    );
-    if (!fileURL || fileURL.startsWith("downloadRequired://")) {
-      return;
-    }
-
-    const thumbnailBuffer = await PLAPI.renderService.renderPDF(fileURL, 1.4, 82);
-    if (thumbnailBuffer && canvas.value) {
-      PLAPI.cacheService.updateThumbnailCache(props.item, {
-        blob: thumbnailBuffer.buffer as ArrayBuffer,
-        width: canvas.value.width || 720,
-        height: canvas.value.height || 960,
-      });
-      thumbnailBinaryCache.set(cacheKey, {
-        blob: thumbnailBuffer.buffer.slice(0),
-        width: canvas.value.width || 720,
-        height: canvas.value.height || 960,
-      });
-      await renderCanvas(
-        thumbnailBuffer,
-        canvas.value.width || 720,
-        canvas.value.height || 960
+      const thumbnailBuffer = await PLAPI.renderService.renderPDF(
+        fileURL,
+        0.8,
+        72
       );
-      previewBlobURLCache.set(cacheKey, imageURL.value);
-      hasPreview.value = true;
-    }
+      if (thumbnailBuffer && canvas.value) {
+        PLAPI.cacheService.updateThumbnailCache(props.item, {
+          blob: thumbnailBuffer.buffer as ArrayBuffer,
+          width: canvas.value.width || 720,
+          height: canvas.value.height || 960,
+        });
+        thumbnailBinaryCache.set(cacheKey, {
+          blob: thumbnailBuffer.buffer.slice(0),
+          width: canvas.value.width || 720,
+          height: canvas.value.height || 960,
+        });
+        await renderCanvas(
+          thumbnailBuffer,
+          canvas.value.width || 720,
+          canvas.value.height || 960
+        );
+        previewBlobURLCache.set(cacheKey, imageURL.value);
+        hasPreview.value = true;
+      }
     } finally {
       isRendering.value = false;
+      isRenderQueued = false;
     }
   });
 };
@@ -241,7 +260,7 @@ onMounted(() => {
         isVisible.value = entry.isIntersecting;
       }
     },
-    { rootMargin: "200px 0px 200px 0px", threshold: 0.01 }
+    { rootMargin: "60px 0px 120px 0px", threshold: 0.01 }
   );
   if (rootRef.value) {
     observer.observe(rootRef.value);

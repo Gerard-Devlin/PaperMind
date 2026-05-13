@@ -168,7 +168,9 @@ const onSaveClicked = async () => {
   PLAPI.paperService.update(
     [new Entity(editingPaperEntityDraft.value)],
     false,
-    true
+    true,
+    false,
+    false
   );
   onCloseClicked();
 };
@@ -177,7 +179,9 @@ const onSaveAndScrapeClicked = async () => {
   const savedPaperEntityDraft = await PLAPI.paperService.update(
     [new Entity(editingPaperEntityDraft.value)],
     false,
-    true
+    true,
+    false,
+    false
   );
   PLAPI.paperService.scrape(savedPaperEntityDraft);
 };

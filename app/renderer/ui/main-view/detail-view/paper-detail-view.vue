@@ -52,7 +52,7 @@ const uiState = PLUIAPILocal.uiStateService.useState();
 const onRatingChanged = (value: number) => {
   const paperEntityDraft = new Entity(props.entity);
   paperEntityDraft.rating = value;
-  PLAPI.paperService.update([paperEntityDraft], false, true);
+  PLAPI.paperService.update([paperEntityDraft], false, true, false, false);
 };
 
 const onDeleteCategorizer = (
@@ -69,7 +69,7 @@ const onDeleteCategorizer = (
       return folder.name !== categorizer.name;
     });
   }
-  PLAPI.paperService.update([paperEntityDraft], false, true);
+  PLAPI.paperService.update([paperEntityDraft], false, true, false, false);
 };
 
 const modifyMainFile = async (url: string) => {

@@ -40,7 +40,7 @@ const onConfirmClicked = async () => {
     paperEntityDraft.supURLs = currentEntityDraft.supURLs;
     paperEntityDraft.note = currentEntityDraft.note;
 
-    PLAPI.paperService.update([paperEntityDraft] as any, false, true);
+    PLAPI.paperService.update([paperEntityDraft] as any, false, true, false, false);
   }
   uiState.showingCandidatesId = "";
   delete uiState.metadataCandidates[props.id]

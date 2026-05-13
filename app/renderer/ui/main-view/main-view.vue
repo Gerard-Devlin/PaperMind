@@ -377,8 +377,7 @@ const removeSelectedEntitiesFrom = (
         return paperEntityDraft;
       }
     );
-    console.log(paperEntityDrafts)
-    PLAPI.paperService.update(paperEntityDrafts, false, true);
+    PLAPI.paperService.update(paperEntityDrafts, false, true, false, false);
   }
 };
 
@@ -403,7 +402,7 @@ const flagSelectedEntities = () => {
         return paperEntityDraft;
       }
     );
-    PLAPI.paperService.update(paperEntityDrafts, false, true);
+    PLAPI.paperService.update(paperEntityDrafts, false, true, false, false);
   }
 };
 

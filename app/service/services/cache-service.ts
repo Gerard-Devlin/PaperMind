@@ -77,7 +77,6 @@ export class CacheService {
    * Get the thumbnail of the paper entity.
    * @param paperEntity - The paper entity to get the thumbnail of.
    * @returns The thumbnail of the paper entity. */
-  @processing(ProcessingKey.General)
   @errorcatching("Failed to get thumbnail.", true, "CacheService", null)
   async loadThumbnail(paperEntity: Entity): Promise<ThumbnailCache | null> {
     const realm = await this._cacheDatabaseCore.realm();
@@ -306,7 +305,6 @@ export class CacheService {
    * @param paperEntity - PaperEntity
    * @param thumbnailCache - Cache of thumbnail
    */
-  @processing(ProcessingKey.General)
   @errorcatching("Failed to update thumbnail cache.", true, "CacheService")
   async updateThumbnailCache(
     paperEntity: Entity,
