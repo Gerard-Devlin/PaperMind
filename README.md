@@ -40,15 +40,15 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 ## Screenshots
 
 <p align="center">
-  <img src="./assets/Ask_mode.png" alt="Ask_mode" width="300">
+  <img src="./assets/Ask_mode.png" alt="Ask_mode" width="400">
 </p>
 
 <p align="center">
-  <img src="./assets/Bookshelf.png" alt="Bookshelf" width="400">
+  <img src="./assets/Bookshelf.png" alt="Bookshelf" width="800">
 </p>
 
 <p align="center">
-  <img src="./assets/Papermind_ai.png" alt="Papermind_ai" width="400">
+  <img src="./assets/Papermind_ai.png" alt="Papermind_ai" width="800">
 </p>
 
 ## 3.7.0 Update
