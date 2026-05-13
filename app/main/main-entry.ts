@@ -26,20 +26,37 @@ function handleDeeplink(urlStr: string) {
       return;
     }
 
-    const { protocol, hostname, pathname, search } = new URL(urlStr);
-    if (protocol === "paperlib:") {
-      const [_, apiGroup, serviceName, methodName] = pathname.split("/");
-      if (["PLAPI", "PLMainAPI", "PLExtAPI"].includes(apiGroup)) {
-        // Remove the leading "?" and parse the query string as JSON
-        const args = Object.fromEntries(
-          new URLSearchParams(decodeURIComponent(search.slice(1)))
-        );
-        console.log(apiGroup, serviceName, methodName, args);
-        globalThis[apiGroup][serviceName][methodName](args);
-      } else {
-        throw new Error("Invalid URL");
-      }
+    const { protocol, hostname, pathname, searchParams } = new URL(urlStr);
+    if (protocol !== "paperlib:" || hostname !== "v3.desktop.paperlib.app") {
+      throw new Error("Invalid URL");
     }
+
+    const [_, apiGroup, serviceName, methodName] = pathname.split("/");
+
+    // Only allow official sync OAuth callbacks from deeplinks.
+    if (
+      apiGroup === "PLAPI" &&
+      serviceName === "syncService" &&
+      methodName === "handleLoginOfficialCallback"
+    ) {
+      const code = searchParams.get("code");
+      if (!code) {
+        throw new Error("Missing code");
+      }
+      PLAPI.syncService.handleLoginOfficialCallback({ code });
+      return;
+    }
+
+    if (
+      apiGroup === "PLAPI" &&
+      serviceName === "syncService" &&
+      methodName === "handleLogoutOfficialCallback"
+    ) {
+      PLAPI.syncService.handleLogoutOfficialCallback(urlStr);
+      return;
+    }
+
+    throw new Error("Invalid URL");
   } catch (e) {
     try {
       PLAPI.logService.error(
