@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUpdated, ref } from "vue";
+import { computed, onMounted, onUpdated, ref, watch } from "vue";
 import { BIconCodeSlash, BIconGithub } from "bootstrap-icons-vue";
 
 import { Categorizer, CategorizerType } from "@/models/categorizer";
@@ -11,7 +11,6 @@ import Markdown from "./components/markdown.vue";
 import PubDetails from "./components/pub-details.vue";
 import Rating from "./components/rating.vue";
 import Section from "./components/section.vue";
-import Supplementaries from "./components/supplementary.vue";
 import Thumbnail from "./components/thumbnail.vue";
 import { Supplementary } from "@/models/supplementary";
 import { uid } from "@/base/misc";
@@ -267,6 +266,13 @@ const parseCodeLink = (codeRaw: string) => {
   };
 };
 
+type CodeLink = {
+  url: string;
+  isOfficial: boolean;
+  label: string;
+  source?: "local" | "huggingface";
+};
+
 const formatCodeLabel = (url: string, isOfficial: boolean) => {
   try {
     const parsed = new URL(url);
@@ -286,12 +292,139 @@ const formatCodeLabel = (url: string, isOfficial: boolean) => {
 const codeLinks = () => {
   return (props.entity.codes || [])
     .map((codeRaw) => parseCodeLink(codeRaw))
-    .filter((code) => code.url && /^https?:\/\//i.test(code.url));
+    .filter((code) => code.url && /^https?:\/\//i.test(code.url))
+    .map((code) => ({ ...code, source: "local" }) as CodeLink);
 };
+
+const paperWithCodeLinks = ref<CodeLink[]>([]);
+const paperWithCodeLoading = ref(false);
+const paperWithCodeCache = new Map<string, CodeLink[]>();
+let paperWithCodeRequestId = 0;
+
+const normalizeTitle = (title: string) => {
+  return title
+    .toLowerCase()
+    .replace(/[{}]/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+};
+
+const normalizeArxiv = (arxiv?: string) => {
+  return `${arxiv || ""}`
+    .toLowerCase()
+    .replace(/^arxiv:/, "")
+    .replace(/v\d+$/, "")
+    .trim();
+};
+
+const fetchJSON = async (url: string) => {
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Papers with Code request failed: ${response.status}`);
+  }
+
+  return response.json();
+};
+
+const fetchPapersWithCodeLinks = async () => {
+  const requestId = ++paperWithCodeRequestId;
+  const localCodes = codeLinks();
+  const arxiv = normalizeArxiv(props.entity.arxiv);
+
+  if (localCodes.some((code) => code.url.toLowerCase().includes("github.com"))) {
+    paperWithCodeLinks.value = [];
+    return;
+  }
+
+  if (!arxiv) {
+    paperWithCodeLinks.value = [];
+    return;
+  }
+
+  const cacheKey = `${arxiv}|${normalizeTitle(props.entity.title)}`;
+  if (paperWithCodeCache.has(cacheKey)) {
+    paperWithCodeLinks.value = paperWithCodeCache.get(cacheKey) || [];
+    return;
+  }
+
+  paperWithCodeLoading.value = true;
+
+  try {
+    const paper = await fetchJSON(
+      `https://huggingface.co/api/papers/${encodeURIComponent(arxiv)}`
+    ) as {
+      githubRepo?: string;
+      githubStars?: number;
+    };
+
+    const githubRepo = `${paper.githubRepo || ""}`.trim();
+    const links = /^https?:\/\/github\.com\//i.test(githubRepo)
+      ? [{
+          url: githubRepo,
+          isOfficial: true,
+          label: formatCodeLabel(githubRepo, true),
+          source: "huggingface" as const,
+        }]
+      : [];
+
+    paperWithCodeCache.set(cacheKey, links);
+
+    if (requestId === paperWithCodeRequestId) {
+      paperWithCodeLinks.value = links;
+    }
+  } catch (error) {
+    console.warn("Failed to fetch code repositories from Hugging Face Papers.", error);
+    paperWithCodeCache.set(cacheKey, []);
+
+    if (requestId === paperWithCodeRequestId) {
+      paperWithCodeLinks.value = [];
+    }
+  } finally {
+    if (requestId === paperWithCodeRequestId) {
+      paperWithCodeLoading.value = false;
+    }
+  }
+};
+
+const mergedCodeLinks = computed(() => {
+  const codeMap = new Map<string, CodeLink>();
+
+  for (const code of [...codeLinks(), ...paperWithCodeLinks.value]) {
+    const key = code.url.toLowerCase().replace(/\/$/, "");
+    if (!codeMap.has(key)) {
+      codeMap.set(key, code);
+    }
+  }
+
+  return [...codeMap.values()];
+});
 
 const onCodeClicked = (url: string) => {
   PLAPI.fileService.open(url);
 };
+
+watch(
+  () => [
+    props.entity._id?.toString(),
+    props.entity.title,
+    props.entity.arxiv,
+    JSON.stringify(props.entity.codes || []),
+  ].join("|"),
+  () => {
+    fetchPapersWithCodeLinks();
+  },
+  { immediate: true }
+);
+
+onMounted(() => {
+  renderTitle();
+});
 
 onUpdated(() => {
   renderTitle();
@@ -400,16 +533,13 @@ onUpdated(() => {
         v-if="entity.note && entity.note.length > 0 && entity.note.startsWith('<md>')"
         :content="entity.note"
       />
-      <Supplementaries :entity="entity"
-        v-if="Object.keys(entity.supplementaries).length > 0 || entity.doi || entity.arxiv || (entity.codes && entity.codes.length > 0)"
-      />
       <Section
         :title="$t('mainview.codes')"
-        v-if="codeLinks().length > 0"
+        v-if="mergedCodeLinks.length > 0"
       >
         <div class="mt-1 flex flex-wrap gap-1 text-xs">
           <div
-            v-for="code in codeLinks()"
+            v-for="code in mergedCodeLinks"
             :key="code.url"
             class="flex cursor-pointer select-none space-x-1 rounded-md bg-neutral-200 p-1 hover:bg-neutral-300 hover:shadow-sm dark:bg-neutral-700 hover:dark:bg-neutral-600"
             @click="onCodeClicked(code.url)"
