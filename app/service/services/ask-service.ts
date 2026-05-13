@@ -3,6 +3,7 @@ import { Eventable } from "@/base/event";
 import { createDecorator } from "@/base/injection/injection";
 import { ProcessingKey, processing } from "@/common/utils/processing";
 import { getPublicationString } from "@/base/string";
+import { Entity } from "@/models/entity";
 import { ILogService, LogService } from "@/common/services/log-service";
 import { getModelProviderPreset } from "@/common/model-provider-registry";
 import {
@@ -33,6 +34,12 @@ interface IAskSourceContext {
 }
 
 type AskContextProfile = "fast" | "balanced" | "detailed";
+
+interface IAskContextConfig {
+  totalChars: number;
+  focusedChars: number;
+  maxSentences: number;
+}
 
 export class AskService extends Eventable<{}> {
   constructor(
@@ -186,7 +193,7 @@ export class AskService extends Eventable<{}> {
     answer: "",
     sources: [],
   })
-  async ask(question: string): Promise<AskAnswer> {
+  async ask(question: string, focusedPapers: Entity[] = []): Promise<AskAnswer> {
     const trimmedQuestion = question.trim();
     if (!trimmedQuestion) {
       return { answer: "", sources: [] };
@@ -220,25 +227,57 @@ export class AskService extends Eventable<{}> {
     )}` as AskContextProfile;
     const contextConfig = this._askContextConfig(contextProfile);
 
-    const results = await this._semanticSearchService.searchForAsk(
+    const semanticResults = await this._semanticSearchService.searchForAsk(
       trimmedQuestion,
-      8
+      12
     );
+    const focusedResults = (focusedPapers || [])
+      .map((paper) => new Entity(paper))
+      .filter((paper) => paper._id)
+      .map((paper) => ({
+        paper,
+        contextText: "",
+        distance: -1,
+      }));
+    const seenPaperIds = new Set<string>();
+    const results = [...focusedResults, ...semanticResults]
+      .filter(({ paper }) => {
+        const id = `${paper._id}`;
+        if (!id || seenPaperIds.has(id)) {
+          return false;
+        }
+        seenPaperIds.add(id);
+        return true;
+      })
+      .slice(0, 14);
+    const focusedCount = focusedResults.length;
     const sourceContexts = new Map<string, IAskSourceContext>();
     const paperContexts = await Promise.all(
       results.map(async ({ paper, contextText }, index) => {
-        const fulltext =
-          contextText || (await this._cacheService.loadFullText(paper));
+        const shouldLoadFulltext =
+          index < focusedCount ||
+          index < focusedCount + 4 ||
+          !contextText;
+        const cachedFulltext = shouldLoadFulltext
+          ? await this._cacheService.loadFullText(paper, true)
+          : "";
+        const fulltext = cachedFulltext || contextText;
         const searchableText = fulltext || paper.abstract || paper.note || "";
         const fallbackText =
           [paper.abstract || "", paper.note || "", searchableText]
             .filter(Boolean)
             .join(" ");
         const quote = this._bestQuote(searchableText, trimmedQuestion);
+        const excerptBudget = this._contextBudget(
+          contextConfig,
+          index,
+          focusedCount,
+          results.length
+        );
         const relevantExcerpt = this._buildRelevantExcerpt(
           searchableText,
           trimmedQuestion,
-          contextConfig.maxChars,
+          excerptBudget.maxChars,
           contextConfig.maxSentences
         );
         sourceContexts.set(`${paper._id}`, {
@@ -249,7 +288,9 @@ export class AskService extends Eventable<{}> {
         return {
           source: {
             id: `${paper._id}`,
-            mainURL: paper.mainURL || "",
+            mainURL: paper.defaultSup
+              ? paper.supplementaries?.[paper.defaultSup]?.url || ""
+              : "",
             title: paper.title,
             authors: paper.authors,
             year: paper.year,
@@ -392,22 +433,17 @@ export class AskService extends Eventable<{}> {
       return "";
     }
 
-    const terms = `${question || ""}`
-      .toLowerCase()
-      .split(/[^a-z0-9\u4e00-\u9fa5]+/i)
-      .map((term) => term.trim())
-      .filter((term) => term.length >= 2);
-    const sentences = normalized
-      .split(/(?<=[.!?。！？])\s+/)
-      .map((sentence) => sentence.trim())
+    const terms = this._queryTerms(question);
+    const sentences = this._textCandidates(normalized)
       .filter((sentence) => sentence.length >= 30);
 
     let bestSentence = sentences[0] || normalized.slice(0, 360);
     let bestScore = -1;
-    for (const sentence of sentences.slice(0, 220)) {
+    for (const sentence of sentences) {
       const lower = sentence.toLowerCase();
+      const compact = this._compactForMatch(sentence);
       const score = terms.reduce(
-        (sum, term) => sum + (lower.includes(term) ? 1 : 0),
+        (sum, term) => sum + (this._hasTerm(lower, compact, term) ? 1 : 0),
         0
       );
       if (score > bestScore) {
@@ -450,34 +486,127 @@ export class AskService extends Eventable<{}> {
       return [];
     }
 
-    const terms = `${query || ""}`
-      .toLowerCase()
+    const terms = this._queryTerms(query);
+
+    const candidates = this._textCandidates(normalized)
+      .filter((sentence) => sentence.length >= 24);
+
+    const ranked = candidates
+      .map((sentence, idx) => {
+        const lower = sentence.toLowerCase();
+        const compact = this._compactForMatch(sentence);
+        const hitCount = terms.reduce(
+          (sum, term) => sum + (this._hasTerm(lower, compact, term) ? 1 : 0),
+          0
+        );
+        const numericHitCount = terms
+          .filter((term) => /\d/.test(term))
+          .reduce(
+            (sum, term) => sum + (this._hasTerm(lower, compact, term) ? 1 : 0),
+            0
+          );
+        const tableSignal =
+          /(^|\s)(table|tab\.|benchmark|dataset|videomme|video-mme|score|accuracy|acc\.?|avg\.?|overall)(\s|$|:)/i.test(
+            sentence
+          ) || /\d+(?:\.\d+)?\s*%/.test(sentence)
+            ? 1
+            : 0;
+        const density =
+          terms.length > 0 ? hitCount / terms.length : 0;
+        const lengthPenalty = Math.abs(sentence.length - 180) / 280;
+        const score =
+          hitCount * 2 +
+          numericHitCount * 2.5 +
+          tableSignal * 0.8 +
+          density -
+          lengthPenalty -
+          idx * 0.0002;
+        return { sentence: sentence.slice(0, 360), score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 240);
+
+    return ranked.map((item) => item.sentence);
+  }
+
+  private _queryTerms(query: string): string[] {
+    const normalizedQuery = `${query || ""}`.toLowerCase();
+    const rawTerms = normalizedQuery
       .split(/[^a-z0-9\u4e00-\u9fa5]+/i)
       .map((term) => term.trim())
       .filter((term) => term.length >= 2);
+    const latinTerms = normalizedQuery.match(/[a-z][a-z0-9._-]*[a-z0-9]/gi) || [];
+    const numericTerms = normalizedQuery.match(/\d+(?:\.\d+)?%?/g) || [];
 
-    const sentences = normalized
+    const expanded = new Set<string>();
+    for (const term of [...rawTerms, ...latinTerms, ...numericTerms]) {
+      expanded.add(term);
+      const compact = this._compactForMatch(term);
+      if (compact.length >= 2) {
+        expanded.add(compact);
+      }
+    }
+
+    return [...expanded];
+  }
+
+  private _compactForMatch(text: string): string {
+    return `${text || ""}`
+      .toLowerCase()
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/gi, "");
+  }
+
+  private _hasTerm(lowerText: string, compactText: string, term: string): boolean {
+    if (!term) {
+      return false;
+    }
+
+    return (
+      lowerText.includes(term) ||
+      compactText.includes(this._compactForMatch(term))
+    );
+  }
+
+  private _textCandidates(text: string): string[] {
+    const normalized = `${text || ""}`.replace(/\s+/g, " ").trim();
+    if (!normalized) {
+      return [];
+    }
+
+    const sentenceCandidates = normalized
       .split(/(?<=[.!?。！？])\s+/)
       .map((sentence) => sentence.trim())
-      .filter((sentence) => sentence.length >= 24)
-      .slice(0, 260);
+      .filter(Boolean);
 
-    const ranked = sentences
-      .map((sentence, idx) => {
-        const lower = sentence.toLowerCase();
-        const hitCount = terms.reduce(
-          (sum, term) => sum + (lower.includes(term) ? 1 : 0),
-          0
-        );
-        const density =
-          terms.length > 0 ? hitCount / terms.length : 0;
-        const lengthPenalty = Math.abs(sentence.length - 140) / 220;
-        const score = hitCount * 2 + density - lengthPenalty - idx * 0.0008;
-        return { sentence: sentence.slice(0, 360), score };
-      })
-      .sort((a, b) => b.score - a.score);
+    const windowCandidates: string[] = [];
+    const windowChars = 900;
+    const overlapChars = 240;
+    for (let start = 0; start < normalized.length; start += windowChars - overlapChars) {
+      let end = Math.min(start + windowChars, normalized.length);
+      if (end < normalized.length) {
+        const boundary = normalized.lastIndexOf(" ", end);
+        if (boundary > start + 280) {
+          end = boundary;
+        }
+      }
+      const chunk = normalized.slice(start, end).trim();
+      if (chunk) {
+        windowCandidates.push(chunk);
+      }
+      if (end >= normalized.length) {
+        break;
+      }
+    }
 
-    return ranked.map((item) => item.sentence);
+    const seen = new Set<string>();
+    return [...sentenceCandidates, ...windowCandidates].filter((candidate) => {
+      const key = candidate.slice(0, 240);
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
   }
 
   private _buildRelevantExcerpt(
@@ -491,6 +620,11 @@ export class AskService extends Eventable<{}> {
       return "";
     }
 
+    const priorityCandidates = this._keywordNeighborhoods(
+      normalized,
+      query,
+      Math.min(maxChars, 8000)
+    );
     const candidates = this._rankQuoteCandidates(normalized, query).slice(
       0,
       Math.max(10, maxSentences)
@@ -499,7 +633,7 @@ export class AskService extends Eventable<{}> {
     const seen = new Set<string>();
     let used = 0;
 
-    for (const sentence of candidates) {
+    for (const sentence of [...priorityCandidates, ...candidates]) {
       const clean = `${sentence || ""}`.trim();
       if (!clean || seen.has(clean)) {
         continue;
@@ -520,15 +654,93 @@ export class AskService extends Eventable<{}> {
     return normalized.slice(0, maxChars);
   }
 
-  private _askContextConfig(profile: AskContextProfile) {
+  private _keywordNeighborhoods(
+    text: string,
+    query: string,
+    maxChars: number
+  ): string[] {
+    const latinTerms = (`${query || ""}`.toLowerCase().match(
+      /[a-z][a-z0-9._-]*[a-z0-9]/gi
+    ) || [])
+      .map((term) => this._compactForMatch(term))
+      .filter((term) => term.length >= 3);
+
+    if (latinTerms.length === 0) {
+      return [];
+    }
+
+    const compactChars: string[] = [];
+    const originalIndexes: number[] = [];
+    for (let i = 0; i < text.length; i += 1) {
+      const char = text[i].toLowerCase();
+      if (/[a-z0-9\u4e00-\u9fa5]/i.test(char)) {
+        compactChars.push(char);
+        originalIndexes.push(i);
+      }
+    }
+
+    const compactText = compactChars.join("");
+    const neighborhoods: string[] = [];
+    let usedChars = 0;
+
+    for (const term of Array.from(new Set(latinTerms))) {
+      let searchFrom = 0;
+      let hits = 0;
+      while (hits < 3) {
+        const compactIndex = compactText.indexOf(term, searchFrom);
+        if (compactIndex < 0) {
+          break;
+        }
+
+        const originalIndex = originalIndexes[compactIndex] || 0;
+        const start = Math.max(0, originalIndex - 900);
+        const end = Math.min(text.length, originalIndex + 1600);
+        const excerpt = text.slice(start, end).trim();
+        if (excerpt) {
+          const extra = excerpt.length + (neighborhoods.length ? 1 : 0);
+          if (usedChars + extra > maxChars) {
+            return neighborhoods;
+          }
+          neighborhoods.push(excerpt);
+          usedChars += extra;
+        }
+
+        searchFrom = compactIndex + term.length;
+        hits += 1;
+      }
+    }
+
+    return neighborhoods;
+  }
+
+  private _contextBudget(
+    config: IAskContextConfig,
+    index: number,
+    focusedCount: number,
+    totalCount: number
+  ) {
+    if (index < focusedCount) {
+      return {
+        maxChars: Math.max(4000, Math.floor(config.focusedChars / Math.max(1, focusedCount))),
+      };
+    }
+
+    const remainingCount = Math.max(1, totalCount - focusedCount);
+    const remainingChars = Math.max(3000, config.totalChars - config.focusedChars);
+    return {
+      maxChars: Math.max(1800, Math.floor(remainingChars / remainingCount)),
+    };
+  }
+
+  private _askContextConfig(profile: AskContextProfile): IAskContextConfig {
     switch (profile) {
       case "fast":
-        return { maxChars: 4500, maxSentences: 30 };
+        return { totalChars: 10000, focusedChars: 7000, maxSentences: 45 };
       case "detailed":
-        return { maxChars: 20000, maxSentences: 140 };
+        return { totalChars: 60000, focusedChars: 42000, maxSentences: 220 };
       case "balanced":
       default:
-        return { maxChars: 12000, maxSentences: 80 };
+        return { totalChars: 24000, focusedChars: 16000, maxSentences: 120 };
     }
   }
 

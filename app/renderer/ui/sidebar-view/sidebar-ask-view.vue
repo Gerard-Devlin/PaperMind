@@ -7,6 +7,7 @@ const question = ref("");
 const asking = ref(false);
 const messages = ref<Array<{ role: "user" | "assistant"; content: string }>>([]);
 const { t } = useI18n();
+const uiState = PLUIAPILocal.uiStateService.useState();
 
 const ask = async () => {
   const text = question.value.trim();
@@ -17,7 +18,10 @@ const ask = async () => {
   messages.value.push({ role: "user", content: text });
   question.value = "";
   asking.value = true;
-  const result = await PLAPI.askService.ask(text);
+  const result = await PLAPI.askService.ask(
+    text,
+    (uiState.selectedPaperEntities || []).slice(0, 3)
+  );
   messages.value.push({
     role: "assistant",
     content: result.answer || t("plugin.askNoAnswer"),

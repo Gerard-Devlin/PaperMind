@@ -21,6 +21,7 @@ import { Entity, IEntityCollection, IEntityObject } from "@/models/entity";
 import { FileService, IFileService } from "./file-service";
 
 export const ICacheService = createDecorator("cacheService");
+const FULLTEXT_CACHE_VERSION = "fulltext-v2-layout";
 
 export class CacheService {
   constructor(
@@ -99,7 +100,7 @@ export class CacheService {
 
   @processing(ProcessingKey.General)
   @errorcatching("Failed to get fulltext cache.", true, "CacheService", "")
-  async loadFullText(paperEntity: Entity): Promise<string> {
+  async loadFullText(paperEntity: Entity, validateFile = false): Promise<string> {
     const realm = await this._cacheDatabaseCore.realm();
 
     const cache = realm.objectForPrimaryKey<PaperEntityCache>(
@@ -107,8 +108,15 @@ export class CacheService {
       new ObjectId(paperEntity._id) as unknown as PrimaryKey
     );
 
-    if (cache?.fulltext) {
+    if (cache?.fulltext && !validateFile) {
       return cache.fulltext;
+    }
+
+    if (cache?.fulltext && validateFile) {
+      const currentMD5 = await this._paperMainFileMD5(paperEntity);
+      if (!currentMD5 || cache.md5 === this._fullTextCacheKey(currentMD5)) {
+        return cache.fulltext;
+      }
     }
 
     await this.updateFullTextCache([paperEntity]);
@@ -118,6 +126,38 @@ export class CacheService {
     );
 
     return updatedCache?.fulltext || "";
+  }
+
+  private async _paperMainFileMD5(paperEntity: Entity): Promise<string> {
+    try {
+      if (
+        !paperEntity.defaultSup ||
+        getProtocol(
+          paperEntity.supplementaries[paperEntity.defaultSup]?.url || ""
+        ) !== "file"
+      ) {
+        return "";
+      }
+
+      const filePath = eraseProtocol(
+        await this._fileService.access(
+          paperEntity.supplementaries[paperEntity.defaultSup].url,
+          false
+        )
+      );
+
+      if (!filePath || !(await promises.lstat(filePath)).isFile()) {
+        return "";
+      }
+
+      return md5(filePath);
+    } catch {
+      return "";
+    }
+  }
+
+  private _fullTextCacheKey(md5String: string) {
+    return md5String ? `${FULLTEXT_CACHE_VERSION}:${md5String}` : "";
   }
 
   // ========================
@@ -168,7 +208,7 @@ export class CacheService {
             _id: new ObjectId(paperEntity._id),
             _partition: "",
             fulltext: fulltext,
-            md5: md5String,
+            md5: this._fullTextCacheKey(md5String),
           });
         });
       } catch (err) {
@@ -201,21 +241,18 @@ export class CacheService {
       );
       const pdf = mupdf.Document.openDocument(pdfBuffer as any, "application/pdf");
 
-      let text = "";
+      const pages: string[] = [];
 
       for (let i = 0; i < pdf.countPages(); i++) {
         const page = pdf.loadPage(i);
         const json = JSON.parse(
           page.toStructuredText("preserve-whitespace").asJSON()
         );
-        for (const block of json.blocks) {
-          for (const line of block.lines) {
-            text += line.text + " ";
-          }
-        }
+        const lines = this._structuredTextLines(json);
+        pages.push([`[Page ${i + 1}]`, ...this._layoutLines(lines)].join("\n"));
       }
 
-      return text;
+      return pages.join("\n\n");
     } catch (error) {
       this._logService.error(
         "Failed to read fulltext of PDF",
@@ -226,6 +263,69 @@ export class CacheService {
 
       return "";
     }
+  }
+
+  private _structuredTextLines(json: any): Array<{
+    text: string;
+    x: number;
+    y: number;
+  }> {
+    const lines: Array<{ text: string; x: number; y: number }> = [];
+
+    for (const block of json?.blocks || []) {
+      const blockBox = block?.bbox || block?.bounds || [0, 0, 0, 0];
+      for (const line of block?.lines || []) {
+        const lineText = `${line?.text || ""}`.replace(/\s+/g, " ").trim();
+        if (!lineText) {
+          continue;
+        }
+
+        const lineBox = line?.bbox || line?.bounds || blockBox;
+        lines.push({
+          text: lineText,
+          x: Number(lineBox?.[0] || blockBox?.[0] || 0),
+          y: Number(lineBox?.[1] || blockBox?.[1] || 0),
+        });
+      }
+    }
+
+    return lines.sort((lineA, lineB) => {
+      const yDiff = lineA.y - lineB.y;
+      if (Math.abs(yDiff) > 3) {
+        return yDiff;
+      }
+
+      return lineA.x - lineB.x;
+    });
+  }
+
+  private _layoutLines(
+    lines: Array<{ text: string; x: number; y: number }>
+  ): string[] {
+    const rows: Array<Array<{ text: string; x: number; y: number }>> = [];
+    const rowTolerance = 4;
+
+    for (const line of lines) {
+      const currentRow = rows[rows.length - 1];
+      if (
+        currentRow &&
+        Math.abs(currentRow[0].y - line.y) <= rowTolerance
+      ) {
+        currentRow.push(line);
+      } else {
+        rows.push([line]);
+      }
+    }
+
+    return rows
+      .map((row) =>
+        row
+          .sort((lineA, lineB) => lineA.x - lineB.x)
+          .map((line) => line.text)
+          .join("\t")
+          .trim()
+      )
+      .filter(Boolean);
   }
 
   /**
@@ -269,19 +369,20 @@ export class CacheService {
             .filtered("_id == $0", new ObjectId(paperEntity._id));
           const object = objects[0] || null;
 
-          if (object && object.md5 === md5String) {
-            return;
-          } else if (object) {
-            object.fulltext = fulltext;
-            object.md5 = md5String;
-          } else {
+        const cacheKey = this._fullTextCacheKey(md5String);
+        if (object && object.md5 === cacheKey) {
+          return;
+        } else if (object) {
+          object.fulltext = fulltext;
+          object.md5 = cacheKey;
+        } else {
             realm.create<PaperEntityCache>(
               "PaperEntityCache",
               {
                 _id: new ObjectId(paperEntity._id),
                 _partition: "",
                 fulltext: fulltext,
-                md5: md5String,
+                md5: cacheKey,
               },
               Realm.UpdateMode.Modified
             );
