@@ -3,22 +3,25 @@ const props = defineProps({
   authors: String,
 });
 
-// TODO: check if we really need uiState. can we get/set state with api
-const uiState = PLUIAPILocal.uiStateService.useState();
+const openAuthorScholar = (author: string) => {
+  const query = `"${author.trim()}"`;
+
+  PLAPI.fileService.open(
+    `https://scholar.google.com/citations?view_op=search_authors&mauthors=${encodeURIComponent(query)}`
+  );
+};
 
 const onClick = (e: MouseEvent, author: string) => {
   e.preventDefault();
   e.stopPropagation();
-  uiState.querySentenceCommandbar = `authors contains '${author}'`;
-  // PLUIAPILocalLocal.uiStateService.setUIState({"querySentenceCommandbar": `authors contains '${author}'`})
+
+  openAuthorScholar(author);
 };
 
 const onRightClick = (e: MouseEvent, author: string) => {
   e.preventDefault();
   e.stopPropagation();
-  PLAPI.fileService.open(
-    `https://scholar.google.com/scholar?q=${author.replaceAll(" ", "+")}`
-  );
+  openAuthorScholar(author);
 };
 </script>
 

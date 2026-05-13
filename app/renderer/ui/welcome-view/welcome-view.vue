@@ -55,7 +55,7 @@ onMounted(async () => {
       class="typing-style text-xl font-bold font-mono mx-auto my-40"
       v-if="isShowSlogan"
     >
-      WELCOME TO PAPERMIND 3.7.0
+      WELCOME TO PAPERMIND 3.8.0
     </div>
 
     <div class="w-[45rem] px-3 mx-auto my-20 flex flex-col" v-else>
@@ -63,7 +63,7 @@ onMounted(async () => {
         <span class="text-3xl my-auto">PAPERMIND</span>
         <span
           class="text-xl bg-neutral-700 text-white dark:bg-neutral-300 dark:text-neutral-800 rounded-md px-2 py-1 my-auto"
-          >3.7.0</span
+          >3.8.0</span
         >
       </div>
 
@@ -78,9 +78,10 @@ onMounted(async () => {
       </div>
 
       <div class="flex flex-col" v-if="language === 'en-GB'">
-        <div class="mx-auto mb-8 font-semibold">Welcome to PaperMind 3.7.0.</div>
+        <div class="mx-auto mb-8 font-semibold">Welcome to PaperMind 3.8.0.</div>
         <div class="mb-2">This release focuses on a cleaner and more reliable model workflow:</div>
         <ul class="list-disc px-4 mx-1">
+          <li class="font-semibold">Author names open exact Google Scholar profile results</li>
           <li class="font-semibold">Multi-provider support for Ask / Tag / Embedding</li>
           <li class="font-semibold">Provider-level API key management on one settings page</li>
           <li class="font-semibold">Per-capability provider and model selection (Ask / Embedding / Tag)</li>
@@ -108,13 +109,14 @@ onMounted(async () => {
         </div>
 
         <hr class="my-8" />
-        <div>Thanks for using PaperMind 3.7.0.</div>
+        <div>Thanks for using PaperMind 3.8.0.</div>
       </div>
 
       <div class="flex flex-col" v-else>
-        <div class="mx-auto mb-8 font-semibold">欢迎来到 PaperMind 3.7.0。</div>
+        <div class="mx-auto mb-8 font-semibold">欢迎来到 PaperMind 3.8.0。</div>
         <div class="mb-2">本次版本重点升级了模型配置与问答检索链路：</div>
         <ul class="list-disc px-4 mx-1">
+          <li class="font-semibold">点击作者名可用精确姓名打开 Google Scholar 作者入口</li>
           <li class="font-semibold">支持多模型供应商接入（Ask / Tag / Embedding）</li>
           <li class="font-semibold">同一页面统一管理供应商 API Key</li>
           <li class="font-semibold">Ask / Embedding / Tag 分别可选供应商与模型</li>
@@ -138,7 +140,7 @@ onMounted(async () => {
         <div class="mb-2">Ask 证据提取改为查询感知，并支持快速/平衡/详细上下文档位。</div>
 
         <hr class="my-8" />
-        <div>感谢使用 PaperMind 3.7.0。</div>
+        <div>感谢使用 PaperMind 3.8.0。</div>
       </div>
 
       <div

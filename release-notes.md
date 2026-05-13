@@ -1,12 +1,14 @@
-﻿## 3.7.0
+## 3.8.0
 
-1. New Feature: multi-provider model integration for Ask / AI Tag / Embedding.
-2. New Feature: provider-level API key management in semantic settings (single-page workflow).
-3. New Feature: per-capability provider + model selection (Ask / Embedding / Tag) with model list refresh.
-4. New Feature: provider health indicators based on real connectivity checks.
-5. Improve: full-document chunked embedding + pooled vectors for better long-paper semantic recall.
-6. Improve: Ask evidence extraction with context profiles (fast / balanced / detailed).
-7. Refactor: compare workflow removed to simplify Ask interaction.
+1. Improve: author names now open Google Scholar author search/profile results directly.
+2. Improve: author Scholar lookup uses the exact author name in Google Scholar profile search.
+3. New Feature: multi-provider model integration for Ask / AI Tag / Embedding.
+4. New Feature: provider-level API key management in semantic settings (single-page workflow).
+5. New Feature: per-capability provider + model selection (Ask / Embedding / Tag) with model list refresh.
+6. New Feature: provider health indicators based on real connectivity checks.
+7. Improve: full-document chunked embedding + pooled vectors for better long-paper semantic recall.
+8. Improve: Ask evidence extraction with context profiles (fast / balanced / detailed).
+9. Refactor: compare workflow removed to simplify Ask interaction.
 
 ## 3.6.1
 

@@ -9,7 +9,7 @@
 <br />
 <br />
 
-<img src="https://img.shields.io/badge/PaperMind-v3.7.0-0f766e?style=for-the-badge&labelColor=111827" />
+<img src="https://img.shields.io/badge/PaperMind-v3.8.0-0f766e?style=for-the-badge&labelColor=111827" />
 <img src="https://img.shields.io/badge/Ask%20%2B%20RAG-Research%20Workflow-7c3aed?style=for-the-badge&labelColor=111827" />
 <img src="https://img.shields.io/badge/PGlite%20%2B%20pgvector-Semantic%20Indexing-16a34a?style=for-the-badge&labelColor=111827" />
 <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-374151?style=for-the-badge&labelColor=111827" />
@@ -51,8 +51,10 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
   <img src="./assets/Papermind_ai.png" alt="Papermind_ai" width="800">
 </p>
 
-## 3.7.0 Update
+## 3.8.0 Update
 
+- Author names now open Google Scholar author search/profile results directly.
+- Author Scholar lookup uses the exact author name in Google Scholar profile search.
 - Multi-provider model integration for Ask / AI Tag / Embedding.
 - Provider-level API key management in Semantic Search settings.
 - Per-capability provider + model selection flow (Ask / Embedding / Tag).
