@@ -9,7 +9,22 @@ const props = defineProps({
   },
 });
 
-const codes = ref(props.codes.map((code) => JSON.parse(code)));
+const parseCode = (code: string) => {
+  try {
+    const parsed = JSON.parse(code);
+    return {
+      url: `${parsed?.url || parsed?.code || parsed?.link || parsed?.repo || parsed?.repository || ""}`,
+      isOfficial: Boolean(parsed?.isOfficial),
+    };
+  } catch {
+    return {
+      url: `${code || ""}`,
+      isOfficial: false,
+    };
+  }
+};
+
+const codes = ref(props.codes.map((code) => parseCode(code)));
 const emits = defineEmits(["event:change"]);
 
 // ======================
@@ -32,8 +47,8 @@ const onInput = (payload: Event, index: number, key: string) => {
 
 const onAddClicked = () => {
   codes.value.unshift({
-    code: "",
-    name: "",
+    url: "",
+    isOfficial: false,
   });
 };
 

@@ -111,9 +111,16 @@ async function initialize() {
   });
 
   // Initialize extensions in background so renderer startup is never blocked.
-  PLExtAPILocal.extensionManagementService
-    .initialize()
-    .catch((error: Error) => {
+  // Some extensions write into renderer-owned UI slots, so wait until PLUIAPI is
+  // exposed before loading plugins.
+  (async () => {
+    await extensionRPCService.waitForAPI(
+      Process.renderer,
+      "PLUIAPI",
+      API_READY_TIMEOUT_MS
+    );
+    await PLExtAPILocal.extensionManagementService.initialize();
+  })().catch((error: Error) => {
       extLogService.error(
         "Failed to initialize extension management service.",
         error,

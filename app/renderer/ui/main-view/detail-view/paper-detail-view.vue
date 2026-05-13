@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onUpdated, ref } from "vue";
+import { BIconCodeSlash, BIconGithub } from "bootstrap-icons-vue";
 
 import { Categorizer, CategorizerType } from "@/models/categorizer";
 import { Entity } from "@/models/entity";
@@ -233,6 +234,65 @@ const renderTitle = async () => {
   }
 };
 
+const parseCodeLink = (codeRaw: string) => {
+  let url = "";
+  let isOfficial = false;
+  let name = "";
+
+  try {
+    const parsed = JSON.parse(codeRaw) as {
+      url?: string;
+      code?: string;
+      link?: string;
+      repo?: string;
+      repository?: string;
+      name?: string;
+      isOfficial?: boolean;
+    };
+    url = `${parsed?.url || parsed?.code || parsed?.link || parsed?.repo || parsed?.repository || ""}`.trim();
+    name = `${parsed?.name || ""}`.trim();
+    isOfficial = Boolean(parsed?.isOfficial);
+  } catch {
+    url = `${codeRaw || ""}`.trim();
+  }
+
+  if (url && !/^https?:\/\//i.test(url) && /^(github\.com|gitlab\.com)\//i.test(url)) {
+    url = `https://${url}`;
+  }
+
+  return {
+    url,
+    isOfficial,
+    label: name || formatCodeLabel(url, isOfficial),
+  };
+};
+
+const formatCodeLabel = (url: string, isOfficial: boolean) => {
+  try {
+    const parsed = new URL(url);
+    const pathParts = parsed.pathname.split("/").filter(Boolean);
+    if (parsed.hostname.toLowerCase().includes("github.com") && pathParts.length >= 2) {
+      return `${pathParts[0]}/${pathParts[1]}`;
+    }
+    if (pathParts.length > 0) {
+      return `${parsed.hostname}/${pathParts.slice(0, 2).join("/")}`;
+    }
+    return parsed.hostname;
+  } catch {
+    return isOfficial ? "Official Code" : "Code";
+  }
+};
+
+const codeLinks = () => {
+  return (props.entity.codes || [])
+    .map((codeRaw) => parseCodeLink(codeRaw))
+    .filter((code) => code.url && /^https?:\/\//i.test(code.url));
+};
+
+const onCodeClicked = (url: string) => {
+  PLAPI.fileService.open(url);
+};
+
 onUpdated(() => {
   renderTitle();
 });
@@ -343,6 +403,28 @@ onUpdated(() => {
       <Supplementaries :entity="entity"
         v-if="Object.keys(entity.supplementaries).length > 0 || entity.doi || entity.arxiv || (entity.codes && entity.codes.length > 0)"
       />
+      <Section
+        :title="$t('mainview.codes')"
+        v-if="codeLinks().length > 0"
+      >
+        <div class="mt-1 flex flex-wrap gap-1 text-xs">
+          <div
+            v-for="code in codeLinks()"
+            :key="code.url"
+            class="flex cursor-pointer select-none space-x-1 rounded-md bg-neutral-200 p-1 hover:bg-neutral-300 hover:shadow-sm dark:bg-neutral-700 hover:dark:bg-neutral-600"
+            @click="onCodeClicked(code.url)"
+          >
+            <BIconGithub
+              class="my-auto text-xs"
+              v-if="code.url.toLowerCase().includes('github')"
+            />
+            <BIconCodeSlash class="my-auto text-xs" v-else />
+            <div class="my-auto text-xxs">
+              {{ code.label }}
+            </div>
+          </div>
+        </div>
+      </Section>
       <!-- TODO: move this to a hover window -->
       <!-- <Markdown :title="'Markdown'" :sups="entity.supURLs" /> -->
 

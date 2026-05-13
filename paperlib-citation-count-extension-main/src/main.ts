@@ -7,10 +7,6 @@ class PaperMindCitationCountExtension extends PLExtension {
   disposeCallbacks: (() => void)[];
   private readonly _cache: Map<string, { content: string; at: number }>;
   private readonly _inflight: Set<string>;
-  private _rateLimitedUntil: number;
-  private _requestChain: Promise<void>;
-  private _nextAllowedAt: number;
-  private _backoffMs: number;
 
   constructor() {
     super({
@@ -21,10 +17,6 @@ class PaperMindCitationCountExtension extends PLExtension {
     this.disposeCallbacks = [];
     this._cache = new Map();
     this._inflight = new Set();
-    this._rateLimitedUntil = 0;
-    this._requestChain = Promise.resolve();
-    this._nextAllowedAt = 0;
-    this._backoffMs = 0;
   }
 
   async initialize() {
@@ -40,6 +32,13 @@ class PaperMindCitationCountExtension extends PLExtension {
         }
       })
     );
+
+    const selectedPaperEntities = (await PLAPI.uiStateService.getState(
+      "selectedPaperEntities"
+    )) as unknown as PaperEntity[];
+    if (selectedPaperEntities?.length === 1) {
+      void this.getCitationCount(selectedPaperEntities[0]);
+    }
   }
 
   async dispose() {
@@ -54,6 +53,9 @@ class PaperMindCitationCountExtension extends PLExtension {
     const lang = await PLAPI.preferenceService.get("language");
     const title = lang === "zh-CN" ? "引用次数" : "Citation Count";
     const paperKey = this._paperKey(paperEntity);
+    const doi = `${paperEntity.doi || ""}`.trim();
+    const arxiv = `${paperEntity.arxiv || ""}`.trim();
+    const paperTitle = `${paperEntity.title || ""}`.trim();
 
     const cached = this._cache.get(paperKey);
     if (cached && Date.now() - cached.at < 24 * 60 * 60 * 1000) {
@@ -78,182 +80,36 @@ class PaperMindCitationCountExtension extends PLExtension {
       },
     });
 
-    const useSearchEndpoint = paperEntity.doi === "" && paperEntity.arxiv === "";
-    let scrapeURL = "";
+    try {
+      const count =
+        (await this._fetchSemanticScholarCount(paperEntity, doi, arxiv, paperTitle)) ||
+        (await this._fetchOpenAlexCount(paperEntity, doi, paperTitle)) ||
+        (await this._fetchCrossrefCount(doi, paperTitle));
+      const content = this._formatCitationCount(count);
 
-    if (paperEntity.doi !== "") {
-      scrapeURL = `https://api.semanticscholar.org/graph/v1/paper/DOI:${encodeURIComponent(
-        paperEntity.doi
-      )}?fields=title,year,authors,citationCount,influentialCitationCount`;
-    } else if (paperEntity.arxiv !== "") {
-      scrapeURL = `https://api.semanticscholar.org/graph/v1/paper/ARXIV:${encodeURIComponent(
-        paperEntity.arxiv.toLowerCase().replace("arxiv:", "").split("v")[0]
-      )}?fields=title,year,authors,citationCount,influentialCitationCount`;
-    } else {
-      scrapeURL = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(
-        paperEntity.title
-      )}&limit=15&fields=title,year,authors,citationCount,influentialCitationCount`;
+      await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
+        "paperlib-citation-count": {
+          title,
+          content,
+        },
+      });
+      this._cache.set(paperKey, { content, at: Date.now() });
+    } catch (err) {
+      PLAPI.logService.error(
+        "Failed to get citation count.",
+        err as Error,
+        false,
+        "CitationCountExt"
+      );
+      await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
+        "paperlib-citation-count": {
+          title,
+          content: "N/A",
+        },
+      });
+    } finally {
+      this._inflight.delete(paperKey);
     }
-
-    await this._enqueueRequest(async () => {
-      if (Date.now() < this._rateLimitedUntil) {
-        const waitSeconds = Math.max(
-          1,
-          Math.ceil((this._rateLimitedUntil - Date.now()) / 1000)
-        );
-        await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
-          "paperlib-citation-count": {
-            title,
-            content:
-              lang === "zh-CN"
-                ? `请求过快，请 ${waitSeconds}s 后重试`
-                : `Rate limited, retry in ${waitSeconds}s`,
-          },
-        });
-        this._inflight.delete(paperKey);
-        return;
-      }
-
-      try {
-        const response = await PLExtAPI.networkTool.get(
-          scrapeURL,
-          {},
-          1,
-          8000,
-          true,
-          true
-        );
-        const parsedResponse = response.body;
-        const itemList = parsedResponse.data ? parsedResponse.data : [parsedResponse];
-
-        const existTitle = stringUtils.formatString({
-          str: paperEntity.title,
-          removeStr: "&amp;",
-          removeSymbol: true,
-          lowercased: true,
-        });
-        const targetYear = Number.parseInt(`${(paperEntity as any).year || ""}`, 10);
-        const targetAuthorToken = this._firstAuthorToken(`${paperEntity.authors || ""}`);
-
-        let bestScore = -1;
-        let bestItem: any = null;
-        for (const item of itemList) {
-          if (!item) {
-            continue;
-          }
-
-          const plainHitTitle = stringUtils.formatString({
-            str: item.title || "",
-            removeStr: "&amp;",
-            removeSymbol: true,
-            lowercased: true,
-          });
-          const sim = plainHitTitle
-            ? stringSimilarity.compareTwoStrings(plainHitTitle, existTitle)
-            : 0;
-
-          if (!useSearchEndpoint) {
-            bestItem = item;
-            break;
-          }
-
-          let score = sim;
-          const hitYear = Number.parseInt(`${item.year || ""}`, 10);
-          if (!Number.isNaN(targetYear) && !Number.isNaN(hitYear)) {
-            if (hitYear === targetYear) {
-              score += 0.15;
-            } else if (Math.abs(hitYear - targetYear) <= 1) {
-              score += 0.06;
-            }
-          }
-
-          const hitAuthorToken = this._firstAuthorTokenFromHit(item);
-          if (targetAuthorToken && hitAuthorToken && targetAuthorToken === hitAuthorToken) {
-            score += 0.15;
-          }
-
-          if (score > bestScore) {
-            bestScore = score;
-            bestItem = item;
-          }
-        }
-
-        let citationCount = "N/A";
-        let influentialCitationCount = "N/A";
-        if (bestItem && (!useSearchEndpoint || bestScore >= 0.62)) {
-          citationCount = `${bestItem.citationCount ?? "N/A"}`;
-          influentialCitationCount = `${bestItem.influentialCitationCount ?? "N/A"}`;
-        }
-
-        let content = "N/A";
-        if (citationCount !== "N/A" && influentialCitationCount !== "N/A") {
-          content = `${citationCount} (${influentialCitationCount})`;
-        } else if (citationCount !== "N/A") {
-          content = `${citationCount}`;
-        } else if (influentialCitationCount !== "N/A") {
-          content = `N/A (${influentialCitationCount})`;
-        }
-
-        await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
-          "paperlib-citation-count": {
-            title,
-            content,
-          },
-        });
-        this._cache.set(paperKey, { content, at: Date.now() });
-        this._backoffMs = 0;
-      } catch (err) {
-        const message = `${(err as Error).message || err}`;
-        if (message.includes("429")) {
-          this._backoffMs = this._backoffMs > 0
-            ? Math.min(this._backoffMs * 2, 120000)
-            : 15000;
-          this._rateLimitedUntil = Date.now() + this._backoffMs;
-          const waitSeconds = Math.ceil(this._backoffMs / 1000);
-          await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
-            "paperlib-citation-count": {
-              title,
-              content:
-                lang === "zh-CN"
-                  ? `请求过快，请 ${waitSeconds}s 后重试`
-                  : `Rate limited, retry in ${waitSeconds}s`,
-            },
-          });
-        } else {
-          PLAPI.logService.error(
-            "Failed to get citation count.",
-            err as Error,
-            false,
-            "CitationCountExt"
-          );
-          await PLAPI.uiSlotService.updateSlot("paperDetailsPanelSlot1", {
-            "paperlib-citation-count": {
-              title,
-              content: "N/A",
-            },
-          });
-        }
-      } finally {
-        this._inflight.delete(paperKey);
-      }
-    });
-  }
-
-  private async _enqueueRequest(task: () => Promise<void>) {
-    this._requestChain = this._requestChain
-      .then(async () => {
-        const waitUntil = Math.max(this._nextAllowedAt, this._rateLimitedUntil);
-        const now = Date.now();
-        if (waitUntil > now) {
-          await new Promise((resolve) => setTimeout(resolve, waitUntil - now));
-        }
-        await task();
-        this._nextAllowedAt = Date.now() + 1200;
-      })
-      .catch(() => {})
-      .then(() => {});
-
-    await this._requestChain;
   }
 
   private _paperKey(paperEntity: PaperEntity) {
@@ -267,6 +123,276 @@ class PaperMindCitationCountExtension extends PLExtension {
       return `arxiv:${arxiv}`;
     }
     return `title:${title}`;
+  }
+
+  private async _fetchSemanticScholarCount(
+    paperEntity: PaperEntity,
+    doi: string,
+    arxiv: string,
+    paperTitle: string
+  ) {
+    const useSearchEndpoint = !doi && !arxiv;
+    let scrapeURL = "";
+
+    if (doi) {
+      scrapeURL = `https://api.semanticscholar.org/graph/v1/paper/DOI:${encodeURIComponent(
+        doi
+      )}?fields=title,year,authors,citationCount,influentialCitationCount`;
+    } else if (arxiv) {
+      scrapeURL = `https://api.semanticscholar.org/graph/v1/paper/ARXIV:${encodeURIComponent(
+        arxiv.toLowerCase().replace("arxiv:", "").split("v")[0]
+      )}?fields=title,year,authors,citationCount,influentialCitationCount`;
+    } else {
+      scrapeURL = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(
+        paperTitle
+      )}&limit=15&fields=title,year,authors,citationCount,influentialCitationCount`;
+    }
+
+    try {
+      const parsedResponse = (
+        await PLExtAPI.networkTool.get(
+          scrapeURL,
+          { Accept: "application/json" },
+          0,
+          10000,
+          false,
+          true
+        )
+      ).body;
+      const itemList = parsedResponse.data ? parsedResponse.data : [parsedResponse];
+      const bestItem = this._pickBestItem(
+        paperEntity,
+        itemList,
+        useSearchEndpoint ? 0.5 : 0
+      );
+
+      if (!bestItem) {
+        return null;
+      }
+
+      const citationCount =
+        typeof bestItem.citationCount === "number" ? bestItem.citationCount : null;
+      const influentialCitationCount =
+        typeof bestItem.influentialCitationCount === "number"
+          ? bestItem.influentialCitationCount
+          : null;
+
+      if (citationCount === null && influentialCitationCount === null) {
+        return null;
+      }
+
+      return {
+        citationCount,
+        influentialCitationCount,
+      };
+    } catch (error) {
+      PLAPI.logService.warn(
+        "Semantic Scholar citation lookup failed.",
+        `${(error as Error).message || error}`,
+        false,
+        "CitationCountExt"
+      );
+      return null;
+    }
+  }
+
+  private async _fetchOpenAlexCount(
+    paperEntity: PaperEntity,
+    doi: string,
+    paperTitle: string
+  ) {
+    try {
+      let parsedResponse: any;
+      if (doi) {
+        parsedResponse = (
+          await PLExtAPI.networkTool.get(
+            `https://api.openalex.org/works?filter=doi:${encodeURIComponent(
+              doi
+            )}&per-page=1&select=display_name,publication_year,cited_by_count,authorships`,
+            { Accept: "application/json" },
+            0,
+            10000,
+            false,
+            true
+          )
+        ).body;
+        parsedResponse = parsedResponse?.results?.[0];
+      } else if (paperTitle) {
+        parsedResponse = (
+          await PLExtAPI.networkTool.get(
+            `https://api.openalex.org/works?search=${encodeURIComponent(
+              paperTitle
+            )}&per-page=10&select=display_name,publication_year,cited_by_count,authorships`,
+            { Accept: "application/json" },
+            0,
+            10000,
+            false,
+            true
+          )
+        ).body;
+        parsedResponse = this._pickBestOpenAlexWork(
+          paperEntity,
+          parsedResponse?.results || []
+        );
+      }
+
+      const citationCount =
+        typeof parsedResponse?.cited_by_count === "number"
+          ? parsedResponse.cited_by_count
+          : null;
+
+      if (citationCount === null) {
+        return null;
+      }
+
+      return {
+        citationCount,
+        influentialCitationCount: null,
+      };
+    } catch (error) {
+      PLAPI.logService.warn(
+        "OpenAlex citation lookup failed.",
+        `${(error as Error).message || error}`,
+        false,
+        "CitationCountExt"
+      );
+      return null;
+    }
+  }
+
+  private async _fetchCrossrefCount(doi: string, paperTitle: string) {
+    if (!doi) {
+      return null;
+    }
+
+    try {
+      const parsedResponse = (
+        await PLExtAPI.networkTool.get(
+          `https://api.crossref.org/works/${encodeURIComponent(doi)}`,
+          { Accept: "application/json" },
+          0,
+          10000,
+          false,
+          true
+        )
+      ).body;
+      const item = parsedResponse?.message;
+      const citationCount =
+        typeof item?.["is-referenced-by-count"] === "number"
+          ? item["is-referenced-by-count"]
+          : null;
+
+      if (citationCount === null) {
+        return null;
+      }
+
+      return {
+        citationCount,
+        influentialCitationCount: null,
+      };
+    } catch (error) {
+      PLAPI.logService.warn(
+        "Crossref citation lookup failed.",
+        `${(error as Error).message || error} ${paperTitle || ""}`,
+        false,
+        "CitationCountExt"
+      );
+      return null;
+    }
+  }
+
+  private _formatCitationCount(
+    count: { citationCount: number | null; influentialCitationCount: number | null } | null
+  ) {
+    if (!count) {
+      return "N/A";
+    }
+
+    if (
+      count.citationCount !== null &&
+      count.influentialCitationCount !== null
+    ) {
+      return `${count.citationCount} (${count.influentialCitationCount})`;
+    }
+
+    if (count.citationCount !== null) {
+      return `${count.citationCount}`;
+    }
+
+    if (count.influentialCitationCount !== null) {
+      return `N/A (${count.influentialCitationCount})`;
+    }
+
+    return "N/A";
+  }
+
+  private _pickBestOpenAlexWork(paperEntity: PaperEntity, itemList: any[]) {
+    return this._pickBestItem(
+      paperEntity,
+      itemList.map((item) => ({
+        ...item,
+        title: item.display_name,
+        year: item.publication_year,
+        authors: (item.authorships || []).map((authorship: any) => ({
+          name: authorship?.author?.display_name || "",
+        })),
+      })),
+      0.5
+    );
+  }
+
+  private _pickBestItem(
+    paperEntity: PaperEntity,
+    itemList: any[],
+    minScore: number
+  ) {
+    const existTitle = this._normalizeTitle(paperEntity.title);
+    const targetYear = Number.parseInt(`${(paperEntity as any).year || ""}`, 10);
+    const targetAuthorToken = this._firstAuthorToken(`${paperEntity.authors || ""}`);
+
+    let bestScore = -1;
+    let bestItem: any = null;
+    for (const item of itemList || []) {
+      if (!item) {
+        continue;
+      }
+
+      const plainHitTitle = this._normalizeTitle(item.title || item.display_name || "");
+      const sim = plainHitTitle
+        ? stringSimilarity.compareTwoStrings(plainHitTitle, existTitle)
+        : 0;
+
+      let score = sim;
+      const hitYear = Number.parseInt(`${item.year || item.publication_year || ""}`, 10);
+      if (!Number.isNaN(targetYear) && !Number.isNaN(hitYear)) {
+        if (hitYear === targetYear) {
+          score += 0.15;
+        } else if (Math.abs(hitYear - targetYear) <= 1) {
+          score += 0.06;
+        }
+      }
+
+      const hitAuthorToken = this._firstAuthorTokenFromHit(item);
+      if (targetAuthorToken && hitAuthorToken && targetAuthorToken === hitAuthorToken) {
+        score += 0.15;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestItem = item;
+      }
+    }
+
+    return bestScore >= minScore ? bestItem : null;
+  }
+
+  private _normalizeTitle(title: string) {
+    return stringUtils.formatString({
+      str: title,
+      removeStr: "&amp;",
+      removeSymbol: true,
+      lowercased: true,
+    });
   }
 
   private _firstAuthorToken(authors: string) {
@@ -292,6 +418,7 @@ class PaperMindCitationCountExtension extends PLExtension {
     const parts = first.split(/\s+/).filter(Boolean);
     return parts.length > 0 ? parts[parts.length - 1] : "";
   }
+
 }
 
 async function initialize() {
@@ -302,4 +429,3 @@ async function initialize() {
 }
 
 export { initialize };
-

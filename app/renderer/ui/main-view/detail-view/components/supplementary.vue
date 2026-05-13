@@ -51,15 +51,7 @@ const onlineSups: ComputedRef<Record<string, ISupplementary>> = computed(() => {
 
   // Also surface code links captured from metadata scrapers.
   for (const [index, codeRaw] of (props.entity.codes || []).entries()) {
-    let url = "";
-    let isOfficial = false;
-    try {
-      const parsed = JSON.parse(codeRaw) as { url?: string; isOfficial?: boolean };
-      url = `${parsed?.url || ""}`.trim();
-      isOfficial = Boolean(parsed?.isOfficial);
-    } catch {
-      url = `${codeRaw || ""}`.trim();
-    }
+    const { url, isOfficial, label } = parseCodeLink(codeRaw);
 
     if (!url || !/^https?:\/\//i.test(url)) {
       continue;
@@ -67,14 +59,67 @@ const onlineSups: ComputedRef<Record<string, ISupplementary>> = computed(() => {
 
     onlineSups[`code-${index}-${url}`] = {
       _id: `auto-generated-code-${index}`,
-      name: isOfficial ? "Official Code" : "Code",
+      name: label || (isOfficial ? "Official Code" : "Code"),
       url,
     };
   }
   return onlineSups;
 });
 
+const parseCodeLink = (codeRaw: string) => {
+  let url = "";
+  let isOfficial = false;
+  let name = "";
+
+  try {
+    const parsed = JSON.parse(codeRaw) as {
+      url?: string;
+      code?: string;
+      link?: string;
+      repo?: string;
+      repository?: string;
+      name?: string;
+      isOfficial?: boolean;
+    };
+    url = `${parsed?.url || parsed?.code || parsed?.link || parsed?.repo || parsed?.repository || ""}`.trim();
+    name = `${parsed?.name || ""}`.trim();
+    isOfficial = Boolean(parsed?.isOfficial);
+  } catch {
+    url = `${codeRaw || ""}`.trim();
+  }
+
+  if (url && !/^https?:\/\//i.test(url) && /^(github\.com|gitlab\.com)\//i.test(url)) {
+    url = `https://${url}`;
+  }
+
+  return {
+    url,
+    isOfficial,
+    label: name || formatCodeLabel(url, isOfficial),
+  };
+};
+
+const formatCodeLabel = (url: string, isOfficial: boolean) => {
+  try {
+    const parsed = new URL(url);
+    const pathParts = parsed.pathname.split("/").filter(Boolean);
+    if (parsed.hostname.toLowerCase().includes("github.com") && pathParts.length >= 2) {
+      return `${pathParts[0]}/${pathParts[1]}`;
+    }
+    if (pathParts.length > 0) {
+      return `${parsed.hostname}/${pathParts.slice(0, 2).join("/")}`;
+    }
+    return parsed.hostname;
+  } catch {
+    return isOfficial ? "Official Code" : "Code";
+  }
+};
+
 const onClicked = async (url: string) => {
+  if (["http", "https"].includes(getProtocol(url))) {
+    PLAPI.fileService.open(url);
+    return;
+  }
   PLAPI.fileService.open(await PLAPI.fileService.access(url, true));
 };
 
@@ -146,7 +191,7 @@ const onRenameSup = (event: Event, id: string) => {
           @click="onClicked(sup.url)"
           @contextmenu="(e: MouseEvent) => onRightClicked(e, sup._id)"
         > 
-          <BIconGithub class="text-xs my-auto" v-if="sup.url.includes('github')" />
+          <BIconGithub class="text-xs my-auto" v-if="sup.url.toLowerCase().includes('github')" />
           <BIconLink class="text-xs my-auto" v-else />
           <div class="text-xxs my-auto" v-if="editingId !== sup._id">
             {{ sup.name }}
