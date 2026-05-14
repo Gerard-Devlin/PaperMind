@@ -61,6 +61,7 @@ const headerRef = ref<HTMLElement | null>(null);
 const dividerRef = ref<HTMLElement | null>(null);
 const contentRef = ref<HTMLElement | null>(null);
 const footerRef = ref<HTMLElement | null>(null);
+const darkMode = ref(false);
 
 // ====================
 // State
@@ -998,6 +999,8 @@ disposable(
 
 onMounted(() => {
   nextTick(async () => {
+    darkMode.value =
+      await PLMainAPI.windowProcessManagementService.isDarkMode();
     await checkLinkedFolder();
     await applyLaunchMode();
   });
@@ -1144,7 +1147,7 @@ onMounted(() => {
                       v-if="row.role !== 'other'"
                       class="role-badge ml-1 inline-flex h-4 items-center rounded border border-neutral-300 px-1 text-[10px] font-normal leading-none text-neutral-500 dark:border-neutral-600 dark:text-neutral-400"
                       :style="
-                        row.role === 'proposed'
+                        darkMode && row.role === 'proposed'
                           ? {
                               borderColor: '#d4d4d4',
                               color: '#d4d4d4',

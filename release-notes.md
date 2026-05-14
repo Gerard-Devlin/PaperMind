@@ -1,14 +1,12 @@
-## 3.8.0
+## 4.0.0
 
-1. Improve: author names now open Google Scholar author search/profile results directly.
-2. Improve: author Scholar lookup uses the exact author name in Google Scholar profile search.
-3. New Feature: multi-provider model integration for Ask / AI Tag / Embedding.
-4. New Feature: provider-level API key management in semantic settings (single-page workflow).
-5. New Feature: per-capability provider + model selection (Ask / Embedding / Tag) with model list refresh.
-6. New Feature: provider health indicators based on real connectivity checks.
-7. Improve: full-document chunked embedding + pooled vectors for better long-paper semantic recall.
-8. Improve: Ask evidence extraction with context profiles (fast / balanced / detailed).
-9. Refactor: compare workflow removed to simplify Ask interaction.
+1. New Feature: Experiment Compare for selected papers.
+2. New Feature: compare methods, baselines, settings, datasets, and numeric metrics in a paper-style table.
+3. New Feature: Quickpaste Compare mode with toolbar, right-click, shortcut, and previous-result restore.
+4. New Feature: fuller LaTeX table copy with caption, paper legend, notes, and warnings.
+5. Improve: full-text experiment table extraction for RAG-based comparison without screenshot OCR.
+6. Improve: dynamic Compare result layout and dark-mode table readability.
+7. Improve: continued full-document chunking and query-aware evidence retrieval for Ask and Compare.
 
 ## 3.6.1
 

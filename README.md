@@ -9,7 +9,7 @@
 <br />
 <br />
 
-<img src="https://img.shields.io/badge/PaperMind-v3.8.0-0f766e?style=for-the-badge&labelColor=111827" />
+<img src="https://img.shields.io/badge/PaperMind-v4.0.0-0f766e?style=for-the-badge&labelColor=111827" />
 <img src="https://img.shields.io/badge/Ask%20%2B%20RAG-Research%20Workflow-7c3aed?style=for-the-badge&labelColor=111827" />
 <img src="https://img.shields.io/badge/PGlite%20%2B%20pgvector-Semantic%20Indexing-16a34a?style=for-the-badge&labelColor=111827" />
 <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-374151?style=for-the-badge&labelColor=111827" />
@@ -33,6 +33,8 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 - Improved evidence mapping chain to reduce repeated, weak, or irrelevant quote reuse.
 - Full-text chunked embedding with pooled document vectors for better long-paper semantic coverage.
 - Query-aware evidence excerpt assembly for Ask answers, improving metric/value retrieval (for example PSNR/SSIM) from full paper context.
+- Experiment Compare for selected papers: extract full-text experiment tables, align shared datasets and metrics, and compare proposed methods against their baselines.
+- Quickpaste Compare mode with paper-style comparison tables, retained paper context, and LaTeX table export.
 - Double-click citation markers to open the corresponding source PDF directly.
 - One-click answer copy with success-check interaction.
 - Quickpaste Ask layout, height, and footer interaction refinements.
@@ -44,6 +46,10 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 </p>
 
 <p align="center">
+  <img src="./assets/Compare.png" alt="Compare" width="400">
+</p>
+
+<p align="center">
   <img src="./assets/Bookshelf.png" alt="Bookshelf" width="800">
 </p>
 
@@ -51,16 +57,14 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
   <img src="./assets/Papermind_ai.png" alt="Papermind_ai" width="800">
 </p>
 
-## 3.8.0 Update
+## 4.0.0 Update
 
-- Author names now open Google Scholar author search/profile results directly.
-- Author Scholar lookup uses the exact author name in Google Scholar profile search.
-- Multi-provider model integration for Ask / AI Tag / Embedding.
-- Provider-level API key management in Semantic Search settings.
-- Per-capability provider + model selection flow (Ask / Embedding / Tag).
-- Added Zhipu provider integration with icon and endpoint preset.
-- Provider connectivity indicators (configured + reachable shows success; otherwise failure).
-- Further Ask retrieval improvements with full-document chunking and query-aware context profiles.
+- Added **Experiment Compare** for multi-paper reading workflows.
+- Select multiple papers and compare methods, baselines, settings, datasets, and numeric metrics in one generated experiment table.
+- Compare mode reads full-text experiment table context from the selected papers instead of relying on OCR screenshots.
+- Quickpaste now includes a Compare workflow with keyboard access, restored previous results, dynamic table layout, and right-click entry from the paper library.
+- Copied comparison output is now a fuller LaTeX table snippet with caption, paper legend, notes, and warnings instead of only a bare `tabular`.
+- Continued Ask/RAG improvements for full-document chunking, query-aware evidence extraction, and source-backed answers.
 
 ## 3.6.1 Update
 

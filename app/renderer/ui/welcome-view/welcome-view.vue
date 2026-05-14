@@ -55,7 +55,7 @@ onMounted(async () => {
       class="typing-style text-xl font-bold font-mono mx-auto my-40"
       v-if="isShowSlogan"
     >
-      WELCOME TO PAPERMIND 3.8.0
+      WELCOME TO PAPERMIND 4.0.0
     </div>
 
     <div class="w-[45rem] px-3 mx-auto my-20 flex flex-col" v-else>
@@ -63,7 +63,7 @@ onMounted(async () => {
         <span class="text-3xl my-auto">PAPERMIND</span>
         <span
           class="text-xl bg-neutral-700 text-white dark:bg-neutral-300 dark:text-neutral-800 rounded-md px-2 py-1 my-auto"
-          >3.8.0</span
+          >4.0.0</span
         >
       </div>
 
@@ -78,69 +78,107 @@ onMounted(async () => {
       </div>
 
       <div class="flex flex-col" v-if="language === 'en-GB'">
-        <div class="mx-auto mb-8 font-semibold">Welcome to PaperMind 3.8.0.</div>
-        <div class="mb-2">This release focuses on a cleaner and more reliable model workflow:</div>
+        <div class="mx-auto mb-8 font-semibold">
+          Welcome to PaperMind 4.0.0.
+        </div>
+        <div class="mb-2">
+          This release adds an experiment comparison workflow for paper reading:
+        </div>
         <ul class="list-disc px-4 mx-1">
-          <li class="font-semibold">Author names open exact Google Scholar profile results</li>
-          <li class="font-semibold">Multi-provider support for Ask / Tag / Embedding</li>
-          <li class="font-semibold">Provider-level API key management on one settings page</li>
-          <li class="font-semibold">Per-capability provider and model selection (Ask / Embedding / Tag)</li>
-          <li class="font-semibold">Connectivity-aware provider status indicators</li>
-          <li class="font-semibold">Improved full-document embedding and query-aware evidence retrieval</li>
-          <li class="font-semibold">Compare workflow removed for a simpler Ask experience</li>
+          <li class="font-semibold">
+            Select multiple papers and compare experiment results together
+          </li>
+          <li class="font-semibold">
+            Align methods, baselines, datasets, settings, and numeric metrics
+          </li>
+          <li class="font-semibold">
+            Use full-text experiment table context instead of screenshot OCR
+          </li>
+          <li class="font-semibold">
+            Open Compare from the toolbar, right-click menu, or shortcut
+          </li>
+          <li class="font-semibold">
+            Restore the previous Compare result when reopening Quickpaste
+          </li>
+          <li class="font-semibold">
+            Copy a fuller LaTeX table with caption, paper legend, notes, and
+            warnings
+          </li>
         </ul>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">Model Providers</div>
+        <div class="font-bold text-xl mb-4">Experiment Compare</div>
         <div class="mb-2">
-          You can now configure multiple OpenAI-compatible providers in one place and reuse them across different capabilities.
+          Compare is designed for the common reading task where related papers
+          report different numbers on the same datasets.
         </div>
         <div class="mb-2">
-          Supported providers in this release include Qwen, OpenAI, DeepSeek, Moonshot, and Zhipu.
+          PaperMind collects the selected papers' full-text experiment evidence,
+          then generates a paper-style comparison table across proposed methods
+          and baselines.
         </div>
 
         <hr class="my-8" />
         <div class="font-bold text-xl mb-4">Semantic + Ask Improvements</div>
         <div class="mb-2">
-          Embedding now uses full-document chunking and pooled vectors, improving long-paper coverage.
+          Ask and Compare both benefit from full-document chunking and
+          query-aware evidence retrieval.
         </div>
         <div class="mb-2">
-          Ask evidence extraction is query-aware and supports lightweight / balanced / detailed context profiles.
+          The copied Compare output includes LaTeX table context so it is easier
+          to reuse in notes, drafts, and paper writing.
         </div>
 
         <hr class="my-8" />
-        <div>Thanks for using PaperMind 3.8.0.</div>
+        <div>Thanks for using PaperMind 4.0.0.</div>
       </div>
 
       <div class="flex flex-col" v-else>
-        <div class="mx-auto mb-8 font-semibold">欢迎来到 PaperMind 3.8.0。</div>
-        <div class="mb-2">本次版本重点升级了模型配置与问答检索链路：</div>
+        <div class="mx-auto mb-8 font-semibold">欢迎来到 PaperMind 4.0.0。</div>
+        <div class="mb-2">本次版本新增了面向读论文流程的实验对比功能：</div>
         <ul class="list-disc px-4 mx-1">
-          <li class="font-semibold">点击作者名可用精确姓名打开 Google Scholar 作者入口</li>
-          <li class="font-semibold">支持多模型供应商接入（Ask / Tag / Embedding）</li>
-          <li class="font-semibold">同一页面统一管理供应商 API Key</li>
-          <li class="font-semibold">Ask / Embedding / Tag 分别可选供应商与模型</li>
-          <li class="font-semibold">供应商状态支持连通性指示</li>
-          <li class="font-semibold">全文分块 embedding + 查询感知证据提取</li>
-          <li class="font-semibold">移除 compare 流程，Ask 体验更聚焦</li>
+          <li class="font-semibold">选择多篇论文后，一起对比实验结果</li>
+          <li class="font-semibold">
+            自动整理方法、baseline、实验设置、数据集与数值指标
+          </li>
+          <li class="font-semibold">
+            基于论文全文中的实验表格文本，不依赖截图 OCR
+          </li>
+          <li class="font-semibold">
+            可从顶部工具栏、右键菜单或快捷键打开 Compare
+          </li>
+          <li class="font-semibold">
+            重新打开 Quickpaste 时保留上一次对比结果
+          </li>
+          <li class="font-semibold">
+            复制时导出更完整的 LaTeX 表格，包含 caption、论文编号说明、notes 和
+            warnings
+          </li>
         </ul>
 
         <hr class="my-8" />
-        <div class="font-bold text-xl mb-4">模型供应商</div>
+        <div class="font-bold text-xl mb-4">实验对比</div>
         <div class="mb-2">
-          现在可以在同一处配置多个 OpenAI 兼容供应商，并在不同能力之间复用。
+          Compare 适合几篇相关论文在同一数据集上报告不同指标、不同 baseline
+          的阅读场景。
         </div>
         <div class="mb-2">
-          本版本已支持 Qwen、OpenAI、DeepSeek、Moonshot、Zhipu。
+          PaperMind
+          会读取选中论文的全文实验上下文，生成接近论文实验表的横向对比结果。
         </div>
 
         <hr class="my-8" />
         <div class="font-bold text-xl mb-4">语义检索与 Ask 优化</div>
-        <div class="mb-2">Embedding 改为全文分块与向量池化，长文召回更稳定。</div>
-        <div class="mb-2">Ask 证据提取改为查询感知，并支持快速/平衡/详细上下文档位。</div>
+        <div class="mb-2">
+          Ask 和 Compare 都会使用全文分块与查询感知证据检索。
+        </div>
+        <div class="mb-2">
+          复制 Compare 结果时会带上 LaTeX
+          表格上下文，更方便放进笔记、草稿或论文写作中。
+        </div>
 
         <hr class="my-8" />
-        <div>感谢使用 PaperMind 3.8.0。</div>
+        <div>感谢使用 PaperMind 4.0.0。</div>
       </div>
 
       <div
