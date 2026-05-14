@@ -476,8 +476,69 @@ const compareSelectedPapers = async () => {
   }
 };
 
+const escapeLatex = (value: string) =>
+  `${value || ""}`
+    .replace(/\\/g, "\\textbackslash{}")
+    .replace(/&/g, "\\&")
+    .replace(/%/g, "\\%")
+    .replace(/\$/g, "\\$")
+    .replace(/#/g, "\\#")
+    .replace(/_/g, "\\_")
+    .replace(/\{/g, "\\{")
+    .replace(/\}/g, "\\}")
+    .replace(/~/g, "\\textasciitilde{}")
+    .replace(/\^/g, "\\textasciicircum{}");
+
+const buildCompareCopyLatex = (result: ExperimentCompareResult) => {
+  const table = `${result.latex || ""}`.trim();
+  if (!table) {
+    return "";
+  }
+
+  const paperLegend = (result.papers || [])
+    .map((paper, index) => `[${index + 1}] ${escapeLatex(paper.title || "")}`)
+    .filter(Boolean)
+    .join("; ");
+  const notes = (result.notes || [])
+    .map((note) => escapeLatex(note))
+    .filter(Boolean)
+    .join("; ");
+  const warnings = (result.warnings || [])
+    .map((warning) => escapeLatex(warning))
+    .filter(Boolean)
+    .join("; ");
+  const footnoteLines = [
+    paperLegend ? `\\textbf{Papers.} ${paperLegend}.` : "",
+    notes ? `\\textbf{Notes.} ${notes}.` : "",
+    warnings ? `\\textbf{Warnings.} ${warnings}.` : "",
+  ].filter(Boolean);
+
+  return [
+    "% Requires \\usepackage{booktabs}",
+    "\\begin{table*}[t]",
+    "\\centering",
+    `\\caption{${escapeLatex(result.title || "Experiment comparison")}}`,
+    "\\small",
+    table,
+    footnoteLines.length > 0
+      ? [
+          "\\vspace{0.5em}",
+          "\\begin{minipage}{\\linewidth}",
+          "\\footnotesize",
+          footnoteLines.join("\\\\\n"),
+          "\\end{minipage}",
+        ].join("\n")
+      : "",
+    "\\end{table*}",
+  ]
+    .filter(Boolean)
+    .join("\n");
+};
+
 const copyCompareLatex = async () => {
-  const text = `${compareResult.value?.latex || ""}`.trim();
+  const text = compareResult.value
+    ? buildCompareCopyLatex(compareResult.value)
+    : "";
   if (!text) {
     return;
   }
@@ -1081,7 +1142,16 @@ onMounted(() => {
                     <span>{{ row.method }}</span>
                     <span
                       v-if="row.role !== 'other'"
-                      class="ml-1 rounded border border-neutral-300 px-1 text-[10px] font-normal text-neutral-500 dark:border-neutral-600 dark:text-neutral-400"
+                      class="role-badge ml-1 inline-flex h-4 items-center rounded border border-neutral-300 px-1 text-[10px] font-normal leading-none text-neutral-500 dark:border-neutral-600 dark:text-neutral-400"
+                      :style="
+                        row.role === 'proposed'
+                          ? {
+                              borderColor: '#d4d4d4',
+                              color: '#d4d4d4',
+                              backgroundColor: 'transparent',
+                            }
+                          : undefined
+                      "
                     >
                       {{ row.role }}
                     </span>
