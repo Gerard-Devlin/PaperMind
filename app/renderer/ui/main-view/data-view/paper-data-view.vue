@@ -125,7 +125,7 @@ disposable(
         selectedIndex.length === 1 &&
         prefState.mainviewType === "tableandpreview"
       ) {
-        const target = paperEntities.value[selectedIndex[0]]
+        const target = paperEntities.value[selectedIndex[0]];
         if (!target.defaultSup) {
           displayingURL.value = "";
           return;
@@ -188,7 +188,8 @@ const onItemRightClicked = (selectedIndex: number[]) => {
   const categorizeList = getCategorizeList(selectedIndex);
   PLMainAPI.contextMenuService.showPaperDataMenu(
     uiState.selectedIndex.length === 1,
-    categorizeList
+    categorizeList,
+    selectedIndex.length >= 2
   );
 };
 

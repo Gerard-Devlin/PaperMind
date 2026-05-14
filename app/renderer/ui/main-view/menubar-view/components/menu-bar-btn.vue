@@ -8,6 +8,7 @@ import {
   BIconGrid3x2,
   BIconListUl,
   BIconPencilSquare,
+  BIconTable,
   BIconTrash,
 } from "bootstrap-icons-vue";
 
@@ -41,6 +42,7 @@ const btnIcons: Record<string, any> = {
   tableview: BIconGrid3x2,
   preference: BIconGear,
   tablereaderview: BIconAspectRatio,
+  compareexperiments: BIconTable,
 };
 </script>
 

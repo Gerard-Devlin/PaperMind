@@ -11,6 +11,7 @@ export interface IUIStateServiceState {
   // =========================================
   // Main Paper/Feed panel
   contentType: string;
+  sidebarPanel: "library" | "feed" | "ask";
   mainViewFocused: boolean;
   editViewShown: boolean;
   feedEditViewShown: boolean;
@@ -20,6 +21,7 @@ export interface IUIStateServiceState {
   overlayNoticationShown: boolean;
   renderRequired: number;
   feedEntityAddingStatus: number;
+  askExperimentCompareRequest: number;
 
   entitiesReloaded: number;
 
@@ -71,6 +73,7 @@ export class UIStateService extends PiniaEventable<IUIStateServiceState> {
   constructor() {
     super("uiStateService", {
       contentType: "library",
+      sidebarPanel: "library",
       mainViewFocused: true,
       editViewShown: false,
       feedEditViewShown: false,
@@ -80,6 +83,7 @@ export class UIStateService extends PiniaEventable<IUIStateServiceState> {
       overlayNoticationShown: false,
       renderRequired: -1,
       feedEntityAddingStatus: 0,
+      askExperimentCompareRequest: 0,
 
       entitiesReloaded: 0,
 
@@ -203,6 +207,7 @@ export class UIStateService extends PiniaEventable<IUIStateServiceState> {
   resetUIStates() {
     const patch = {
       contentType: "library",
+      sidebarPanel: "library",
       mainViewFocused: true,
       editViewShown: false,
       feedEditViewShown: false,
@@ -212,6 +217,7 @@ export class UIStateService extends PiniaEventable<IUIStateServiceState> {
       candidatesViewShown: false,
       renderRequired: -1,
       feedEntityAddingStatus: 0,
+      askExperimentCompareRequest: 0,
       selectedIndex: [],
       selectedIds: [],
       selectedPaperEntities: [],

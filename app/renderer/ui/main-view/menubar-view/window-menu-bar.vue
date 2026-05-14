@@ -125,6 +125,16 @@ disposable(
         @event:click="emits('event:click', 'flag')"
         :disabled="disableMultiBtn"
       />
+      <MenuBarBtn
+        id="compare-experiments-btn"
+        btnName="compareexperiments"
+        @event:click="emits('event:click', 'compare-experiments')"
+        :disabled="
+          uiState.contentType !== 'library' ||
+          uiState.selectedPaperEntities.length < 2
+        "
+        :with-tooltip="false"
+      />
       <div
         class="flex rounded-md hover:bg-neutral-100 hover:dark:bg-neutral-600"
         style="margin-left: 0.5rem !important; margin-right: 0.5rem !important"

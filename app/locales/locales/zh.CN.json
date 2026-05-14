@@ -80,6 +80,7 @@
     "rescrape": "抓取元数据",
     "rescrapefrom": "从指定源抓取",
     "fuzzyscrape": "模糊抓取",
+    "compareexperiments": "实验对比",
     "removefrom": "从中移除",
     "delete": "删除",
     "edit": "编辑",
@@ -230,7 +231,8 @@
     "hotkeysOpenPDFLabel": "打开 PDF",
     "hotkeysEditLabel": "编辑元数据",
     "hotkeysPluginLabel": "打开快速引用插件",
-    "hotkeysAskLabel": "打开 Ask 模式"
+    "hotkeysAskLabel": "打开 Ask 模式",
+    "hotkeysCompareLabel": "打开实验对比"
   },
   "confirmation": {
     "title": "确认",
@@ -247,6 +249,9 @@
     "citekey": "引用键",
     "askHint": "向你的文献库提问。PaperMind 会先检索相关论文，再给出带引用的回答。",
     "askPlaceholder": "提问...",
+    "compareMode": "Compare",
+    "comparePlaceholder": "可选对比要求，例如只看某一数据集上的",
+    "selectedPapers": "{count} 篇论文",
     "askLibrary": "Ask 文献库",
     "answer": "回答",
     "answering": "回答中",
@@ -256,7 +261,14 @@
     "askNoSemanticResultFound": "未找到语义检索结果。",
     "askNoSemanticResultTryRebuild": "无语义检索结果（可尝试重建索引）",
     "searchInGoogleScholar": "在 Google Scholar 中搜索...",
-    "askFailedPrefix": "Ask 失败"
+    "askFailedPrefix": "Ask 失败",
+    "compareNoTable": "未在选中的论文中找到明确的实验表格。",
+    "compareSelectAtLeastTwo": "请先在文献库里选择至少两篇论文。",
+    "compareLoadFailed": "选中的论文没有成功载入，请重新选择后再试。",
+    "compareReading": "正在读取全文实验表格...",
+    "compareNoTableExtracted": "没有从选中的论文中提取到实验表格。",
+    "compareFailedPrefix": "对比失败",
+    "copyLatex": "复制 LaTeX"
   },
   "presetting": {
     "presetting": "预设",

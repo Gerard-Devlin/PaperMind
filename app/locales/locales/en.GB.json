@@ -80,6 +80,7 @@
     "rescrape": "Scrape",
     "rescrapefrom": "Scrape from",
     "fuzzyscrape": "Fuzzily Scrape",
+    "compareexperiments": "Compare Experiments",
     "removefrom": "Remove from",
     "delete": "Delete",
     "edit": "Edit",
@@ -230,7 +231,8 @@
     "hotkeysOpenPDFLabel": "Open PDF",
     "hotkeysEditLabel": "Edit Metadata",
     "hotkeysPluginLabel": "Open Quick Reference Plugin",
-    "hotkeysAskLabel": "Open Ask Mode"
+    "hotkeysAskLabel": "Open Ask Mode",
+    "hotkeysCompareLabel": "Open Experiment Compare"
   },
   "confirmation": {
     "title": "Confirmation",
@@ -247,6 +249,9 @@
     "citekey": "Cite Key",
     "askHint": "Ask your library. PaperMind will retrieve related papers first, then answer with citations.",
     "askPlaceholder": "Ask...",
+    "compareMode": "Compare",
+    "comparePlaceholder": "Optional compare instruction, e.g. only one dataset",
+    "selectedPapers": "{count} papers",
     "askLibrary": "Ask library",
     "answer": "Answer",
     "answering": "Answering",
@@ -256,7 +261,14 @@
     "askNoSemanticResultFound": "No semantic result found.",
     "askNoSemanticResultTryRebuild": "No semantic result (try Rebuild Index)",
     "searchInGoogleScholar": "Search in Google Scholar...",
-    "askFailedPrefix": "Ask failed"
+    "askFailedPrefix": "Ask failed",
+    "compareNoTable": "No explicit experiment table was found in the selected papers.",
+    "compareSelectAtLeastTwo": "Select at least two papers in the library first.",
+    "compareLoadFailed": "Selected papers could not be loaded. Please select them again.",
+    "compareReading": "Reading full-text experiment tables...",
+    "compareNoTableExtracted": "No experiment table was extracted from the selected papers.",
+    "compareFailedPrefix": "Compare failed",
+    "copyLatex": "Copy LaTeX"
   },
   "presetting": {
     "presetting": "Presetting",

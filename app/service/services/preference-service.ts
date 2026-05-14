@@ -40,7 +40,6 @@ export interface IPreferenceStore {
   syncAPIKey: string;
   syncEmail: string;
 
-
   syncFileStorage: string;
   webdavURL: string;
   webdavUsername: string;
@@ -67,6 +66,7 @@ export interface IPreferenceStore {
   shortcutFlag: string;
   shortcutCopyKey: string;
   shortcutAsk: string;
+  shortcutCompare: string;
 
   shortcutDelete: string;
 
@@ -80,8 +80,12 @@ export interface IPreferenceStore {
   mainviewShortAuthor: boolean;
 
   pluginLinkedFolder: string;
-  quickpasteLaunchMode: "cite" | "ask";
+  quickpasteLaunchMode: "cite" | "ask" | "compare";
   quickpasteLastAskAnswer: string;
+  quickpasteComparePaperIds: string[];
+  quickpasteCompareRequestAt: number;
+  quickpasteLastCompareInstruction: string;
+  quickpasteLastCompareResult: Record<string, any> | null;
 
   selectedPDFViewer: string;
   selectedPDFViewerPath: string;

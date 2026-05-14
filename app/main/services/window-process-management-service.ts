@@ -308,9 +308,9 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
       entry: "index_quickpaste.html",
       title: "Quickpaste",
       width: 600,
-      height: 76,
+      height: 88,
       minWidth: 600,
-      minHeight: 76,
+      minHeight: 88,
       maxWidth: 600,
       maxHeight: 620,
       useContentSize: true,
@@ -335,15 +335,15 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
 
     this.create(Process.quickpaste, options, {
       blur: (win: BrowserWindow) => {
-        win.setSize(600, 76);
+        win.setSize(600, 88);
         win.hide();
       },
 
       focus: (win: BrowserWindow) => {
-        win.setSize(600, 76);
+        win.setSize(600, 88);
       },
       show: (win: BrowserWindow) => {
-        win.setSize(600, 76);
+        win.setSize(600, 88);
       },
     });
 

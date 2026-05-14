@@ -80,6 +80,7 @@
     "rescrape": "抓取元数据",
     "rescrapefrom": "从指定源抓取",
     "fuzzyscrape": "模糊抓取",
+    "compareexperiments": "實驗對比",
     "removefrom": "从中移除",
     "delete": "删除",
     "edit": "编辑",
@@ -225,7 +226,8 @@
     "hotkeysDuplicateKeysInfo": "该快捷键已被其他功能使用。",
     "hotkeysOpenPDFLabel": "打开 PDF",
     "hotkeysEditLabel": "编辑元数据",
-    "hotkeysPluginLabel": "打开快速引用插件"
+    "hotkeysPluginLabel": "打开快速引用插件",
+    "hotkeysCompareLabel": "開啟實驗對比"
   },
   "confirmation": {
     "title": "确认",
@@ -239,7 +241,24 @@
     "newfolder": "新建文件夹",
     "singleref": "单条引用",
     "allref": "全部引用",
-    "citekey": "引用键"
+    "citekey": "引用键",
+    "askLibrary": "Ask 文献库",
+    "askPlaceholder": "Ask 文献库",
+    "askThinking": "正在思考...",
+    "askAnswerEmpty": "没有生成答案，请换个问法再试。",
+    "askFailedPrefix": "回答失败",
+    "answering": "回答中",
+    "answer": "回答",
+    "compareMode": "Compare",
+    "comparePlaceholder": "可選對比要求，例如只看某一資料集上的",
+    "selectedPapers": "{count} 篇論文",
+    "compareNoTable": "未在選中的論文中找到明確的實驗表格。",
+    "compareSelectAtLeastTwo": "請先在文獻庫裡選擇至少兩篇論文。",
+    "compareLoadFailed": "選中的論文沒有成功載入，請重新選擇後再試。",
+    "compareReading": "正在讀取全文實驗表格...",
+    "compareNoTableExtracted": "沒有從選中的論文中提取到實驗表格。",
+    "compareFailedPrefix": "對比失敗",
+    "copyLatex": "複製 LaTeX"
   },
   "presetting": {
     "presetting": "预设",

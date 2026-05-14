@@ -72,6 +72,7 @@ export interface IPreferenceStore {
   shortcutFlag: string;
   shortcutCopyKey: string;
   shortcutAsk: string;
+  shortcutCompare: string;
 
   shortcutDelete: string;
 
@@ -85,8 +86,12 @@ export interface IPreferenceStore {
   mainviewShortAuthor: boolean;
 
   pluginLinkedFolder: string;
-  quickpasteLaunchMode: "cite" | "ask";
+  quickpasteLaunchMode: "cite" | "ask" | "compare";
   quickpasteLastAskAnswer: string;
+  quickpasteComparePaperIds: string[];
+  quickpasteCompareRequestAt: number;
+  quickpasteLastCompareInstruction: string;
+  quickpasteLastCompareResult: Record<string, any> | null;
 
   selectedPDFViewer: string;
   selectedPDFViewerPath: string;
@@ -224,6 +229,7 @@ const _defaultPreferences: IPreferenceStore = {
   shortcutFlag: `${cmdOrCtrl}+F`,
   shortcutCopyKey: `${cmdOrCtrl}+Shift+K`,
   shortcutAsk: `${cmdOrCtrl}+Shift+A`,
+  shortcutCompare: `${cmdOrCtrl}+Shift+M`,
 
   shortcutDelete: "Delete",
 
@@ -239,6 +245,10 @@ const _defaultPreferences: IPreferenceStore = {
   pluginLinkedFolder: "",
   quickpasteLaunchMode: "cite",
   quickpasteLastAskAnswer: "",
+  quickpasteComparePaperIds: [],
+  quickpasteCompareRequestAt: 0,
+  quickpasteLastCompareInstruction: "",
+  quickpasteLastCompareResult: null,
 
   selectedPDFViewer: "default",
   selectedPDFViewerPath: "",
@@ -305,7 +315,10 @@ function _migrate(
   }
 
   const legacyDefaultFolder = join(os.homedir(), "Documents", "paperlib");
-  if (!store.has("appLibFolder") || store.get("appLibFolder") === legacyDefaultFolder) {
+  if (
+    !store.has("appLibFolder") ||
+    store.get("appLibFolder") === legacyDefaultFolder
+  ) {
     store.set("appLibFolder", _defaultPreferences.appLibFolder);
   }
 
@@ -396,7 +409,8 @@ function _migrate(
   if (!store.has("qwenAskBaseURL")) {
     store.set(
       "qwenAskBaseURL",
-      (store.get("qwenChatBaseURL") as string) || _defaultPreferences.qwenAskBaseURL
+      (store.get("qwenChatBaseURL") as string) ||
+        _defaultPreferences.qwenAskBaseURL
     );
   }
   if (!store.has("qwenAskModel")) {
@@ -426,17 +440,46 @@ function _migrate(
   if (!store.has("qwenAITagBaseURL")) {
     store.set(
       "qwenAITagBaseURL",
-      (store.get("qwenChatBaseURL") as string) || _defaultPreferences.qwenAITagBaseURL
+      (store.get("qwenChatBaseURL") as string) ||
+        _defaultPreferences.qwenAITagBaseURL
     );
   }
   if (!store.has("qwenAITagModel")) {
     store.set(
       "qwenAITagModel",
-      (store.get("qwenChatModel") as string) || _defaultPreferences.qwenAITagModel
+      (store.get("qwenChatModel") as string) ||
+        _defaultPreferences.qwenAITagModel
     );
   }
   if (!store.has("chatModelListCache")) {
     store.set("chatModelListCache", {});
+  }
+  if (!store.has("shortcutCompare")) {
+    store.set("shortcutCompare", _defaultPreferences.shortcutCompare);
+  }
+  if (!store.has("quickpasteLastCompareInstruction")) {
+    store.set(
+      "quickpasteLastCompareInstruction",
+      _defaultPreferences.quickpasteLastCompareInstruction
+    );
+  }
+  if (!store.has("quickpasteLastCompareResult")) {
+    store.set(
+      "quickpasteLastCompareResult",
+      _defaultPreferences.quickpasteLastCompareResult
+    );
+  }
+  if (!store.has("quickpasteComparePaperIds")) {
+    store.set(
+      "quickpasteComparePaperIds",
+      _defaultPreferences.quickpasteComparePaperIds
+    );
+  }
+  if (!store.has("quickpasteCompareRequestAt")) {
+    store.set(
+      "quickpasteCompareRequestAt",
+      _defaultPreferences.quickpasteCompareRequestAt
+    );
   }
 
   store.set("preferenceVersion", preferenceVersion);
@@ -516,4 +559,3 @@ export class PreferenceService extends Eventable<IPreferenceStore> {
     await keytar.setPassword("papermind", key, pwd);
   }
 }
-

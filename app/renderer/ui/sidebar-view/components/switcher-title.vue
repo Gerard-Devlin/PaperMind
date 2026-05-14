@@ -1,16 +1,27 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 const props = defineProps({
   titles: {
     type: Object as () => Array<String>,
     required: true,
   },
+  selectedIndex: {
+    type: Number,
+    default: 0,
+  },
 });
 
 const emits = defineEmits(["changed"]);
 
-const selected = ref(0);
+const selected = ref(props.selectedIndex);
+
+watch(
+  () => props.selectedIndex,
+  (newValue) => {
+    selected.value = newValue;
+  }
+);
 </script>
 
 <template>

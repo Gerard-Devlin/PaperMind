@@ -69,6 +69,7 @@ export interface IContextMenuServiceState {
   dataContextMenuScrapeClicked: number;
   dataContextMenuFuzzyScrapeClicked: number;
   dataContextMenuGenerateAITagsClicked: number;
+  dataContextMenuCompareExperimentsClicked: number;
   dataContextMenuDeleteClicked: number;
   dataContextMenuFlagClicked: number;
   dataContextMenuExportBibTexClicked: number;
@@ -119,6 +120,7 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
       dataContextMenuScrapeClicked: 0,
       dataContextMenuFuzzyScrapeClicked: 0,
       dataContextMenuGenerateAITagsClicked: 0,
+      dataContextMenuCompareExperimentsClicked: 0,
       dataContextMenuDeleteClicked: 0,
       dataContextMenuFlagClicked: 0,
       dataContextMenuExportBibTexClicked: 0,
@@ -180,7 +182,11 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
     false,
     "ContextMenu"
   )
-  showPaperDataMenu(allowEdit: boolean, categorizeList: CategorizerMenuItem[]) {
+  showPaperDataMenu(
+    allowEdit: boolean,
+    categorizeList: CategorizerMenuItem[],
+    allowCompare = false
+  ) {
     let removeFolderMenuTemplate: MenuItemConstructorOptions[] = [];
     let removeTagMenuTemplate: MenuItemConstructorOptions[] = [];
     categorizeList.forEach(({ type, name, id }) => {
@@ -226,7 +232,9 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
     const template: MenuItemConstructorOptions[] = [
       {
         label: this._locales.t("menu.open"),
-        accelerator: PLMainAPILocal.preferenceService.get("shortcutOpen") as string,
+        accelerator: PLMainAPILocal.preferenceService.get(
+          "shortcutOpen"
+        ) as string,
         click: () => {
           this.fire("dataContextMenuOpenClicked");
         },
@@ -242,7 +250,9 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
       { type: "separator" },
       {
         label: this._locales.t("menu.rescrape"),
-        accelerator: PLMainAPILocal.preferenceService.get("shortcutScrape") as string,
+        accelerator: PLMainAPILocal.preferenceService.get(
+          "shortcutScrape"
+        ) as string,
         click: () => {
           this.fire("dataContextMenuScrapeClicked");
         },
@@ -265,25 +275,38 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
           this.fire("dataContextMenuGenerateAITagsClicked");
         },
       },
+      {
+        label: this._locales.t("menu.compareexperiments"),
+        enabled: allowCompare,
+        click: () => {
+          this.fire("dataContextMenuCompareExperimentsClicked");
+        },
+      },
       { type: "separator" },
       {
         label: this._locales.t("menu.edit"),
         enabled: allowEdit,
-        accelerator: PLMainAPILocal.preferenceService.get("shortcutEdit") as string,
+        accelerator: PLMainAPILocal.preferenceService.get(
+          "shortcutEdit"
+        ) as string,
         click: () => {
           this.fire("dataContextMenuEditClicked");
         },
       },
       {
         label: this._locales.t("menu.delete"),
-        accelerator: PLMainAPILocal.preferenceService.get("shortcutDelete") as string,
+        accelerator: PLMainAPILocal.preferenceService.get(
+          "shortcutDelete"
+        ) as string,
         click: () => {
           this.fire("dataContextMenuDeleteClicked");
         },
       },
       {
         label: this._locales.t("menu.toggleflag"),
-        accelerator: PLMainAPILocal.preferenceService.get("shortcutFlag") as string,
+        accelerator: PLMainAPILocal.preferenceService.get(
+          "shortcutFlag"
+        ) as string,
         click: () => {
           this.fire("dataContextMenuFlagClicked");
         },
@@ -427,7 +450,9 @@ export class ContextMenuService extends Eventable<IContextMenuServiceState> {
     const template: MenuItemConstructorOptions[] = [
       {
         label: this._locales.t("menu.open"),
-        accelerator: PLMainAPILocal.preferenceService.get("shortcutOpen") as string,
+        accelerator: PLMainAPILocal.preferenceService.get(
+          "shortcutOpen"
+        ) as string,
         click: () => {
           this.fire("dataContextMenuOpenClicked");
         },

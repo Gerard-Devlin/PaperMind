@@ -211,7 +211,10 @@ const openSelectedEntities = () => {
       if (!paperEntity.defaultSup) {
         return;
       }
-      const fileURL = await PLAPI.fileService.access(paperEntity.supplementaries[paperEntity.defaultSup].url, true);
+      const fileURL = await PLAPI.fileService.access(
+        paperEntity.supplementaries[paperEntity.defaultSup].url,
+        true
+      );
 
       PLAPI.fileService.open(fileURL);
     });
@@ -228,15 +231,16 @@ const showInFinderSelectedEntities = () => {
       if (!paperEentity.defaultSup) {
         return;
       }
-      PLAPI.fileService.showInFinder(paperEentity.supplementaries[paperEentity.defaultSup].url);
+      PLAPI.fileService.showInFinder(
+        paperEentity.supplementaries[paperEentity.defaultSup].url
+      );
     });
   }
 };
 
 const previewSelectedEntities = async () => {
   if (uiState.contentType === "library") {
-
-    const targetPaperEntity = uiState.selectedPaperEntities[0]
+    const targetPaperEntity = uiState.selectedPaperEntities[0];
     if (targetPaperEntity.defaultSup) {
       const fileURL = await PLAPI.fileService.access(
         targetPaperEntity.supplementaries[targetPaperEntity.defaultSup].url,
@@ -244,7 +248,6 @@ const previewSelectedEntities = async () => {
       );
       PLAPI.fileService.preview(fileURL);
     }
-
   }
 };
 
@@ -269,9 +272,7 @@ const reloadSelectedEntities = () => {
     if (paperEntities) {
       for (const index of uiState.selectedIndex) {
         if (paperEntities.value.length > index) {
-          selectedPaperEntities.push(
-            new Entity(paperEntities.value[index])
-          );
+          selectedPaperEntities.push(new Entity(paperEntities.value[index]));
           selectedIds.push(`${paperEntities.value[index]._id}`);
         } else if (uiState.selectedIndex.length === 1) {
           uiState.selectedIndex = [];
@@ -474,6 +475,36 @@ const importFilesFromPicker = async () => {
   await PLAPI.paperService.create(filePaths);
 };
 
+const compareSelectedExperiments = async () => {
+  if (
+    uiState.contentType !== "library" ||
+    uiState.selectedPaperEntities.length < 2
+  ) {
+    return;
+  }
+
+  const selectedIds = uiState.selectedPaperEntities
+    .map((paper) => `${paper._id || ""}`.trim())
+    .filter(Boolean);
+  if (selectedIds.length < 2) {
+    return;
+  }
+
+  await PLMainAPI.preferenceService.set({
+    quickpasteLaunchMode: "compare",
+    quickpasteComparePaperIds: selectedIds,
+    quickpasteLastAskAnswer: "",
+  });
+
+  if (
+    !(await PLMainAPI.windowProcessManagementService.exist(Process.quickpaste))
+  ) {
+    await PLMainAPI.windowProcessManagementService.createQuickpasteRenderer();
+  }
+  await PLMainAPI.windowProcessManagementService.show(Process.quickpaste);
+  await PLMainAPI.windowProcessManagementService.focus(Process.quickpaste);
+};
+
 const onMenuButtonClicked = (command: string) => {
   switch (command) {
     case "rescrape":
@@ -487,6 +518,9 @@ const onMenuButtonClicked = (command: string) => {
       break;
     case "flag":
       flagSelectedEntities();
+      break;
+    case "compare-experiments":
+      void compareSelectedExperiments();
       break;
     case "list-view":
       switchViewType("list");
@@ -604,6 +638,15 @@ disposable(
     "dataContextMenuGenerateAITagsClicked",
     () => {
       void generateAITagsForSelectedEntities();
+    }
+  )
+);
+
+disposable(
+  PLMainAPI.contextMenuService.on(
+    "dataContextMenuCompareExperimentsClicked",
+    () => {
+      void compareSelectedExperiments();
     }
   )
 );

@@ -123,7 +123,10 @@ export class MenuService extends Eventable<IMenuServiceState> {
           {
             label: this._locales.t("menu.close"),
             click: () => {
-              PLMainAPILocal.windowProcessManagementService.hide(Process.renderer, true);
+              PLMainAPILocal.windowProcessManagementService.hide(
+                Process.renderer,
+                true
+              );
             },
           },
         ],
@@ -248,7 +251,7 @@ export class MenuService extends Eventable<IMenuServiceState> {
    * Enable all global shortcuts.
    */
   enableGlobalShortcuts() {
-    const openQuickpaste = async (mode: "cite" | "ask") => {
+    const openQuickpaste = async (mode: "cite" | "ask" | "compare") => {
       this._preferenceService.set({ quickpasteLaunchMode: mode });
       if (
         !PLMainAPILocal.windowProcessManagementService.browserWindows.has(
@@ -274,6 +277,13 @@ export class MenuService extends Eventable<IMenuServiceState> {
     if (askKey && !globalShortcut.isRegistered(askKey as string)) {
       globalShortcut.register(askKey as string, async () => {
         await openQuickpaste("ask");
+      });
+    }
+
+    const compareKey = this._preferenceService.get("shortcutCompare");
+    if (compareKey && !globalShortcut.isRegistered(compareKey as string)) {
+      globalShortcut.register(compareKey as string, async () => {
+        await openQuickpaste("compare");
       });
     }
   }
