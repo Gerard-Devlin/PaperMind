@@ -33,21 +33,13 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
 - Improved evidence mapping chain to reduce repeated, weak, or irrelevant quote reuse.
 - Full-text chunked embedding with pooled document vectors for better long-paper semantic coverage.
 - Query-aware evidence excerpt assembly for Ask answers, improving metric/value retrieval (for example PSNR/SSIM) from full paper context.
-- Experiment Compare for selected papers: extract full-text experiment tables, align shared datasets and metrics, and compare proposed methods against their baselines.
+- **Experiment Compare** for selected papers: extract full-text experiment tables, align shared datasets and metrics, and compare proposed methods against their baselines.
 - Quickpaste Compare mode with paper-style comparison tables, retained paper context, and LaTeX table export.
 - Double-click citation markers to open the corresponding source PDF directly.
 - One-click answer copy with success-check interaction.
 - Quickpaste Ask layout, height, and footer interaction refinements.
 
 ## Screenshots
-
-<p align="center">
-  <img src="./assets/Ask_mode.png" alt="Ask_mode" width="400">
-</p>
-
-<p align="center">
-  <img src="./assets/Compare.png" alt="Compare" width="400">
-</p>
 
 <p align="center">
   <img src="./assets/Bookshelf.png" alt="Bookshelf" width="800">
@@ -57,22 +49,21 @@ I am an undergraduate student who uses Paperlib heavily in daily research readin
   <img src="./assets/Papermind_ai.png" alt="Papermind_ai" width="800">
 </p>
 
-## 4.0.0 Update
+## Research Workflows
 
-- Added **Experiment Compare** for multi-paper reading workflows.
-- Select multiple papers and compare methods, baselines, settings, datasets, and numeric metrics in one generated experiment table.
-- Compare mode reads full-text experiment table context from the selected papers instead of relying on OCR screenshots.
-- Quickpaste now includes a Compare workflow with keyboard access, restored previous results, dynamic table layout, and right-click entry from the paper library.
-- Copied comparison output is now a fuller LaTeX table snippet with caption, paper legend, notes, and warnings instead of only a bare `tabular`.
-- Continued Ask/RAG improvements for full-document chunking, query-aware evidence extraction, and source-backed answers.
+PaperMind is designed for the parts of reading that usually spill across tabs, notes, and spreadsheets.
 
-## 3.6.1 Update
+- **Ask mode** helps turn a local library into a source-backed research assistant: it retrieves relevant papers, answers with citations, and keeps each claim close to the original PDF evidence.
 
-- Welcome page updated to **3.6.1**.
-- Quickpaste Ask interaction polish, including footer visibility and dynamic sizing behavior.
-- Citation hover UX improvements and smoother source-opening flow.
-- Ask evidence-chain quality improvements for more precise per-citation mapping.
-- Full-text indexing and query-aware context extraction upgrades for more precise evidence-grounded numeric answers.
+  <p align="center">
+    <img src="./assets/Ask_mode.png" alt="Ask_mode" width="400">
+  </p>
+
+- **Experiment Compare** is for reading related papers side by side. Select several papers, open Compare, and PaperMind can assemble a paper-style table across shared datasets, metrics, proposed methods, baselines, and experimental settings. The result can also be copied as a fuller LaTeX table snippet for notes or drafts.
+
+  <p align="center">
+    <img src="./assets/Compare.png" alt="Compare" width="400">
+  </p>
 
 ## Why This Fork
 
