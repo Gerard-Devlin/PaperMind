@@ -240,6 +240,22 @@ async function initialize() {
     );
   });
 
+  PLMainAPILocal.windowProcessManagementService.on("destroyed", (v) => {
+    mainRPCService.stopCommunication(
+      v.value,
+      PLMainAPILocal.windowProcessManagementService.browserWindows,
+      PLMainAPILocal.utilityProcessManagementService.utlityProcesses
+    );
+  });
+
+  PLMainAPILocal.utilityProcessManagementService.on("destroyed", (v) => {
+    mainRPCService.stopCommunication(
+      v.value,
+      PLMainAPILocal.windowProcessManagementService.browserWindows,
+      PLMainAPILocal.utilityProcessManagementService.utlityProcesses
+    );
+  });
+
   // ============================================================
   // 7. Once the main renderer process is ready, create the extension process.
   PLMainAPILocal.utilityProcessManagementService.on("serviceReady", (v) => {

@@ -132,6 +132,15 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
 
     this.browserWindows.set(id, new BrowserWindow(windowOptions));
     const win = this.browserWindows.get(id);
+    let didDestroy = false;
+    win.on("closed", () => {
+      if (didDestroy) {
+        return;
+      }
+      didDestroy = true;
+      this.browserWindows.remove(id);
+      this.fire({ destroyed: id });
+    });
 
     win.webContents.on(
       "did-fail-load",
@@ -351,7 +360,6 @@ export class WindowProcessManagementService extends Eventable<IWindowProcessMana
    */
   destroy(windowId: string) {
     this.browserWindows.destroy(windowId);
-    this.fire({ destroyed: windowId });
   }
 
   /**

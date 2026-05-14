@@ -140,13 +140,15 @@ export class MainProcessRPCService extends RPCService {
       has: (id: string) => boolean;
     }
   ): Promise<void> {
+    delete this._protocols[destroyedProcessID];
+
     for (const otherProcessID of this._processGraph.nodes()) {
       if (otherProcessID === destroyedProcessID) {
         continue;
       }
 
       if (this._processGraph.hasEdge(otherProcessID, destroyedProcessID)) {
-        if (processes?.has[otherProcessID]) {
+        if (processes?.has(otherProcessID)) {
           processes.get(otherProcessID).postMessage({
             type: "destroy-port",
             value: destroyedProcessID,

@@ -69,6 +69,9 @@ export class WindowStorage {
       let window: BrowserWindow;
       if (typeof id === "string") {
         window = this._windows[id as string];
+        if (window) {
+          delete this._wId2Id[window.id];
+        }
         delete this._windows[id as string];
       } else {
         window = this._windows[this._wId2Id[id]];
@@ -82,6 +85,22 @@ export class WindowStorage {
       }
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  remove(id: string | number): void {
+    if (typeof id === "string") {
+      const window = this._windows[id];
+      if (window) {
+        delete this._wId2Id[window.id];
+      }
+      delete this._windows[id];
+    } else {
+      const realId = this._wId2Id[id];
+      if (realId) {
+        delete this._windows[realId];
+      }
+      delete this._wId2Id[id];
     }
   }
 
