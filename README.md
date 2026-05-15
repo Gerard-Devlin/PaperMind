@@ -74,7 +74,7 @@ PaperMind is designed for the parts of reading that usually spill across tabs, n
 - **arXiv Recommendations** helps keep a research direction fresh without repeatedly searching by hand. Add recommendation keywords in Feeds, refresh when needed, and PaperMind will retrieve related arXiv papers, rank them by relevance, and make it easy to add useful papers to the library.
 
   <p align="center">
-    <img src="./assets/arxiv_recommand.png" alt="arXiv Recommendations" width="400">
+    <img src="./assets/arxiv_recommand.png" alt="arXiv Recommendations" width="800">
   </p>
 
 ## Why This Fork
