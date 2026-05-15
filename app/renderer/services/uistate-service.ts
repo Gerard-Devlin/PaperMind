@@ -1,0 +1,274 @@
+import { IEventState } from "@/base/event";
+import { createDecorator } from "@/base/injection/injection";
+import { FeedEntity } from "@/models/feed-entity";
+import { PaperEntity } from "@/models/paper-entity";
+import { PaperSmartFilter } from "@/models/smart-filter";
+import { PiniaEventable } from "./pinia-eventable";
+import { IProcessingState, ProcessingKey } from "@/common/utils/processing";
+import { Entity } from "@/models/entity";
+
+export interface IUIStateServiceState {
+  // =========================================
+  // Main Paper/Feed panel
+  contentType: string;
+  sidebarPanel: "library" | "feed" | "ask";
+  mainViewFocused: boolean;
+  editViewShown: boolean;
+  feedEditViewShown: boolean;
+  paperSmartFilterEditViewShown: boolean;
+  preferenceViewShown: boolean;
+  paperGraphViewShown: boolean;
+  deleteConfirmShown: boolean;
+  overlayNoticationShown: boolean;
+  renderRequired: number;
+  feedEntityAddingStatus: number;
+  feedEntityAddingIds: string[];
+  askExperimentCompareRequest: number;
+
+  entitiesReloaded: number;
+
+  // selectedIndex: contains the index of the selected papers in the dataview.
+  // It should be the only state that is used to control the selection.
+  selectedIndex: Array<number>;
+  // selectedIds: contains the ids of the selected papers in the current dataview.
+  // It can be accessed in any component. But it is read-only. It can be only changed by the event listener of selectedIndex in the dataview.
+  selectedIds: Array<string>;
+  // selectedPaperEntities/selectedFeedEntities: contains the selected paper/feed entities in the current dataview.
+  // It can be accessed in any component. But it is read-only. It can be only changed by the event listener of selectedIndex in the dataview.
+  selectedPaperEntities: Array<Entity>;
+  selectedFeedEntities: Array<FeedEntity>;
+  selectedQuerySentenceIds: string[];
+  selectedFeed: string;
+
+  showingCandidatesId: string;
+  metadataCandidates: Record<string, Entity[]>;
+
+  editingPaperSmartFilter: PaperSmartFilter;
+
+  querySentencesSidebar: Array<string>;
+  querySentenceCommandbar: string;
+
+  dragingIds: Array<string>;
+
+  // =========================================
+  // Command/Search Bar
+  commandBarText: string;
+  commandBarSearchMode: "general" | "fulltext" | "advanced" | "semantic";
+
+  // =========================================
+  // DEV
+  isDevMode: boolean;
+  os: string;
+
+  // =========================================
+  // Processing States
+  "processingState.general": number;
+}
+
+export const IUIStateService = createDecorator("uiStateService");
+
+/**
+ * UI service is responsible for managing the UI state.*/
+export class UIStateService extends PiniaEventable<IUIStateServiceState> {
+  public readonly processingState: SubStateGroup<IProcessingState>;
+
+  constructor() {
+    super("uiStateService", {
+      contentType: "library",
+      sidebarPanel: "library",
+      mainViewFocused: true,
+      editViewShown: false,
+      feedEditViewShown: false,
+      paperSmartFilterEditViewShown: false,
+      preferenceViewShown: false,
+      paperGraphViewShown: false,
+      deleteConfirmShown: false,
+      overlayNoticationShown: false,
+      renderRequired: -1,
+      feedEntityAddingStatus: 0,
+      feedEntityAddingIds: [],
+      askExperimentCompareRequest: 0,
+
+      entitiesReloaded: 0,
+
+      selectedIndex: [],
+      selectedIds: [],
+      selectedPaperEntities: [],
+      selectedFeedEntities: [],
+      selectedQuerySentenceIds: ["lib-all"],
+      selectedFeed: "feed-all",
+      dragingIds: [],
+
+      showingCandidatesId: "",
+      metadataCandidates: {},
+
+      querySentencesSidebar: [],
+      querySentenceCommandbar: "",
+
+      editingPaperSmartFilter: new PaperSmartFilter(),
+
+      commandBarText: "",
+      commandBarSearchMode: "general",
+
+      isDevMode: false,
+      os: globalThis["window"]["electron"].process.platform,
+
+      "processingState.general": 0,
+    });
+
+    // =========================================
+    // Processing States Group
+    this.processingState = new SubStateGroup("processingState", {
+      general: 0,
+    });
+    for (const [key, value] of Object.entries(
+      this.processingState.useState()
+    )) {
+      if (key.startsWith("$")) {
+        continue;
+      }
+      this.fire({ [`processingState.${key}`]: value });
+      this.processingState.on(key as any, (value) => {
+        this.fire({
+          [`processingState.${key}`]: value.value,
+        });
+      });
+    }
+
+    // =========================================
+    // Theme Listener
+    window
+      .matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", (event) => {
+        this.setState({ renderRequired: Date.now() });
+      });
+  }
+
+  /**
+   * Set the state of the UI service. Many UI components are controlled by the UI states.
+   * @param patch - patch to the state. It can be a single state, a partial state or a full state.
+   */
+  setUIState(patch: Partial<IUIStateServiceState>) {
+    for (const [key, value] of Object.entries(patch)) {
+      const keyParts = key.split(".");
+
+      if (keyParts.length > 2) {
+        throw new Error(
+          "States key must be in the form of 'stateGroup.key' or 'key'!"
+        );
+      }
+
+      if (keyParts.length === 2) {
+        const [stateGroup, stateKey] = keyParts;
+        if (stateGroup === "processingState") {
+          this.processingState.setState({ [stateKey]: value });
+        } else {
+          throw new Error(`State group '${stateGroup}' is not supported!`);
+        }
+      } else {
+        this.fire({ [key]: value });
+      }
+    }
+  }
+
+  /**
+   * Get the UI state.
+   * @param stateKey - key of the state
+   * @returns The state
+   */
+  getUIState(stateKey: keyof IUIStateServiceState) {
+    const keyParts = stateKey.split(".");
+
+    if (keyParts.length > 2) {
+      throw new Error(
+        "States key must be in the form of 'stateGroup.key' or 'key'!"
+      );
+    }
+
+    if (keyParts.length === 2) {
+      const [stateGroup, stateKey] = keyParts;
+      if (stateGroup === "processingState") {
+        return this.processingState.getUIState(stateKey as any);
+      } else {
+        throw new Error(`State group '${stateGroup}' is not supported!`);
+      }
+    } else {
+      return this._eventState[stateKey];
+    }
+  }
+
+  /**
+   * Get all UI states.
+   * @returns The state
+   */
+  getUIStates() {
+    return this._eventState;
+  }
+
+  /**
+   * Reset all UI states to default.
+   */
+  resetUIStates() {
+    const patch = {
+      contentType: "library",
+      sidebarPanel: "library",
+      mainViewFocused: true,
+      editViewShown: false,
+      feedEditViewShown: false,
+      paperSmartFilterEditViewShown: false,
+      deleteConfirmShown: false,
+      paperGraphViewShown: false,
+      overlayNoticationShown: false,
+      candidatesViewShown: false,
+      renderRequired: -1,
+      feedEntityAddingStatus: 0,
+      feedEntityAddingIds: [],
+      askExperimentCompareRequest: 0,
+      selectedIndex: [],
+      selectedIds: [],
+      selectedPaperEntities: [],
+      selectedFeedEntities: [],
+      selectedFeed: "feed-all",
+      dragingIds: [],
+      pluginLinkedFolder: "",
+      commandBarText: "",
+      commandBarSearchMode: "general",
+      os: globalThis["window"]["electron"].process.platform,
+    };
+    this.fire(patch);
+  }
+
+  /**
+   * Increase the processing state.
+   * @param key - key of the processing state
+   */
+  increaseProcessingState(key: ProcessingKey) {
+    this.processingState.setUIState({
+      [key]: this.processingState.getUIState(key) + 1,
+    });
+  }
+
+  /**
+   * Decrease the processing state.
+   * @param key - key of the processing state
+   */
+  decreaseProcessingState(key: ProcessingKey) {
+    this.processingState.setUIState({
+      [key]: this.processingState.getUIState(key) - 1,
+    });
+  }
+}
+
+class SubStateGroup<T extends IEventState> extends PiniaEventable<T> {
+  constructor(stateID: string, defaultState: T) {
+    super(stateID, defaultState);
+  }
+
+  setUIState(patch: Partial<T>) {
+    this.fire(patch);
+  }
+
+  getUIState(stateKey: keyof T) {
+    return this._eventState[stateKey as string];
+  }
+}

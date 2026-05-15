@@ -1,0 +1,54 @@
+name: Format Check
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  format_check:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    strategy:
+      matrix:
+        node-versions: ["18.16.1"]
+
+    steps:
+      - name: "Checkout Project"
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS Environment ${{ matrix.node-versions }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: "Setup PNPM"
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: "Install Node Module"
+        run: pnpm install
+
+      - name: Get All Changed Metadata JSON Files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: metadata/**/*.json
+
+      - name: Check Changed Metadata JSON Files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for file in "$ALL_CHANGED_FILES"; do
+            npx prettier --check $file
+            node ./pipeline/check_pipeline.mjs $file
+          done

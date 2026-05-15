@@ -1,0 +1,876 @@
+﻿import {
+  BrowserWindow,
+  BrowserWindowConstructorOptions,
+  Menu,
+  Rectangle,
+  Tray,
+  app,
+  dialog,
+  ipcMain,
+  nativeImage,
+  nativeTheme,
+  screen,
+  shell,
+} from "electron";
+import { existsSync } from "fs";
+import os from "os";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import { errorcatching } from "@/base/error";
+import { Eventable } from "@/base/event";
+import { createDecorator } from "@/base/injection/injection";
+import { Process } from "@/base/process-id";
+import { WindowStorage } from "@/base/window-storage";
+import {
+  IPreferenceService,
+  PreferenceService,
+} from "@/main/services/preference-service";
+
+interface WindowOptions extends BrowserWindowConstructorOptions {
+  entry: string;
+}
+
+export enum APPTheme {
+  System = "system",
+  Light = "light",
+  Dark = "dark",
+}
+
+export interface IWindowProcessManagementServiceState {
+  serviceReady: string;
+  requestPort: string;
+  destroyed: string;
+  rendererProcess: string;
+  [key: string]: string;
+}
+
+export const IWindowProcessManagementService = createDecorator(
+  "windowProcessManagementService"
+);
+
+export class WindowProcessManagementService extends Eventable<IWindowProcessManagementServiceState> {
+  public browserWindows: WindowStorage;
+  private _tray?: Tray;
+  private _isQuitting = false;
+
+  constructor(
+    @IPreferenceService private readonly _preferenceService: PreferenceService
+  ) {
+    super("windowProcessManagementService", {
+      serviceReady: "",
+      requestPort: "",
+      destroyed: "",
+      rendererProcess: "",
+    });
+
+    this.browserWindows = new WindowStorage();
+
+    ipcMain.on("request-port", (event, senderID) => {
+      this.fire({ requestPort: senderID });
+    });
+
+    app.on("before-quit", () => {
+      this._isQuitting = true;
+    });
+  }
+
+  public isQuitting(): boolean {
+    return this._isQuitting;
+  }
+
+  private _isWindowAlive(win?: BrowserWindow | null): win is BrowserWindow {
+    return !!win && !win.isDestroyed();
+  }
+
+  private _safeClose(win?: BrowserWindow | null) {
+    if (!this._isWindowAlive(win)) return;
+    try {
+      win.close();
+    } catch {
+      // Ignore close races during shutdown.
+    }
+  }
+
+  private _safeDestroy(win?: BrowserWindow | null) {
+    if (!this._isWindowAlive(win)) return;
+    try {
+      win.destroy();
+    } catch {
+      // Ignore destroy races during shutdown.
+    }
+  }
+
+  private _safeHide(win?: BrowserWindow | null) {
+    if (!this._isWindowAlive(win)) return;
+    try {
+      win.hide();
+    } catch {
+      // Ignore hide races during shutdown.
+    }
+  }
+
+  /**
+   * Create Process with a BrowserWindow
+   * @param id - window id
+   * @param options - window options
+   * @param eventCallbacks - callbacks for events
+   * @param additionalHeaders - additional response headers for the window
+   */
+  @errorcatching("Failed to create window.", true, "WinProcessManagement")
+  create(
+    id: string,
+    options: WindowOptions,
+    eventCallbacks?: Record<string, (win: BrowserWindow, event?: any) => void>,
+    additionalHeaders?: Record<string, string>
+  ) {
+    if (this.browserWindows.has(id)) {
+      this.browserWindows.destroy(id);
+    }
+
+    const { entry, ...windowOptions } = options;
+
+    this.browserWindows.set(id, new BrowserWindow(windowOptions));
+    const win = this.browserWindows.get(id);
+    let didDestroy = false;
+    win.on("closed", () => {
+      if (didDestroy) {
+        return;
+      }
+      didDestroy = true;
+      this.browserWindows.remove(id);
+      this.fire({ destroyed: id });
+    });
+
+    win.webContents.on(
+      "did-fail-load",
+      (_event, code, description, validatedURL, isMainFrame) => {
+        if (!isMainFrame) {
+          return;
+        }
+        const detail = `Window: ${id}\nCode: ${code}\nReason: ${description}\nURL: ${validatedURL}`;
+        console.error("[Window] did-fail-load", detail);
+        try {
+          dialog.showErrorBox("PaperMind Load Failed", detail);
+        } catch {}
+      }
+    );
+    win.webContents.on("render-process-gone", (_event, details) => {
+      const detail = `Window: ${id}\nReason: ${details.reason}\nExit code: ${details.exitCode}`;
+      console.error("[Window] render-process-gone", detail);
+      try {
+        dialog.showErrorBox("PaperMind Renderer Crashed", detail);
+      } catch {}
+    });
+
+    if (additionalHeaders) {
+      win.webContents.session.webRequest.onHeadersReceived(
+        (details, callback) => {
+          callback({
+            responseHeaders: {
+              ...details.responseHeaders,
+              ...additionalHeaders,
+            },
+          });
+        }
+      );
+    }
+
+    const entryURL = this._constructEntryURL(entry);
+    if (entryURL.startsWith("http")) {
+      win.loadURL(entryURL);
+    } else {
+      win.loadFile(entryURL);
+    }
+
+    // Make all links open with the browser, not with the application
+    win.webContents.setWindowOpenHandler(({ url }) => {
+      if (
+        url.includes(process.env.VITE_DEV_SERVER_URL || "") &&
+        process.env.NODE_ENV === "development"
+      ) {
+        return { action: "allow" };
+      }
+      if (url.startsWith("http")) {
+        shell.openExternal(url);
+      }
+      return { action: "deny" };
+    });
+    win.webContents.on("will-navigate", function (e, url) {
+      if (
+        url.includes(process.env.VITE_DEV_SERVER_URL || "") &&
+        process.env.NODE_ENV === "development"
+      ) {
+        return;
+      }
+      e.preventDefault();
+      shell.openExternal(url);
+    });
+
+    nativeTheme.themeSource = this._preferenceService.get("preferedTheme") as
+      | "dark"
+      | "light"
+      | "system";
+
+    this._setNonMacSpecificStyles(win);
+
+    for (const eventName of [
+      "ready-to-show",
+      "blur",
+      "focus",
+      "close",
+      "show",
+      "unmaximize",
+      "maximize",
+      "move",
+      "resize",
+    ]) {
+      win.on(eventName as any, (e) => {
+        this.fire({ [id]: eventName });
+
+        if (eventCallbacks && eventCallbacks[eventName]) {
+          eventCallbacks[eventName](win, e);
+        }
+      });
+    }
+
+    this.fire({ [id]: "created" });
+  }
+
+  createMainRenderer() {
+    const windowSize = this._preferenceService.get("windowSize") as {
+      height: number;
+      width: number;
+    };
+    return this.create(
+      Process.renderer,
+      {
+        entry: "index.html",
+        title: "PaperMind",
+        width: windowSize.width,
+        height: windowSize.height,
+        minWidth: 600,
+        minHeight: 400,
+        useContentSize: true,
+        webPreferences: {
+          preload: fileURLToPath(
+            new URL("../preload/preload.mjs", import.meta.url)
+          ),
+          webSecurity: false,
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: false,
+          enableBlinkFeatures: "CSSColorSchemeUARendering",
+        },
+        frame: false,
+        backgroundColor: "#ffffff",
+        vibrancy: "sidebar",
+        visualEffectState: "active",
+      },
+      {
+        close: (win: BrowserWindow, event?: any) => {
+          const closeToTray = this._preferenceService.get("closeToTray");
+
+          if (closeToTray && !this._isQuitting) {
+            event?.preventDefault?.();
+            win.hide();
+            this._ensureTray(win);
+            return;
+          }
+
+          const winSize = win.getNormalBounds();
+          if (winSize) {
+            this._preferenceService.set({
+              windowSize: {
+                width: winSize.width,
+                height: winSize.height,
+              },
+            });
+          }
+
+          for (const [windowId, window] of Object.entries(
+            this.browserWindows.all()
+          )) {
+            if (windowId !== Process.renderer) {
+              this._safeClose(window);
+            }
+          }
+          this._safeDestroy(this.browserWindows.get(Process.renderer));
+
+          if (process.platform !== "darwin") app.quit();
+        },
+      }
+    );
+  }
+
+  createQuickpasteRenderer() {
+    const options: WindowOptions = {
+      entry: "index_quickpaste.html",
+      title: "Quickpaste",
+      width: 600,
+      height: 88,
+      minWidth: 600,
+      minHeight: 88,
+      maxWidth: 600,
+      maxHeight: 620,
+      useContentSize: true,
+      webPreferences: {
+        preload: fileURLToPath(
+          new URL("../preload/preload_quickpaste.mjs", import.meta.url)
+        ),
+        webSecurity: false,
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: false,
+        enableBlinkFeatures: "CSSColorSchemeUARendering",
+      },
+      frame: false,
+      vibrancy: "sidebar",
+      visualEffectState: "active",
+      show: false,
+    };
+    if (os.platform() === "darwin") {
+      options["type"] = "panel";
+    }
+
+    this.create(Process.quickpaste, options, {
+      blur: (win: BrowserWindow) => {
+        win.setSize(600, 88);
+        win.hide();
+      },
+
+      focus: (win: BrowserWindow) => {
+        win.setSize(600, 88);
+      },
+      show: (win: BrowserWindow) => {
+        win.setSize(600, 88);
+      },
+    });
+
+    if (os.platform() === "darwin") {
+      this.browserWindows
+        .get(Process.quickpaste)
+        .setVisibleOnAllWorkspaces(true);
+    }
+  }
+
+  /**
+   * Destroy the window with the given id.
+   * @param windowId - The id of the window to be destroyed
+   */
+  destroy(windowId: string) {
+    this.browserWindows.destroy(windowId);
+  }
+
+  /**
+   * Fire the serviceReady event. This event is fired when the service of the window is ready to be used by other processes.
+   * @param windowId - The id of the window that fires the event
+   */
+  fireServiceReady(windowId: string) {
+    this.fire({ serviceReady: windowId });
+  }
+
+  /**
+   * Show the window with the given id.
+   * @param windowId - The id of the window to be shown
+   */
+  show(windowId: string) {
+    const win = this.browserWindows.get(windowId);
+    if (this._isWindowAlive(win)) {
+      win.show();
+    }
+  }
+
+  /**
+   * Hide the window with the given id.
+   * @param windowId - The id of the window to be hidden
+   */
+  hide(windowId: string, restoreFocus = false) {
+    const win = this.browserWindows.get(windowId);
+    if (this._isWindowAlive(win)) {
+      if (restoreFocus) {
+        if (os.platform() === "darwin") {
+          this._safeHide(win);
+          app.hide();
+        } else {
+          win.minimize();
+          this._safeHide(win);
+        }
+      } else {
+        this._safeHide(win);
+      }
+    }
+  }
+
+  /**
+   * Minimize the window with the given id.
+   * @param windowId - The id of the window to be minimized
+   */
+  minimize(windowId: string) {
+    if (windowId === Process.renderer) {
+      const win = this.browserWindows.get(windowId);
+      if (this._isWindowAlive(win)) {
+        win.minimize();
+      }
+
+      for (const [windowId, win] of Object.entries(this.browserWindows.all())) {
+        if (windowId !== Process.renderer) {
+          if (os.platform() === "darwin" || windowId === Process.quickpaste) {
+            this._safeHide(win);
+          } else {
+            if (this._isWindowAlive(win)) {
+              win.minimize();
+            }
+          }
+        }
+      }
+    } else {
+      const win = this.browserWindows.get(windowId);
+      if (this._isWindowAlive(win)) {
+        win.minimize();
+      }
+    }
+  }
+
+  /**
+   * Unmaximize the window with the given id.
+   * @param windowId - The id of the window to be unmaximized
+   */
+  unmaximize(windowId: string) {
+    const win = this.browserWindows.get(windowId);
+    if (win) {
+      win.unmaximize();
+    }
+  }
+
+  /**
+   * Maximize the window with the given id.
+   * @param windowId - The id of the window to be maximized
+   */
+  maximize(windowId: string) {
+    const win = this.browserWindows.get(windowId);
+    if (win) {
+      win.maximize();
+    }
+  }
+
+  /**
+   * Close the window with the given id.
+   * @param windowId - The id of the window to be closed
+   */
+  close(windowId: string) {
+    if (os.platform() === "darwin") {
+      if (windowId === Process.renderer) {
+        for (const [, win] of Object.entries(this.browserWindows.all())) {
+          this._safeHide(win);
+        }
+      } else {
+        const win = this.browserWindows.get(windowId);
+        this._safeHide(win);
+      }
+    } else {
+      if (windowId === Process.renderer) {
+        for (const [, win] of Object.entries(this.browserWindows.all())) {
+          this._safeClose(win);
+        }
+        // Only quit the app when a real quit was requested (e.g. via tray Exit or before-quit).
+        if (this._isQuitting && process.platform !== "darwin") {
+          app.quit();
+        }
+      } else {
+        const win = this.browserWindows.get(windowId);
+        this._safeClose(win);
+      }
+    }
+  }
+
+  /**
+   * Force close the window with the given id.
+   * @param windowId - The id of the window to be force closed
+   */
+  forceClose(windowId: string) {
+    if (windowId === Process.renderer) {
+      for (const [, win] of Object.entries(this.browserWindows.all())) {
+        this._safeClose(win);
+      }
+    } else {
+      const win = this.browserWindows.get(windowId);
+      this._safeClose(win);
+    }
+  }
+
+  /**
+   * Change the theme of the app.
+   * @param theme - The theme to be changed to
+   */
+  @errorcatching("Failed to change theme.", true, "WinProcessManagement")
+  changeTheme(theme: APPTheme) {
+    nativeTheme.themeSource = theme;
+  }
+
+  /**
+   * Check if the app is in dark mode.
+   * @returns Whether the app is in dark mode
+   */
+  isDarkMode(): boolean {
+    return nativeTheme.shouldUseDarkColors;
+  }
+
+  /**
+   * Resize the window with the given id.
+   * @param windowId - The id of the window to be resized
+   * @param width - The width of the window
+   * @param height - The height of the window
+   */
+  @errorcatching("Failed to resize window.", true, "WinProcessManagement")
+  resize(windowId: string, width: number, height: number) {
+    const win = this.browserWindows.get(windowId);
+    if (this._isWindowAlive(win)) {
+      win.setSize(width, height);
+    }
+  }
+
+  /**
+   * Get the size of the screen.
+   * @returns The size of the screen
+   */
+  getScreenSize() {
+    const { x, y } = screen.getCursorScreenPoint();
+    const currentDisplay = screen.getDisplayNearestPoint({ x, y });
+    const { width, height } = currentDisplay.workAreaSize;
+
+    return { width, height };
+  }
+
+  private _ensureTray(mainWindow: BrowserWindow) {
+    if (this._tray) {
+      return;
+    }
+
+    const iconCandidates = [
+      path.join(process.resourcesPath, "icon_v2.ico"),
+      path.join(process.cwd(), "build", "icon_v2.ico"),
+      path.join(app.getAppPath(), "build", "icon_v2.ico"),
+      path.join(process.resourcesPath, "app.asar.unpacked", "build", "icon_v2.ico"),
+    ];
+    const iconPath =
+      iconCandidates.find((candidate) => {
+        try {
+          return !!candidate && existsSync(candidate);
+        } catch {
+          return false;
+        }
+      }) || iconCandidates[0];
+    const icon = nativeImage.createFromPath(iconPath);
+
+    this._tray = new Tray(icon);
+    this._tray.setToolTip("PaperMind");
+    this._tray.setContextMenu(
+      Menu.buildFromTemplate([
+        {
+          label: "Show PaperMind",
+          click: () => {
+            if (mainWindow.isMinimized()) {
+              mainWindow.restore();
+            }
+            mainWindow.show();
+            mainWindow.focus();
+          },
+        },
+        {
+          label: "Exit",
+          click: () => {
+            this._isQuitting = true;
+            app.quit();
+          },
+        },
+      ])
+    );
+
+    this._tray.on("double-click", () => {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.show();
+      mainWindow.focus();
+    });
+  }
+
+  private _constructEntryURL(url: string) {
+    // Is absolute path
+    if (path.isAbsolute(url) || url.startsWith("http")) {
+      return url;
+    }
+
+    if (app.isPackaged) {
+      // Packaged layout: <app.asar>/dist/{main,renderer}
+      // Resolve from app root to avoid chunk-relative path issues.
+      return path.join(app.getAppPath(), "dist", "renderer", url);
+    } else if (process.env.NODE_ENV === "test") {
+      return fileURLToPath(new URL(url, import.meta.url));
+    } else {
+      const href = new URL(url, process.env.ELECTRON_RENDERER_URL).href;
+      return href;
+    }
+  }
+
+  private _setNonMacSpecificStyles(win: BrowserWindow) {
+    if (os.platform() !== "darwin") {
+      win.webContents.insertCSS(`
+  
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: var(--q-bg-secondary);
+    border-radius: 2px;
+  }
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 2px;
+  }
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  .sidebar-windows-bg {
+    background-color: #efefef;
+  }
+  
+  .splitpanes__splitter {
+    background-color: #efefef;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .sidebar-windows-bg {
+      background-color: rgb(50, 50, 50);
+    }
+    .splitpanes__splitter {
+      background-color: rgb(50, 50, 50);
+    }
+    .plugin-windows-bg {
+      background-color: rgb(50, 50, 50);
+    }
+  }
+  
+  `);
+    }
+  }
+
+  /**
+   * Check if the window exists with the given id.
+   * @param windowId - The id of the window to be checked
+   * @returns Whether the window exists.
+   */
+  exist(windowId: string): boolean {
+    return this.browserWindows.has(windowId);
+  }
+
+  /**
+   * Focus the window with the given id.
+   * @param windowId - The id of the window to be focused
+   */
+  focus(windowId: string): void {
+    if (this.exist(windowId)) {
+      this.browserWindows.get(windowId).focus();
+    }
+  }
+
+  /**
+   * Blur the window with the given id.
+   * @param windowId - The id of the window to be blurred
+   */
+  blur(windowId: string): void {
+    if (this.exist(windowId)) {
+      this.browserWindows.get(windowId).blur();
+    }
+  }
+
+  /**
+   * Whether the window is focused.
+   * @param windowId - The id of the window to be checked
+   */
+  isFocused(windowId: string): boolean {
+    if (this.exist(windowId)) {
+      return this.browserWindows.get(windowId).isFocused();
+    }
+    return false;
+  }
+
+  /**
+   * Set parent as current window's parent window.
+   * @param parentId - The id of the parent window
+   * @param currentId - The id of the current window
+   */
+  setParentWindow(parentId: string | null, currentId: string) {
+    if (this.exist(currentId)) {
+      if (parentId === null) {
+        const currentWindow = this.browserWindows.get(currentId);
+        currentWindow.setParentWindow(null);
+      } else if (this.exist(parentId)) {
+        const parentWindow = this.browserWindows.get(parentId);
+        const currentWindow = this.browserWindows.get(currentId);
+        currentWindow.setParentWindow(parentWindow);
+      }
+    }
+  }
+
+  /**
+   * Return the window's current bounds.
+   * @param windowId - The id of the window to be checked
+   */
+  getBounds(windowId: string) {
+    if (this.exist(windowId)) {
+      const currentWindow = this.browserWindows.get(windowId);
+      return currentWindow.getBounds();
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Set the window's current bounds.
+   * @param windowId - The id of the window to be set
+   * @param bounds - The bounds of the window to be set
+   */
+  setBounds(windowId: string, bounds: Partial<Rectangle>) {
+    if (this.exist(windowId)) {
+      const currentWindow = this.browserWindows.get(windowId);
+      return currentWindow.setBounds(bounds);
+    }
+  }
+
+  /**
+   * Return whether the window has a parent.
+   * @param windowId - The id of the window to be checked
+   */
+  hasParentWindow(windowId: string) {
+    if (this.exist(windowId)) {
+      const currentWindow = this.browserWindows.get(windowId);
+      return !!currentWindow.getParentWindow();
+    }
+    return false;
+  }
+
+  /**
+   * Set whether the window should show always on top of other windows.
+   * @param windowId - The id of the window to be set
+   * @param flag - Whether the window should show always on top of other windows
+   */
+  setAlwaysOnTop(windowId: string, flag: boolean) {
+    if (this.exist(windowId)) {
+      const currentWindow = this.browserWindows.get(windowId);
+      currentWindow.setAlwaysOnTop(flag);
+    }
+  }
+
+  /**
+   * Move the window to the center of the screen.
+   * @param windowId - The id of the window to be set
+   */
+  center(windowId: string) {
+    if (this.exist(windowId)) {
+      const currentWindow = this.browserWindows.get(windowId);
+      currentWindow.center();
+    }
+  }
+
+  download(
+    windowId: string,
+    url: string,
+    options = {},
+    headers = {}
+  ): Promise<string> {
+    function registerListener(
+      session,
+      options,
+      callback = (error?: Error, item?: any) => {}
+    ) {
+      const downloadItems = new Set();
+      let receivedBytes = 0;
+      let completedBytes = 0;
+      let totalBytes = 0;
+      const activeDownloadItems = () => downloadItems.size;
+
+      const listener = (event, item, webContents) => {
+        downloadItems.add(item);
+        totalBytes += item.getTotalBytes();
+
+        const window_ = BrowserWindow.fromWebContents(webContents);
+        if (!window_) {
+          throw new Error("Failed to get window from web contents.");
+        }
+
+        const filePath = options.targetPath;
+
+        item.setSavePath(filePath);
+
+        item.on("updated", () => {});
+
+        item.on("done", (event, state) => {
+          completedBytes += item.getTotalBytes();
+          downloadItems.delete(item);
+
+          if (!window_.isDestroyed() && !activeDownloadItems()) {
+            window_.setProgressBar(-1);
+            receivedBytes = 0;
+            completedBytes = 0;
+            totalBytes = 0;
+          }
+
+          if (options.unregisterWhenDone) {
+            session.removeListener("will-download", listener);
+          }
+
+          if (state === "cancelled") {
+            if (typeof options.onCancel === "function") {
+              options.onCancel(item);
+            }
+
+            callback(new Error("Download was cancelled."));
+          } else if (state === "interrupted") {
+            callback(new Error("Download was interrupted."));
+          } else if (state === "completed") {
+            const savePath = item.getSavePath();
+            callback(undefined, savePath);
+          }
+        });
+      };
+
+      session.on("will-download", listener);
+    }
+
+    return new Promise((resolve, reject) => {
+      if (this.exist(windowId)) {
+        const currentWindow = this.browserWindows.get(windowId);
+
+        registerListener(
+          currentWindow.webContents.session,
+          { unregisterWhenDone: true, ...options },
+          (error, item) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(item);
+            }
+          }
+        );
+        currentWindow.webContents.downloadURL(url, { headers });
+      } else {
+        resolve("");
+      }
+    });
+  }
+}
+

@@ -1,0 +1,1289 @@
+{
+  "info": {
+    "name": "Conference on Machine Learning and Systems",
+    "short_name": "MLSys",
+    "date": "2024"
+  },
+  "collection": [
+    {
+      "title": "HeteroSwitch: Characterizing and Taming System-Induced Data Heterogeneity in Federated Learning",
+      "authors": [
+        {
+          "first_name": "Gyudong",
+          "last_name": "Kim"
+        },
+        {
+          "first_name": "Mehdi",
+          "last_name": "Ghasemi"
+        },
+        {
+          "first_name": "Soroush",
+          "last_name": "Heidari"
+        },
+        {
+          "first_name": "Seungryong",
+          "last_name": "Kim"
+        },
+        {
+          "first_name": "Young",
+          "last_name": "Geun Kim"
+        },
+        {
+          "first_name": "Sarma",
+          "last_name": "Vrudhula"
+        },
+        {
+          "first_name": "Carole-Jean",
+          "last_name": "Wu"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "SLoRA: Scalable Serving of Thousands of LoRA Adapters",
+      "authors": [
+        {
+          "first_name": "Ying",
+          "last_name": "Sheng"
+        },
+        {
+          "first_name": "Shiyi",
+          "last_name": "Cao"
+        },
+        {
+          "first_name": "Dacheng",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Coleman",
+          "last_name": "Hooper"
+        },
+        {
+          "first_name": "Nicholas",
+          "last_name": "Lee"
+        },
+        {
+          "first_name": "Shuo",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Christopher",
+          "last_name": "Chou"
+        },
+        {
+          "first_name": "Banghua",
+          "last_name": "Zhu"
+        },
+        {
+          "first_name": "Lianmin",
+          "last_name": "Zheng"
+        },
+        {
+          "first_name": "Kurt",
+          "last_name": "Keutzer"
+        },
+        {
+          "first_name": "Joseph",
+          "last_name": "Gonzalez"
+        },
+        {
+          "first_name": "Ion",
+          "last_name": "Stoica"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Q-Hitter: A Better Token Oracle for Efficient LLM Inference via Sparse-Quantized KV Cache",
+      "authors": [
+        {
+          "first_name": "Zhenyu",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Shiwei",
+          "last_name": "Liu"
+        },
+        {
+          "first_name": "Runjin",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Bhavya",
+          "last_name": "Kailkhura"
+        },
+        {
+          "first_name": "Beidi",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Atlas",
+          "last_name": "Wang"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Efficient Post-training Quantization with FP8 Formats",
+      "authors": [
+        {
+          "first_name": "Haihao",
+          "last_name": "Shen"
+        },
+        {
+          "first_name": "Naveen",
+          "last_name": "Mellempudi"
+        },
+        {
+          "first_name": "Xin",
+          "last_name": "He"
+        },
+        {
+          "first_name": "Qun",
+          "last_name": "Gao"
+        },
+        {
+          "first_name": "Chang",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Mengni",
+          "last_name": "Wang"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "DiffusionPipe: Training Large Diffusion Models with Efficient Pipelines",
+      "authors": [
+        {
+          "first_name": "Ye",
+          "last_name": "Tian"
+        },
+        {
+          "first_name": "Zhen",
+          "last_name": "Jia"
+        },
+        {
+          "first_name": "Ziyue",
+          "last_name": "Luo"
+        },
+        {
+          "first_name": "Yida",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Chuan",
+          "last_name": "Wu"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "CloudEval-YAML: A Practical Benchmark for Cloud Configuration Generation",
+      "authors": [
+        {
+          "first_name": "Yifei",
+          "last_name": "Xu"
+        },
+        {
+          "first_name": "Yuning",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Xumiao",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Xianshang",
+          "last_name": "Lin"
+        },
+        {
+          "first_name": "Pan",
+          "last_name": "Hu"
+        },
+        {
+          "first_name": "Yunfei",
+          "last_name": "Ma"
+        },
+        {
+          "first_name": "Songwu",
+          "last_name": "Lu"
+        },
+        {
+          "first_name": "Wan",
+          "last_name": "Du"
+        },
+        {
+          "first_name": "Zhuoqing",
+          "last_name": "Mao"
+        },
+        {
+          "first_name": "Ennan",
+          "last_name": "Zhai"
+        },
+        {
+          "first_name": "Dennis",
+          "last_name": "Cai"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "ACROBAT: Optimizing Auto-batching of Dynamic Deep Learning at Compile Time",
+      "authors": [
+        {
+          "first_name": "Pratik",
+          "last_name": "Fegade"
+        },
+        {
+          "first_name": "Tianqi",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Phillip",
+          "last_name": "Gibbons"
+        },
+        {
+          "first_name": "Todd",
+          "last_name": "Mowry"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "vMCU: Coordinated Memory Management and Kernel Optimization for DNN Inference on MCUs",
+      "authors": [
+        {
+          "first_name": "Size",
+          "last_name": "Zheng"
+        },
+        {
+          "first_name": "Renze",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Meng",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Zihao",
+          "last_name": "Ye"
+        },
+        {
+          "first_name": "Luis",
+          "last_name": "Ceze"
+        },
+        {
+          "first_name": "Yun",
+          "last_name": "Liang"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "VQPy: An Object-Oriented Approach to Modern Video Analytics",
+      "authors": [
+        {
+          "first_name": "Shan",
+          "last_name": "Yu"
+        },
+        {
+          "first_name": "Zhenting",
+          "last_name": "Zhu"
+        },
+        {
+          "first_name": "Yu",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Hanchen",
+          "last_name": "Xu"
+        },
+        {
+          "first_name": "Pengzhan",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Yang",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Arthi",
+          "last_name": "Padmanabhan"
+        },
+        {
+          "first_name": "Hugo",
+          "last_name": "Latapie"
+        },
+        {
+          "first_name": "Harry",
+          "last_name": "Xu"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Keyformer: KV Cache reduction through key tokens selection for Efficient Generative Inference",
+      "authors": [
+        {
+          "first_name": "Muhammad",
+          "last_name": "Adnan"
+        },
+        {
+          "first_name": "Akhil",
+          "last_name": "Arunkumar"
+        },
+        {
+          "first_name": "Gaurav",
+          "last_name": "Jain"
+        },
+        {
+          "first_name": "Prashant",
+          "last_name": "Nair"
+        },
+        {
+          "first_name": "Ilya",
+          "last_name": "Soloveychik"
+        },
+        {
+          "first_name": "Purushotham",
+          "last_name": "Kamath"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Prompt Cache: Modular Attention Reuse for Low-Latency Inference",
+      "authors": [
+        {
+          "first_name": "In",
+          "last_name": "Gim"
+        },
+        {
+          "first_name": "Guojun",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Seung-seob",
+          "last_name": "Lee"
+        },
+        {
+          "first_name": "Nikhil",
+          "last_name": "Sarda"
+        },
+        {
+          "first_name": "Anurag",
+          "last_name": "Khandelwal"
+        },
+        {
+          "first_name": "Lin",
+          "last_name": "Zhong"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Schrodinger's FP Training Neural Networks with Dynamic Floating-Point Containers",
+      "authors": [
+        {
+          "first_name": "Milos",
+          "last_name": "Nikolic"
+        },
+        {
+          "first_name": "Enrique",
+          "last_name": "Torres Sanchez"
+        },
+        {
+          "first_name": "Jiahui",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Ali",
+          "last_name": "Hadi Zadeh"
+        },
+        {
+          "first_name": "Mostafa",
+          "last_name": "Mahmoud"
+        },
+        {
+          "first_name": "Ameer",
+          "last_name": "Abdelhadi"
+        },
+        {
+          "first_name": "Kareem",
+          "last_name": "Ibrahim"
+        },
+        {
+          "first_name": "Andreas",
+          "last_name": "Moshovos"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Lancet: Accelerating Mixture-of-Experts Training by Overlapping Weight Gradient Computation and All-to-All Communication",
+      "authors": [
+        {
+          "first_name": "Chenyu",
+          "last_name": "Jiang"
+        },
+        {
+          "first_name": "Ye",
+          "last_name": "Tian"
+        },
+        {
+          "first_name": "Zhen",
+          "last_name": "Jia"
+        },
+        {
+          "first_name": "Chuan",
+          "last_name": "Wu"
+        },
+        {
+          "first_name": "Yida",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Shuai",
+          "last_name": "Zheng"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Proteus: Preserving Model Confidentiality during Graph Optimizations",
+      "authors": [
+        {
+          "first_name": "Yubo",
+          "last_name": "Gao"
+        },
+        {
+          "first_name": "Maryam",
+          "last_name": "Haghifam"
+        },
+        {
+          "first_name": "Christina",
+          "last_name": "Giannoula"
+        },
+        {
+          "first_name": "Renbo",
+          "last_name": "Tu"
+        },
+        {
+          "first_name": "Gennady",
+          "last_name": "Pekhimenko"
+        },
+        {
+          "first_name": "Nandita",
+          "last_name": "Vijaykumar"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "QMoE: Sub-1-Bit Compression of Trillion Parameter Models",
+      "authors": [
+        {
+          "first_name": "Elias",
+          "last_name": "Frantar"
+        },
+        {
+          "first_name": "Dan",
+          "last_name": "Alistarh"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "HeteGen: Efficient Heterogeneous Parallel Inference for Large Language Models on Resource-Constrained Devices",
+      "authors": [
+        {
+          "first_name": "ZHAO",
+          "last_name": "XUANLEI"
+        },
+        {
+          "first_name": "Bin",
+          "last_name": "Jia"
+        },
+        {
+          "first_name": "Haotian",
+          "last_name": "Zhou"
+        },
+        {
+          "first_name": "Ziming",
+          "last_name": "Liu"
+        },
+        {
+          "first_name": "Shenggan",
+          "last_name": "Cheng"
+        },
+        {
+          "first_name": "Yang",
+          "last_name": "You"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Distributed Matrix-Based Sampling for Graph Neural Network Training",
+      "authors": [
+        {
+          "first_name": "Alok",
+          "last_name": "Tripathy"
+        },
+        {
+          "first_name": "Katherine",
+          "last_name": "Yelick"
+        },
+        {
+          "first_name": "Aydin",
+          "last_name": "Buluc"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "FedTrans: Efficient Federated Learning via Multi-Model Transformation",
+      "authors": [
+        {
+          "first_name": "Yuxuan",
+          "last_name": "Zhu"
+        },
+        {
+          "first_name": "Jiachen",
+          "last_name": "Liu"
+        },
+        {
+          "first_name": "Mosharaf",
+          "last_name": "Chowdhury"
+        },
+        {
+          "first_name": "Fan",
+          "last_name": "Lai"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "COMET: Neural Cost Model Explanation Framework",
+      "authors": [
+        {
+          "first_name": "Isha",
+          "last_name": "Chaudhary"
+        },
+        {
+          "first_name": "Alex",
+          "last_name": "Renda"
+        },
+        {
+          "first_name": "Charith",
+          "last_name": "Mendis"
+        },
+        {
+          "first_name": "Gagandeep",
+          "last_name": "Singh"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Atom: Low-Bit Quantization for Efficient and Accurate LLM Serving",
+      "authors": [
+        {
+          "first_name": "Yilong",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Chien-Yu",
+          "last_name": "Lin"
+        },
+        {
+          "first_name": "Kan",
+          "last_name": "Zhu"
+        },
+        {
+          "first_name": "Zihao",
+          "last_name": "Ye"
+        },
+        {
+          "first_name": "Lequn",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Size",
+          "last_name": "Zheng"
+        },
+        {
+          "first_name": "Luis",
+          "last_name": "Ceze"
+        },
+        {
+          "first_name": "Arvind",
+          "last_name": "Krishnamurthy"
+        },
+        {
+          "first_name": "Tianqi",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Baris",
+          "last_name": "Kasikci"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "FLASH: Fast Model Adaptation in ML-Centric Cloud Platforms",
+      "authors": [
+        {
+          "first_name": "Haoran",
+          "last_name": "Qiu"
+        },
+        {
+          "first_name": "Weichao",
+          "last_name": "Mao"
+        },
+        {
+          "first_name": "Archit",
+          "last_name": "Patke"
+        },
+        {
+          "first_name": "Shengkun",
+          "last_name": "Cui"
+        },
+        {
+          "first_name": "Chen",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Hubertus",
+          "last_name": "Franke"
+        },
+        {
+          "first_name": "Zbigniew",
+          "last_name": "Kalbarczyk"
+        },
+        {
+          "first_name": "Tamer",
+          "last_name": "Basar"
+        },
+        {
+          "first_name": "Ravi",
+          "last_name": "Iyer"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Torch2Chip: An End-to-end Customizable Deep Neural Network Compression and Deployment Toolkit for Prototype Hardware Accelerator Design",
+      "authors": [
+        {
+          "first_name": "Jian",
+          "last_name": "Meng"
+        },
+        {
+          "first_name": "Yuan",
+          "last_name": "Liao"
+        },
+        {
+          "first_name": "Anupreetham",
+          "last_name": "Anupreetham"
+        },
+        {
+          "first_name": "Ahmed",
+          "last_name": "Hasssan"
+        },
+        {
+          "first_name": "Shixing",
+          "last_name": "Yu"
+        },
+        {
+          "first_name": "Han-sok",
+          "last_name": "Suh"
+        },
+        {
+          "first_name": "Xiaofeng",
+          "last_name": "Hu"
+        },
+        {
+          "first_name": "Jae-sun",
+          "last_name": "Seo"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "LIFL: A Lightweight, Event-driven Serverless Platform for Federated Learning",
+      "authors": [
+        {
+          "first_name": "Shixiong",
+          "last_name": "Qi"
+        },
+        {
+          "first_name": "K.",
+          "last_name": "K. Ramakrishnan"
+        },
+        {
+          "first_name": "Myungjin",
+          "last_name": "Lee"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Does Compressing Activations Help Model Parallel Training?",
+      "authors": [
+        {
+          "first_name": "Song",
+          "last_name": "Bian"
+        },
+        {
+          "first_name": "Dacheng",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Hongyi",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Eric",
+          "last_name": "Xing"
+        },
+        {
+          "first_name": "Shivaram",
+          "last_name": "Venkataraman"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Accelerating ReLU for MPC-Based Private Inference with a Communication-Efficient Sign Estimation",
+      "authors": [
+        {
+          "first_name": "Kiwan",
+          "last_name": "Maeng"
+        },
+        {
+          "first_name": "G.",
+          "last_name": "Edward Suh"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "ACCURATE LOW-DEGREE POLYNOMIAL APPROXIMATION OF NON-POLYNOMIAL OPERATORS FOR FAST PRIVATE INFERENCE IN HOMOMORPHIC ENCRYPTION",
+      "authors": [
+        {
+          "first_name": "Jingtian",
+          "last_name": "Dang"
+        },
+        {
+          "first_name": "Jianming",
+          "last_name": "Tong"
+        },
+        {
+          "first_name": "Anupam",
+          "last_name": "Golder"
+        },
+        {
+          "first_name": "Cong",
+          "last_name": "\"Callie\" Hao"
+        },
+        {
+          "first_name": "Arijit",
+          "last_name": "Raychowdhury"
+        },
+        {
+          "first_name": "Tushar",
+          "last_name": "Krishna"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "FlashDecoding++: Faster Large Language Model Inference with Asynchronization, Flat GEMM Optimization, and Heuristics",
+      "authors": [
+        {
+          "first_name": "Ke",
+          "last_name": "Hong"
+        },
+        {
+          "first_name": "Guohao",
+          "last_name": "Dai"
+        },
+        {
+          "first_name": "Jiaming",
+          "last_name": "Xu"
+        },
+        {
+          "first_name": "Qiuli",
+          "last_name": "Mao"
+        },
+        {
+          "first_name": "Xiuhong",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Jun",
+          "last_name": "Liu"
+        },
+        {
+          "first_name": "kangdi",
+          "last_name": "chen"
+        },
+        {
+          "first_name": "Yuhan",
+          "last_name": "Dong"
+        },
+        {
+          "first_name": "Yu",
+          "last_name": "Wang"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "VIDUR: A LARGE-SCALE SIMULATION FRAMEWORK FOR LLM INFERENCE",
+      "authors": [
+        {
+          "first_name": "Amey",
+          "last_name": "Agrawal"
+        },
+        {
+          "first_name": "Nitin",
+          "last_name": "Kedia"
+        },
+        {
+          "first_name": "Jayashree",
+          "last_name": "Mohan"
+        },
+        {
+          "first_name": "Ashish",
+          "last_name": "Panwar"
+        },
+        {
+          "first_name": "Nipun",
+          "last_name": "Kwatra"
+        },
+        {
+          "first_name": "Bhargav",
+          "last_name": "Gulavani"
+        },
+        {
+          "first_name": "Ramachandran",
+          "last_name": "Ramjee"
+        },
+        {
+          "first_name": "Alexey",
+          "last_name": "Tumanov"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Punica: Multi-Tenant LoRA Serving",
+      "authors": [
+        {
+          "first_name": "Lequn",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Zihao",
+          "last_name": "Ye"
+        },
+        {
+          "first_name": "Yongji",
+          "last_name": "Wu"
+        },
+        {
+          "first_name": "Danyang",
+          "last_name": "Zhuo"
+        },
+        {
+          "first_name": "Luis",
+          "last_name": "Ceze"
+        },
+        {
+          "first_name": "Arvind",
+          "last_name": "Krishnamurthy"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "SiDA: Sparsity-Inspired Data-Aware Serving for Efficient and Scalable  Large Mixture-of-Experts Models",
+      "authors": [
+        {
+          "first_name": "Zhixu",
+          "last_name": "Du"
+        },
+        {
+          "first_name": "Shiyu",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Yuhao",
+          "last_name": "Wu"
+        },
+        {
+          "first_name": "Xiangyu",
+          "last_name": "Jiang"
+        },
+        {
+          "first_name": "Jingwei",
+          "last_name": "Sun"
+        },
+        {
+          "first_name": "Qilin",
+          "last_name": "Zheng"
+        },
+        {
+          "first_name": "Yongkai",
+          "last_name": "Wu"
+        },
+        {
+          "first_name": "Ang",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Hai",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Yiran",
+          "last_name": "Chen"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "On Latency Predictors for Neural Architecture Search",
+      "authors": [
+        {
+          "first_name": "Yash",
+          "last_name": "Akhauri"
+        },
+        {
+          "first_name": "Mohamed",
+          "last_name": "Abdelfattah"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "AWQ: Activation-aware Weight Quantization for On-Device LLM Compression and Acceleration",
+      "authors": [
+        {
+          "first_name": "Ji",
+          "last_name": "Lin"
+        },
+        {
+          "first_name": "Jiaming",
+          "last_name": "Tang"
+        },
+        {
+          "first_name": "Haotian",
+          "last_name": "Tang"
+        },
+        {
+          "first_name": "Shang",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Wei-Ming",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Wei-Chen",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Guangxuan",
+          "last_name": "Xiao"
+        },
+        {
+          "first_name": "Xingyu",
+          "last_name": "Dang"
+        },
+        {
+          "first_name": "Chuang",
+          "last_name": "Gan"
+        },
+        {
+          "first_name": "Song",
+          "last_name": "Han"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Disaggregated Multi-Tower: Topology-aware Modeling Technique for Efficient Large Scale Recommendation",
+      "authors": [
+        {
+          "first_name": "Liang",
+          "last_name": "Luo"
+        },
+        {
+          "first_name": "Buyun",
+          "last_name": "Zhang"
+        },
+        {
+          "first_name": "Michael",
+          "last_name": "Tsang"
+        },
+        {
+          "first_name": "Yinbin",
+          "last_name": "Ma"
+        },
+        {
+          "first_name": "Ching-Hsiang",
+          "last_name": "Chu"
+        },
+        {
+          "first_name": "Yuxin",
+          "last_name": "Chen"
+        },
+        {
+          "first_name": "Shen",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Yuchen",
+          "last_name": "Hao"
+        },
+        {
+          "first_name": "Yanli",
+          "last_name": "Zhao"
+        },
+        {
+          "first_name": "Guna",
+          "last_name": "Lakshminarayanan"
+        },
+        {
+          "first_name": "Ellie",
+          "last_name": "Wen"
+        },
+        {
+          "first_name": "Jongsoo",
+          "last_name": "Park"
+        },
+        {
+          "first_name": "Dheevatsa",
+          "last_name": "Mudigere"
+        },
+        {
+          "first_name": "Maxim",
+          "last_name": "Naumov"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "JIT-Q: Just-in-time Quantization with Processing-In-Memory for Efficient ML Training",
+      "authors": [
+        {
+          "first_name": "Mohamed",
+          "last_name": "Ibrahim"
+        },
+        {
+          "first_name": "Shaizeen",
+          "last_name": "Aga"
+        },
+        {
+          "first_name": "Ada",
+          "last_name": "Li"
+        },
+        {
+          "first_name": "Suchita",
+          "last_name": "Pati"
+        },
+        {
+          "first_name": "Mahzabeen",
+          "last_name": "Islam"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "Fine-Tuning Language Models Using Formal Methods Feedback: A Use Case in Autonomous Systems",
+      "authors": [
+        {
+          "first_name": "Yunhao",
+          "last_name": "Yang"
+        },
+        {
+          "first_name": "Neel",
+          "last_name": "P. Bhatt"
+        },
+        {
+          "first_name": "Tyler",
+          "last_name": "Ingebrand"
+        },
+        {
+          "first_name": "William",
+          "last_name": "Ward"
+        },
+        {
+          "first_name": "Steven",
+          "last_name": "Carr"
+        },
+        {
+          "first_name": "Atlas",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Ufuk",
+          "last_name": "Topcu"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "UniDM: A Unified Framework for Data Manipulation with Large Language Models",
+      "authors": [
+        {
+          "first_name": "Yichen",
+          "last_name": "Qian"
+        },
+        {
+          "first_name": "Yongyi",
+          "last_name": "He"
+        },
+        {
+          "first_name": "Rong",
+          "last_name": "Zhu"
+        },
+        {
+          "first_name": "Jintao",
+          "last_name": "Huang"
+        },
+        {
+          "first_name": "Zhijian",
+          "last_name": "Ma"
+        },
+        {
+          "first_name": "Haibin",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Yaohua",
+          "last_name": "Wang"
+        },
+        {
+          "first_name": "Xiuyu",
+          "last_name": "Sun"
+        },
+        {
+          "first_name": "Defu",
+          "last_name": "Lian"
+        },
+        {
+          "first_name": "Bolin",
+          "last_name": "Ding"
+        },
+        {
+          "first_name": "Jingren",
+          "last_name": "Zhou"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    },
+    {
+      "title": "L-GreCo: Layerwise-adaptive Gradient Compression For Efficient Data-parallel Deep Learning",
+      "authors": [
+        {
+          "first_name": "Ilia",
+          "last_name": "Markov"
+        },
+        {
+          "first_name": "Kaveh",
+          "last_name": "Alim"
+        },
+        {
+          "first_name": "Elias",
+          "last_name": "Frantar"
+        },
+        {
+          "first_name": "Dan",
+          "last_name": "Alistarh"
+        }
+      ],
+      "publication": "The Seventh Annual Conference on Machine Learning and Systems",
+      "pubTime": "2024",
+      "pubType": 1
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+/**
+ * @see https://www.electron.build/configuration/configuration
+ */
+{
+  appId: "com.papermind.app",
+  productName: "PaperMind",
+  copyright: "Copyright (c) 2026 PaperMind. All rights reserved.",
+  asar: true,
+  npmRebuild: false,
+  buildDependenciesFromSource: false,
+  electronDist: "node_modules/electron/dist",
+  publish: [
+    {
+      provider: "generic",
+      url: "https://distribution.paperlib.app/electron-win/",
+    },
+  ],
+  directories: {
+    output: "release/${version}",
+  },
+  win: {
+    executableName: "PaperMind",
+    publisherName: "PaperMind",
+    legalTrademarks: "PaperMind",
+    icon: "build/icon_v2.ico",
+    target: [
+      {
+        target: "nsis",
+        arch: ["x64"],
+      },
+    ],
+    artifactName: "${productName}_${version}.${ext}",
+  },
+  nsis: {
+    oneClick: false,
+    createDesktopShortcut: "always",
+    allowToChangeInstallationDirectory: true,
+  },
+  files: [
+    "dist",
+    "!node_modules/realm/react-native${/*}",
+    "!node_modules/realm/scripts${/*}",
+    "!node_modules/realm/src${/*}",
+    "!node_modules/realm/vendor${/*}",
+    "!node_modules/esbuild${/*}",
+    "!node_modules/esbuild-darwin-64${/*}",
+    "!app",
+    "!assets",
+    "!certificate.p12",
+    "!tests",
+  ],
+  extraResources: [
+    {
+      from: "build/icon_v2.ico",
+      to: "icon_v2.ico",
+    },
+    {
+      from: "paperlib-entry-scrape-extension-main",
+      to: "bundled-extensions/paperlib-entry-scrape-extension-main",
+      filter: ["package.json", "dist/**", "public/**", "pdf-worker/**"],
+    },
+    {
+      from: "paperlib-metadata-scrape-extension-main",
+      to: "bundled-extensions/paperlib-metadata-scrape-extension-main",
+      filter: ["package.json", "dist/**"],
+    },
+    {
+      from: "paperlib-community-metadata-collection-main",
+      to: "bundled-extensions/paperlib-community-metadata-collection-main",
+      filter: ["package.json", "metadata/**", "pipeline/**"],
+    },
+    {
+      from: "paperlib-citation-count-extension-main",
+      to: "bundled-extensions/paperlib-citation-count-extension-main",
+      filter: ["package.json", "dist/**"],
+    },
+  ],
+}

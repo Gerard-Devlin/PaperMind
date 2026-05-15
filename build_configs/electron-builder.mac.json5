@@ -1,0 +1,38 @@
+/**
+ * @see https://www.electron.build/configuration/configuration
+ */
+{
+  appId: "dev.paperlib.app",
+  productName: "Paperlib",
+  asar: true,
+  publish: [
+    {
+      provider: "generic",
+      url: "https://distribution.paperlib.app/electron-mac/",
+    },
+  ],
+  directories: {
+    output: "release/${version}",
+  },
+  mac: {
+    icon: "./icon.icns",
+    artifactName: "${productName}_${version}.${ext}",
+    target: ["dmg", "zip"],
+    releaseInfo: {
+      releaseNotesFile: "./release-notes.md",
+    },
+  },
+  files: [
+    "dist",
+    "!node_modules/realm/react-native${/*}",
+    "!node_modules/realm/scripts${/*}",
+    "!node_modules/realm/src${/*}",
+    "!node_modules/realm/vendor${/*}",
+    "!node_modules/esbuild${/*}",
+    "!node_modules/esbuild-darwin-64${/*}",
+    "!app",
+    "!assets",
+    "!certificate.p12",
+    "!tests",
+  ],
+}

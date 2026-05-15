@@ -1,0 +1,49 @@
+{
+  "name": "paperlib-api",
+  "version": "0.1.10",
+  "author": "Paperlib",
+  "description": "The API for paperlib extension development.",
+  "exports": {
+    ".": {
+      "default": "./dist/api.mjs",
+      "types": "./dist/api.d.ts"
+    },
+    "./api": {
+      "default": "./dist/api.mjs",
+      "types": "./dist/api.d.ts"
+    },
+    "./rpc": {
+      "default": "./dist/rpc.mjs",
+      "types": "./dist/rpc.d.ts"
+    },
+    "./model": {
+      "default": "./dist/model.mjs",
+      "types": "./dist/model.d.ts"
+    },
+    "./utils": {
+      "default": "./dist/utils.mjs",
+      "types": "./dist/utils.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">=18.16.1"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "paperlib-api"
+  ],
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "electron-store": "8.1.0",
+    "electron-updater": "5.0.1",
+    "electron": "26.6.5",
+    "electron-log": "4.4.8",
+    "citation-js": "0.6.4",
+    "pinia": "2.1.7",
+    "fast-xml-parser": "4.0.6",
+    "realm": "11.10.2",
+    "tough-cookie": "4.0.0"
+  }
+}

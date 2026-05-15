@@ -1,0 +1,133 @@
+import fs from "fs";
+import path from "path";
+
+import { InjectionContainer } from "@/base/injection/injection";
+import { Process } from "@/base/process-id";
+import { UtilityProcessRPCService } from "@/base/rpc/rpc-service-utility";
+import { LogService } from "@/common/services/log-service";
+
+import { NetworkTool } from "./base/network";
+import { ExtensionManagementService } from "./services/extension-management-service";
+import { ExtensionPreferenceService } from "./services/extension-preference-service";
+import { IInjectable } from "./services/injectable";
+
+const API_READY_TIMEOUT_MS = 30000;
+
+async function initialize() {
+  const extLogService = new LogService("extension.log");
+
+  process.on("uncaughtException", (err) => {
+    extLogService.error("Uncaught exception:", err, false, "Extension");
+  });
+
+  // ============================================================
+  // 1. Initilize the RPC service for current process
+  const extensionRPCService = new UtilityProcessRPCService(
+    Process.extension,
+    "PLExtAPI"
+  );
+  // ============================================================
+  // 2. Start the port exchange process.
+  extensionRPCService.initCommunication();
+  // ============================================================
+  // 3. Wait for the main/renderer process to expose its APIs (PLMainAPI/PLAPI)
+  const mainAPIExposed = await extensionRPCService.waitForAPI(
+    Process.main,
+    "PLMainAPI",
+    API_READY_TIMEOUT_MS
+  );
+  if (!mainAPIExposed) {
+    console.error("Main process API is not exposed");
+    throw new Error("Main process API is not exposed");
+  }
+  const serviceAPIExposed = await extensionRPCService.waitForAPI(
+    Process.service,
+    "PLAPI",
+    API_READY_TIMEOUT_MS
+  );
+  if (!serviceAPIExposed) {
+    throw new Error("Service process API is not exposed");
+  }
+  // 3.1 Get extension working path
+  const configDir = await PLMainAPI.fileSystemService.getSystemPath(
+    "userData",
+    Process.extension
+  );
+  globalThis["extensionWorkingDir"] = path.join(configDir, "extensions");
+  if (!fs.existsSync(globalThis["extensionWorkingDir"])) {
+    fs.mkdirSync(globalThis["extensionWorkingDir"]);
+  }
+
+  // 3.2 Get custom CA certificates
+  if (fs.existsSync(path.join(configDir, "ca.crt"))) {
+    globalThis["caCertPath"] = path.join(configDir, "ca.crt");
+  }
+  if (fs.existsSync(path.join(configDir, "ca.pem"))) {
+    globalThis["caCertPath"] = path.join(configDir, "ca.pem");
+  }
+  if (fs.existsSync(path.join(configDir, "ca.cer"))) {
+    globalThis["caCertPath"] = path.join(configDir, "ca.cer");
+  }
+  if (fs.existsSync(path.join(configDir, "ca.key"))) {
+    globalThis["clientKeyPath"] = path.join(configDir, "client.key");
+  }
+  if (fs.existsSync(path.join(configDir, "client.crt"))) {
+    globalThis["clientCertPath"] = path.join(configDir, "client.crt");
+  }
+
+  // ============================================================
+  // 4. Create the instances for all services, tools, etc. of the current process.
+  const injectionContainer = new InjectionContainer({
+    extensionRPCService,
+  });
+
+  const instances = injectionContainer.createInstance<IInjectable>({
+    extensionManagementService: ExtensionManagementService,
+    extensionPreferenceService: ExtensionPreferenceService,
+    networkTool: NetworkTool,
+  });
+  // 4.1 Expose the instances to the global scope for convenience.
+  for (const [key, instance] of Object.entries(instances)) {
+    if (!globalThis["PLExtAPILocal"]) {
+      globalThis["PLExtAPILocal"] = {} as any;
+    }
+    if (!globalThis["PLExtAPI"]) {
+      globalThis["PLExtAPI"] = {} as any;
+    }
+
+    globalThis[key] = instance;
+    globalThis["PLExtAPILocal"][key] = instance;
+    globalThis["PLExtAPI"][key] = instance;
+  }
+
+  // ============================================================
+  // 5. Set actionors for RPC service with all initialized services.
+  //    Expose the APIs of the current process to other processes
+  PLExtAPILocal.extensionRPCService.setActionor(instances);
+
+  process.parentPort.postMessage({
+    type: "service-ready",
+    value: Process.extension,
+  });
+
+  // Initialize extensions in background so renderer startup is never blocked.
+  // Some extensions write into renderer-owned UI slots, so wait until PLUIAPI is
+  // exposed before loading plugins.
+  (async () => {
+    await extensionRPCService.waitForAPI(
+      Process.renderer,
+      "PLUIAPI",
+      API_READY_TIMEOUT_MS
+    );
+    await PLExtAPILocal.extensionManagementService.initialize();
+  })().catch((error: Error) => {
+      extLogService.error(
+        "Failed to initialize extension management service.",
+        error,
+        true,
+        "Extension"
+      );
+    });
+}
+
+initialize();

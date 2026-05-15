@@ -1,0 +1,304 @@
+import { app } from "electron";
+import path from "path";
+
+import { InjectionContainer } from "@/base/injection/injection";
+import { Process } from "@/base/process-id";
+import { MainProcessRPCService } from "@/base/rpc/rpc-service-main";
+import { IInjectable } from "@/main/services/injectable";
+import { PreferenceService } from "@/main/services/preference-service";
+
+import { ContextMenuService } from "./services/contextmenu-service";
+import { FileSystemService } from "./services/filesystem-service";
+import { MenuService } from "./services/menu-service";
+import { ProxyService } from "./services/proxy-service";
+import { SystemService } from "./services/system-service";
+import { UpgradeService } from "./services/upgrade-service";
+import { UtilityProcessManagementService } from "./services/utility-process-management-service";
+import { WindowProcessManagementService } from "./services/window-process-management-service";
+
+function findDeepLinkArg(args: string[]) {
+  return args.find((arg) => typeof arg === "string" && arg.startsWith("paperlib:"));
+}
+
+function handleDeeplink(urlStr: string) {
+  try {
+    if (!urlStr || !urlStr.startsWith("paperlib:")) {
+      return;
+    }
+
+    const { protocol, hostname, pathname, searchParams } = new URL(urlStr);
+    if (protocol !== "paperlib:" || hostname !== "v3.desktop.paperlib.app") {
+      throw new Error("Invalid URL");
+    }
+
+    const [_, apiGroup, serviceName, methodName] = pathname.split("/");
+
+    // Only allow official sync OAuth callbacks from deeplinks.
+    if (
+      apiGroup === "PLAPI" &&
+      serviceName === "syncService" &&
+      methodName === "handleLoginOfficialCallback"
+    ) {
+      const code = searchParams.get("code");
+      if (!code) {
+        throw new Error("Missing code");
+      }
+      PLAPI.syncService.handleLoginOfficialCallback({ code });
+      return;
+    }
+
+    if (
+      apiGroup === "PLAPI" &&
+      serviceName === "syncService" &&
+      methodName === "handleLogoutOfficialCallback"
+    ) {
+      PLAPI.syncService.handleLogoutOfficialCallback(urlStr);
+      return;
+    }
+
+    throw new Error("Invalid URL");
+  } catch (e) {
+    try {
+      PLAPI.logService.error(
+        "SchemeURL error",
+        `${(e as Error).message}\n${(e as Error).stack}`,
+        true,
+        "SchemeURL"
+      );
+    } catch (err) {}
+  }
+}
+
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+} else {
+  app.on("second-instance", (event, commandLine, workingDirectory) => {
+    if (
+      PLMainAPILocal.windowProcessManagementService.browserWindows.has(
+        Process.renderer
+      )
+    ) {
+      PLMainAPILocal.windowProcessManagementService.browserWindows
+        .get(Process.renderer)
+        .show();
+      PLMainAPILocal.windowProcessManagementService.browserWindows
+        .get(Process.renderer)
+        .focus();
+
+      if (commandLine.length > 1) {
+        const deepLink = findDeepLinkArg(commandLine);
+        if (deepLink) {
+          handleDeeplink(deepLink);
+        }
+      }
+    } else {
+      PLMainAPILocal.windowProcessManagementService.createMainRenderer();
+    }
+  });
+}
+
+try {
+  // Avoid hard-failing on restricted Windows environments (e.g. no registry permission).
+  // Protocol registration is optional and should never block app startup.
+  const shouldRegisterProtocol =
+    process.env.PAPERMIND_REGISTER_PROTOCOL === "1";
+  if (shouldRegisterProtocol) {
+    if (process.defaultApp) {
+      if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient("paperlib", process.execPath, [
+          path.resolve(process.argv[1]),
+        ]);
+      }
+    } else {
+      app.setAsDefaultProtocolClient("paperlib");
+    }
+  }
+} catch (error) {
+  try {
+    console.warn("Protocol registration skipped:", error);
+  } catch {}
+}
+
+async function initialize() {
+  // ============================================================
+  // 1. Initilize the RPC service for current process
+  const mainRPCService = new MainProcessRPCService(Process.main, "PLMainAPI");
+
+  // ============================================================
+  // 2. Create the instances for all services, tools, etc. of the current process.
+  const injectionContainer = new InjectionContainer();
+  const instances = injectionContainer.createInstance<IInjectable>({
+    preferenceService: PreferenceService,
+    windowProcessManagementService: WindowProcessManagementService,
+    fileSystemService: FileSystemService,
+    contextMenuService: ContextMenuService,
+    menuService: MenuService,
+    upgradeService: UpgradeService,
+    proxyService: ProxyService,
+    utilityProcessManagementService: UtilityProcessManagementService,
+    systemService: SystemService,
+  });
+  // 3.1 Expose the instances to the global scope for convenience.
+  for (const [key, instance] of Object.entries(instances)) {
+    if (!globalThis["PLMainAPILocal"]) {
+      globalThis["PLMainAPILocal"] = {} as any;
+    }
+    globalThis[key] = instance;
+    globalThis["PLMainAPILocal"][key] = instance;
+  }
+
+  // Configure start-at-login according to preferences and listen for changes.
+  try {
+    const prefService = PLMainAPILocal.preferenceService;
+    const startAtLogin = prefService.get("startAtLogin" as any) as boolean;
+    if (process.platform === "win32" || process.platform === "darwin") {
+      try {
+        app.setLoginItemSettings({ openAtLogin: !!startAtLogin });
+      } catch (e) {}
+    }
+
+    // Update on preference change
+    prefService.on("startAtLogin", ({ value }) => {
+      try {
+        app.setLoginItemSettings({ openAtLogin: !!value });
+      } catch (e) {}
+    });
+  } catch (e) {}
+
+  // ============================================================
+  // 4. Set actionors for RPC service with all initialized services.
+  //    Expose the APIs of the current process to other processes
+  mainRPCService.setActionor(instances);
+
+  // ============================================================
+  // 5. Setup other things for the main process.
+  app.on("window-all-closed", () => {
+    PLMainAPILocal.utilityProcessManagementService.close();
+
+    // Only quit automatically when a real quit was requested.
+    if (
+      process.platform !== "darwin" &&
+      PLMainAPILocal.windowProcessManagementService.isQuitting()
+    )
+      app.quit();
+  });
+
+  app.on("second-instance", () => {
+    if (
+      PLMainAPILocal.windowProcessManagementService.browserWindows.has(
+        Process.renderer
+      )
+    ) {
+      if (
+        PLMainAPILocal.windowProcessManagementService.browserWindows
+          .get(Process.renderer)
+          .isMinimized()
+      ) {
+        PLMainAPILocal.windowProcessManagementService.browserWindows
+          .get(Process.renderer)
+          .restore();
+        PLMainAPILocal.windowProcessManagementService.browserWindows
+          .get(Process.renderer)
+          .focus();
+      }
+    }
+  });
+
+  app.on("activate", () => {
+    if (
+      PLMainAPILocal.windowProcessManagementService.browserWindows.has(
+        Process.renderer
+      )
+    ) {
+      PLMainAPILocal.windowProcessManagementService.browserWindows
+        .get(Process.renderer)
+        .show();
+      PLMainAPILocal.windowProcessManagementService.browserWindows
+        .get(Process.renderer)
+        .focus();
+    } else {
+      PLMainAPILocal.windowProcessManagementService.createMainRenderer();
+    }
+  });
+
+  // ============================================================
+  // 6. Start the port exchange process.
+  PLMainAPILocal.windowProcessManagementService.on("requestPort", (v) => {
+    mainRPCService.initCommunication(
+      v.value,
+      PLMainAPILocal.windowProcessManagementService.browserWindows,
+      PLMainAPILocal.utilityProcessManagementService.utlityProcesses
+    );
+  });
+
+  PLMainAPILocal.utilityProcessManagementService.on("requestPort", (v) => {
+    mainRPCService.initCommunication(
+      v.value,
+      PLMainAPILocal.windowProcessManagementService.browserWindows,
+      PLMainAPILocal.utilityProcessManagementService.utlityProcesses
+    );
+  });
+
+  PLMainAPILocal.windowProcessManagementService.on("destroyed", (v) => {
+    mainRPCService.stopCommunication(
+      v.value,
+      PLMainAPILocal.windowProcessManagementService.browserWindows,
+      PLMainAPILocal.utilityProcessManagementService.utlityProcesses
+    );
+  });
+
+  PLMainAPILocal.utilityProcessManagementService.on("destroyed", (v) => {
+    mainRPCService.stopCommunication(
+      v.value,
+      PLMainAPILocal.windowProcessManagementService.browserWindows,
+      PLMainAPILocal.utilityProcessManagementService.utlityProcesses
+    );
+  });
+
+  // ============================================================
+  // 7. Once the main renderer process is ready, create the extension process.
+  PLMainAPILocal.utilityProcessManagementService.on("serviceReady", (v) => {
+    if (v.value === Process.service) {
+      PLMainAPILocal.utilityProcessManagementService.createExtensionProcess();
+      // ============================================================
+      // 8. Create the main renderer process.
+      PLMainAPILocal.windowProcessManagementService.createMainRenderer();
+    }
+  });
+  PLMainAPILocal.windowProcessManagementService.on("serviceReady", (v) => {
+    if (v.value === Process.renderer) {
+      PLMainAPILocal.menuService.enableGlobalShortcuts();
+    }
+  });
+
+  PLMainAPILocal.utilityProcessManagementService.createServiceProcess();
+}
+
+app.whenReady().then(() => {
+  // Set application name for Windows 10+ notifications
+  if (process.platform === "win32") app.setAppUserModelId(app.getName());
+
+  app.on("browser-window-created", (_, window) => {
+    if (!window) return;
+    const { webContents } = window;
+    webContents.on("before-input-event", (event, input) => {
+      if (input.type === "keyDown") {
+        // Toggle devtool(F12)
+        if (input.code === "F12") {
+          if (webContents.isDevToolsOpened()) {
+            webContents.closeDevTools();
+          } else {
+            webContents.openDevTools({ mode: "undocked" });
+          }
+        }
+      }
+    });
+  });
+
+  initialize();
+});
+
+app.on("open-url", (event, urlStr) => {
+  handleDeeplink(urlStr);
+});

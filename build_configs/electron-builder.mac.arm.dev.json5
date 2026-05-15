@@ -1,0 +1,35 @@
+/**
+ * @see https://www.electron.build/configuration/configuration
+ */
+{
+  appId: "dev.beta.paperlib.app",
+  productName: "Paperlib Beta",
+  asar: true,
+  publish: [
+    {
+      provider: "generic",
+      url: "https://distribution.paperlib.app/arm_dev_channel/",
+    },
+  ],
+  directories: {
+    output: "release/${version}",
+  },
+  mac: {
+    icon: "./icon_beta.icns",
+    artifactName: "${productName}_${version}.${ext}",
+    target: ["dmg", "zip"],
+  },
+  files: [
+    "dist",
+    "!node_modules/realm/react-native${/*}",
+    "!node_modules/realm/scripts${/*}",
+    "!node_modules/realm/src${/*}",
+    "!node_modules/realm/vendor${/*}",
+    "!node_modules/esbuild${/*}",
+    "!node_modules/esbuild-darwin-64${/*}",
+    "!app",
+    "!assets",
+    "!certificate.p12",
+    "!tests",
+  ],
+}

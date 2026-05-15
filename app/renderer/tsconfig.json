@@ -1,0 +1,24 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "include": [
+    "./**/*",
+    "../base/**/*",
+    "../common/**/*",
+    "../locales/**/*",
+    "../models/**/*"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "types": ["../index.d.ts"],
+    "baseUrl": "../",
+    "rootDir": "../",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "noUnusedParameters": false,
+    "noUnusedLocals": false,
+    "experimentalDecorators": true,
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  }
+}

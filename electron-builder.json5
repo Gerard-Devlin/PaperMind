@@ -1,0 +1,60 @@
+/**
+ * @see https://www.electron.build/configuration/configuration
+ */
+{
+  appId: "dev.paperlib.app",
+  productName: "PaperMind",
+  asar: true,
+  publish: [
+    {
+      provider: "generic",
+      url: "https://distribution.paperlib.app/electron-mac-arm/",
+    },
+  ],
+  directories: {
+    output: "release/${version}",
+  },
+  mac: {
+    icon: "./icons/icon.icns",
+    artifactName: "${productName}_${version}.${ext}",
+    target: {
+      target: "default",
+      arch: ["arm64"],
+    },
+    releaseInfo: {
+      releaseNotesFile: "./release-notes.md",
+    },
+  },
+  buildDependenciesFromSource: true,
+  files: [
+    "dist",
+    "!node_modules/realm/react-native${/*}",
+    "!node_modules/realm/scripts${/*}",
+    "!node_modules/realm/src${/*}",
+    "!node_modules/realm/vendor${/*}",
+    "!node_modules/esbuild${/*}",
+    "!node_modules/esbuild-darwin-64${/*}",
+    "!app",
+    "!assets",
+    "!certificate.p12",
+    "!tests",
+  ],
+  extraResources: [
+    {
+      from: "paperlib-entry-scrape-extension-main",
+      to: "bundled-extensions/paperlib-entry-scrape-extension-main",
+      filter: ["package.json", "dist/**", "public/**", "pdf-worker/**"],
+    },
+    {
+      from: "paperlib-metadata-scrape-extension-main",
+      to: "bundled-extensions/paperlib-metadata-scrape-extension-main",
+      filter: ["package.json", "dist/**"],
+    },
+    {
+      from: "paperlib-community-metadata-collection-main",
+      to: "bundled-extensions/paperlib-community-metadata-collection-main",
+      filter: ["package.json", "metadata/**", "pipeline/**"],
+    },
+  ],
+}
+
