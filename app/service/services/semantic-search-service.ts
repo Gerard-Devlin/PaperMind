@@ -61,6 +61,12 @@ export interface ISemanticMultiQueryTextRankResult {
   scores: Record<string, number>;
 }
 
+export interface ISemanticGraphEdge {
+  source: string;
+  target: string;
+  score: number;
+}
+
 interface IPgLikeResult<T> {
   rows: T[];
 }
@@ -232,6 +238,90 @@ export class SemanticSearchService extends Eventable<{}> {
       abstract: row.abstract || null,
       documentText: row.document_text || "",
     }));
+  }
+
+  @processing(ProcessingKey.General)
+  @errorcatching("Failed to retrieve semantic graph edges.", true, "SemanticSearch", [])
+  async semanticGraphEdges(
+    ids: string[],
+    topK = 4,
+    minScore = 0.72
+  ): Promise<ISemanticGraphEdge[]> {
+    const normalizedIds = Array.from(
+      new Set(
+        (ids || [])
+          .map((id) => `${id || ""}`.trim())
+          .filter((id) => /^[a-fA-F0-9]{24}$/.test(id))
+      )
+    ).slice(0, 320);
+    if (normalizedIds.length < 2) {
+      return [];
+    }
+
+    const hasPostgresURL = await this._hasPostgresURL();
+    const client: IPgLikeClient = hasPostgresURL
+      ? (await this._getPool()) as IPgLikeClient
+      : (await this._getPGlite()) as IPgLikeClient;
+    if (hasPostgresURL) {
+      await this._ensureSchema();
+    } else {
+      await this._ensurePGliteSchema();
+    }
+
+    const placeholders = normalizedIds.map((_, index) => `$${index + 1}`).join(", ");
+    const result = await client.query<{
+      source: string;
+      target: string;
+      score: number;
+    }>(
+      `
+      WITH selected AS (
+        SELECT id::text AS id, embedding
+        FROM papers
+        WHERE id IN (${placeholders}) AND embedding IS NOT NULL
+      )
+      SELECT
+        a.id AS source,
+        b.id AS target,
+        1 - (a.embedding <=> b.embedding) AS score
+      FROM selected a
+      JOIN selected b ON a.id < b.id
+      ORDER BY a.embedding <=> b.embedding ASC
+      LIMIT ${Math.max(1, normalizedIds.length * Math.max(1, topK) * 4)}
+      `,
+      normalizedIds
+    );
+
+    const perNodeCount = new Map<string, number>();
+    const usedPairs = new Set<string>();
+    const edges: ISemanticGraphEdge[] = [];
+    const candidates = result.rows
+      .map((row) => ({
+        source: `${row.source}`,
+        target: `${row.target}`,
+        score: Number(row.score || 0),
+      }))
+      .filter((row) => row.source && row.target && row.score >= minScore)
+      .sort((a, b) => b.score - a.score);
+
+    for (const candidate of candidates) {
+      const sourceCount = perNodeCount.get(candidate.source) || 0;
+      const targetCount = perNodeCount.get(candidate.target) || 0;
+      const pairKey = [candidate.source, candidate.target].sort().join(":");
+      if (
+        usedPairs.has(pairKey) ||
+        sourceCount >= topK ||
+        targetCount >= topK
+      ) {
+        continue;
+      }
+      usedPairs.add(pairKey);
+      perNodeCount.set(candidate.source, sourceCount + 1);
+      perNodeCount.set(candidate.target, targetCount + 1);
+      edges.push(candidate);
+    }
+
+    return edges;
   }
 
   @processing(ProcessingKey.General)

@@ -40,6 +40,13 @@ type GraphEdge = {
   target: string;
   width: number;
   opacity: number;
+  semantic?: boolean;
+};
+
+type SemanticGraphEdge = {
+  source: string;
+  target: string;
+  score: number;
 };
 
 const uiApiLocal = (globalThis as any).PLUIAPILocal;
@@ -51,6 +58,8 @@ const uiState =
   });
 const injectedPaperEntities = inject<Ref<IEntityCollection> | null>("paperEntities", null);
 const localPaperEntities: Ref<IEntityCollection> = ref([] as any);
+const semanticGraphEdges = ref<SemanticGraphEdge[]>([]);
+const graphReloadToken = ref(0);
 const graphPaperEntities = computed(
   () => injectedPaperEntities?.value || localPaperEntities.value
 );
@@ -77,18 +86,70 @@ const graph = shallowRef<{ nodes: GraphNode[]; edges: GraphEdge[]; width: number
 });
 let animationFrame = 0;
 let viewportAnimationFrame = 0;
+let reloadTimer: ReturnType<typeof setTimeout> | null = null;
+let searchRequestId = 0;
 let settlingTicks = 0;
 const layoutReady = ref(false);
 const simulationRunning = ref(false);
+
+const snapshotEntities = (items: any[]) =>
+  Array.from(items || [])
+    .map((paper: any) => {
+      try {
+        return new Entity(paper);
+      } catch {
+        return null;
+      }
+    })
+    .filter((paper): paper is Entity => Boolean(paper))
+    .filter((paper) => paper._id && paper.title);
+
+const reloadSemanticGraphEdges = async (papers: Entity[]) => {
+  const ids = papers.map((paper) => `${paper._id || ""}`).filter(Boolean);
+  if (ids.length < 2) {
+    semanticGraphEdges.value = [];
+    graphReloadToken.value += 1;
+    return;
+  }
+
+  try {
+    semanticGraphEdges.value = (await PLAPI.semanticSearchService.semanticGraphEdges(
+      ids,
+      4,
+      0.7
+    )) as SemanticGraphEdge[];
+  } catch {
+    semanticGraphEdges.value = [];
+  }
+  graphReloadToken.value += 1;
+};
+
 const reloadLocalPaperEntities = async () => {
   if (injectedPaperEntities) {
     return;
   }
-  localPaperEntities.value = (await PLAPI.paperService.load(
+  const loaded = await PLAPI.paperService.load(
     "",
     "addTime",
     "desc"
-  )) as IEntityCollection;
+  );
+  const papers = snapshotEntities(loaded as any[]);
+  localPaperEntities.value = papers as IEntityCollection;
+  graphReloadToken.value += 1;
+  void reloadSemanticGraphEdges(papers);
+};
+
+const scheduleReloadLocalPaperEntities = () => {
+  if (injectedPaperEntities) {
+    return;
+  }
+  if (reloadTimer) {
+    clearTimeout(reloadTimer);
+  }
+  reloadTimer = setTimeout(() => {
+    reloadTimer = null;
+    void reloadLocalPaperEntities();
+  }, 80);
 };
 
 const colors = [
@@ -228,8 +289,10 @@ const centerNode = (node: GraphNode) => {
   });
 };
 
-const updateSearchMatches = (focus = false) => {
-  const query = searchText.value.trim().toLowerCase();
+const updateSearchMatches = async (focus = false) => {
+  const rawQuery = searchText.value.trim();
+  const query = rawQuery.toLowerCase();
+  const requestId = ++searchRequestId;
   if (!query) {
     matchedNodeIds.value = new Set();
     searchResultIds.value = [];
@@ -239,10 +302,39 @@ const updateSearchMatches = (focus = false) => {
     return;
   }
 
-  const matches = graph.value.nodes.filter((node) =>
+  const textMatches = graph.value.nodes.filter((node) =>
     node.title.toLowerCase().includes(query)
   );
-  const matchIds = matches.map((node) => node.id);
+  let semanticMatchIds: string[] = [];
+  try {
+    const semanticResults = (await PLAPI.semanticSearchService.search(
+      rawQuery,
+      24
+    )) as Entity[];
+    if (requestId !== searchRequestId) {
+      return;
+    }
+    const availableNodeIds = new Set(graph.value.nodes.map((node) => node.id));
+    semanticMatchIds = semanticResults
+      .map((paper: any) => `paper:${paper._id || ""}`)
+      .filter((id) => availableNodeIds.has(id));
+  } catch {
+    semanticMatchIds = [];
+  }
+
+  if (requestId !== searchRequestId) {
+    return;
+  }
+
+  const matchIds = [
+    ...semanticMatchIds,
+    ...textMatches
+      .map((node) => node.id)
+      .filter((id) => !semanticMatchIds.includes(id)),
+  ];
+  const matches = matchIds
+    .map((id) => graph.value.nodes.find((node) => node.id === id))
+    .filter((node): node is GraphNode => Boolean(node));
   matchedNodeIds.value = new Set(matchIds);
   searchResultIds.value = matchIds;
 
@@ -375,13 +467,21 @@ const nodeRadius = (kind: GraphNode["kind"], weight: number, selected = false) =
 };
 
 const buildGraph = () => {
-  const selectedIds = new Set((uiState.selectedPaperEntities || []).map((paper) => `${paper._id}`));
-  const papers = Array.from(graphPaperEntities.value as any[])
-    .map((paper: any) => new Entity(paper))
-    .filter((paper) => paper._id && paper.title)
-    .slice(0, 260);
+  const selectedIds = new Set(
+    (uiState.selectedPaperEntities || [])
+      .map((paper) => {
+        try {
+          return `${paper._id}`;
+        } catch {
+          return "";
+        }
+      })
+      .filter(Boolean)
+  );
+  const papers = snapshotEntities(graphPaperEntities.value as any[]).slice(0, 260);
+  const selectedPapers = snapshotEntities((uiState.selectedPaperEntities || []) as any[]);
 
-  const displayPapers = (papers.length > 0 ? papers : uiState.selectedPaperEntities || []).slice(0, 320);
+  const displayPapers = (papers.length > 0 ? papers : selectedPapers).slice(0, 320);
   const width = 980;
   const height = 560;
   const centerX = width / 2;
@@ -395,9 +495,15 @@ const addNode = (node: GraphNode) => {
     nodeIds.add(node.id);
     nodes.push(node);
   };
-  const addEdge = (source: string, target: string, width = 0.55, opacity = 0.22) => {
+  const addEdge = (
+    source: string,
+    target: string,
+    width = 0.55,
+    opacity = 0.22,
+    semantic = false
+  ) => {
     if (!nodeIds.has(source) || !nodeIds.has(target)) return;
-    edges.push({ source, target, width, opacity });
+    edges.push({ source, target, width, opacity, semantic });
   };
 
   const topicCounts = new Map<string, number>();
@@ -551,6 +657,19 @@ const addNode = (node: GraphNode) => {
     }
   }
 
+  for (const edge of semanticGraphEdges.value) {
+    const source = `paper:${edge.source}`;
+    const target = `paper:${edge.target}`;
+    const score = Math.max(0, Math.min(1, Number(edge.score || 0)));
+    addEdge(
+      source,
+      target,
+      0.55 + Math.max(0, score - 0.7) * 2.4,
+      0.14 + Math.max(0, score - 0.7) * 0.62,
+      true
+    );
+  }
+
   applyForceDirectedLayout(nodes, edges, width, height);
   resolveAllOverlaps(nodes, 120);
   fitNodesToCircle(nodes, width, height);
@@ -565,7 +684,7 @@ const addNode = (node: GraphNode) => {
   layoutReady.value = true;
   settlingTicks = 0;
   simulationRunning.value = true;
-  updateSearchMatches();
+  void updateSearchMatches();
   void nextTick(drawGraph);
 };
 
@@ -1408,7 +1527,11 @@ const drawGraph = () => {
     const b = map.get(edge.target);
     if (!a || !b) continue;
     ctx.globalAlpha = edge.opacity;
-    ctx.strokeStyle = graphLineColor();
+    ctx.strokeStyle = edge.semantic
+      ? darkMode.value
+        ? "rgba(125, 211, 252, 0.62)"
+        : "rgba(37, 99, 235, 0.42)"
+      : graphLineColor();
     ctx.lineWidth = edge.width;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
@@ -1576,18 +1699,44 @@ const tick = () => {
 };
 
 watch(
-  () => [graphPaperEntities.value.length, uiState.selectedPaperEntities.length],
+  () => [
+    graphReloadToken.value,
+    graphPaperEntities.value.length,
+    semanticGraphEdges.value.length,
+    (uiState.selectedPaperEntities || [])
+      .map((paper) => {
+        try {
+          return `${paper._id}`;
+        } catch {
+          return "";
+        }
+      })
+      .join(","),
+  ],
   buildGraph,
   { immediate: true }
 );
-watch(searchText, () => updateSearchMatches());
+watch(
+  () =>
+    snapshotEntities(graphPaperEntities.value as any[])
+      .map((paper) => `${paper._id}`)
+      .join(","),
+  () => {
+    if (!injectedPaperEntities) {
+      return;
+    }
+    void reloadSemanticGraphEdges(snapshotEntities(graphPaperEntities.value as any[]));
+  },
+  { immediate: true }
+);
+watch(searchText, () => void updateSearchMatches());
 watch(
   () => props.searchSubmitTick,
   () => {
     if (!props.embedded) {
       return;
     }
-    updateSearchMatches(true);
+    void updateSearchMatches(true);
   }
 );
 watch(
@@ -1611,6 +1760,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("resize", resizeCanvas);
+  if (reloadTimer) {
+    clearTimeout(reloadTimer);
+    reloadTimer = null;
+  }
   cancelAnimationFrame(animationFrame);
   cancelAnimationFrame(viewportAnimationFrame);
 });
@@ -1629,7 +1782,7 @@ if (uiApiLocal?.uiStateService) {
 }
 if (!injectedPaperEntities) {
   disposable(PLAPI.paperService.on("updated", () => {
-    void reloadLocalPaperEntities();
+    scheduleReloadLocalPaperEntities();
   }));
 }
 </script>
@@ -1682,7 +1835,7 @@ if (!injectedPaperEntities) {
             />
             <div
               class="mr-2 my-auto flex flex-none select-none whitespace-nowrap rounded-md border-[1px] border-neutral-400 px-2 py-1 text-xxs text-neutral-400 transition-colors hover:border-neutral-600 hover:text-neutral-600 hover:dark:border-neutral-200 hover:dark:text-neutral-200 dark:border-neutral-500"
-              @click="() => updateSearchMatches(true)"
+              @click="() => void updateSearchMatches(true)"
             >
               Search
             </div>
